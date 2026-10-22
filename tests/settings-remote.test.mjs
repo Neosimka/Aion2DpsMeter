@@ -186,7 +186,7 @@ async function pair({ holdLanguage = null } = {}) {
         if (node === boss) { bossMeasures++; return { fontSize: boss.style.fontSize || (meter.classList.contains("slim") ? "12px" : "15px") }; }
         return { getPropertyValue: (key) => root.style.getPropertyValue(key) || ({
           "--meter-fill-opacity": "0.8", "--text-color": "#ffffff", "--player-name-shadow": "none",
-          "--row-fill": root.dataset.theme === "frost" ? "#d8ecff" : "#303040",
+          "--row-fill": root.dataset.theme === "a2d-neon" ? "#d8ecff" : "#303040",
         }[key] || "") };
       },
       fetch: async (url) => {
@@ -298,13 +298,13 @@ test("theme and player limit clicks update the other window's existing controls 
   const fixture = await pair();
   const themeItems = [...fixture.main.dropdowns.get("theme").menu.children];
   const renders = fixture.main.rendered;
-  fixture.settings.pick("theme", "frost");
+  fixture.settings.pick("theme", "a2d-neon");
   fixture.settings.pick("playerLimit", "10");
   await settle();
-  assert.equal(fixture.main.root.dataset.theme, "frost");
+  assert.equal(fixture.main.root.dataset.theme, "a2d-neon");
   assert.equal(fixture.main.app.playerLimit, 10);
   assert.ok(fixture.main.rendered > renders);
-  assertSelected(fixture.main, "theme", "frost");
+  assertSelected(fixture.main, "theme", "a2d-neon");
   assertSelected(fixture.main, "playerLimit", "10");
   assert.deepEqual(fixture.main.dropdowns.get("theme").menu.children, themeItems, "remote changes do not rebuild menus");
   assert.equal(fixture.main.dropdowns.get("theme").button.style.background, "#d8ecff");
@@ -423,7 +423,7 @@ test("hidden settings stays paused and reopen refills newer values without write
   const outsideHandlers = fixture.settings.domHandlers.get("click").length;
   fixture.settings.listeners.get("settings-hidden")();
   assert.equal(fixture.settings.timers.size, 0);
-  fixture.main.window.javaBridge.setSetting("dpsMeter.theme", "frost");
+  fixture.main.window.javaBridge.setSetting("dpsMeter.theme", "a2d-neon");
   fixture.main.window.javaBridge.setSetting("dpsMeter.playerLimit", "12");
   await settle();
   assert.equal(fixture.settings.timers.size, 0);
@@ -435,7 +435,7 @@ test("hidden settings stays paused and reopen refills newer values without write
   assert.equal(input.value, "33");
   assert.equal(fixture.settings.nodes.get(".windowOpacityValue").textContent, "33%");
   assert.equal(fixture.settings.app.playerLimit, 12);
-  assertSelected(fixture.settings, "theme", "frost");
+  assertSelected(fixture.settings, "theme", "a2d-neon");
   assertSelected(fixture.settings, "playerLimit", "12");
   assert.equal(fixture.writes().length, 2, "only the two edits while hidden, no refill persistence");
   assert.ok(fixture.writes().every((call) => call.view === "main"));
