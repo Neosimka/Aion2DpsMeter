@@ -49,7 +49,10 @@ jobs:
           cat check.json 2>/dev/null; echo
           if [ "$code" = "200" ]; then
             echo "Le site accepte la clé de légion."
-          elif [ "$code" = "401" ] || [ "$code" = "500" ]; then
+          elif [ "$code" = "500" ]; then
+            echo "::error::Netlify ne voit pas CHEVRERIE_KEY (HTTP 500). Dans le dossier du site : netlify env:set CHEVRERIE_KEY ... puis netlify deploy --prod (le redéploiement est indispensable)."
+            exit 1
+          elif [ "$code" = "401" ]; then
             echo "::error::Le site refuse la clé (HTTP $code). Remets exactement la même clé sur GitHub (secret CHEVRERIE_KEY) et sur Netlify (netlify env:set CHEVRERIE_KEY ... puis netlify deploy --prod)."
             exit 1
           else
