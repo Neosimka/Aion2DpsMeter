@@ -430,7 +430,9 @@ async fn try_send(state: &AppState, record: &FightRecord, category: Category) ->
         .await;
     match response {
         Ok(r) if r.status().is_success() => Outcome::Sent,
-        Ok(r) if r.status().as_u16() == 429 || r.status().is_server_error() => {
+        // 401/403 : clé de légion pas encore (ou mal) réglée sur le site. On
+        // garde le combat : il partira quand la clé sera corrigée.
+        Ok(r) if matches!(r.status().as_u16(), 401 | 403 | 429) || r.status().is_server_error() => {
             Outcome::Retry(format!("le site a répondu {}", r.status()))
         }
         Ok(r) => Outcome::Drop(format!("le site a refusé : {}", r.status())),

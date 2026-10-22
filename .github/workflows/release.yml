@@ -44,6 +44,17 @@ jobs:
             exit 1
           fi
           echo "Clé de légion présente (${#CHEVRERIE_KEY} caractères)."
+          code=$(curl -s -o check.json -w "%{http_code}" -H "x-chevrerie-key: ${CHEVRERIE_KEY}" \
+            https://aion2-la-chevrerie.netlify.app/api/meter/check || true)
+          cat check.json 2>/dev/null; echo
+          if [ "$code" = "200" ]; then
+            echo "Le site accepte la clé de légion."
+          elif [ "$code" = "401" ] || [ "$code" = "500" ]; then
+            echo "::error::Le site refuse la clé (HTTP $code). Remets exactement la même clé sur GitHub (secret CHEVRERIE_KEY) et sur Netlify (netlify env:set CHEVRERIE_KEY ... puis netlify deploy --prod)."
+            exit 1
+          else
+            echo "::warning::Contrôle de la clé impossible (HTTP $code) : site pas encore à jour ? La compilation continue."
+          fi
 
       - name: Dépendances
         run: npm ci
