@@ -26,8 +26,8 @@ use tauri::Manager;
 use crate::app::AppState;
 use crate::entity::fight_record::{FightRecord, APP_VERSION};
 
-/// L'API du site (redirigée vers les fonctions Netlify par `netlify.toml`).
-pub const SITE_API: &str = "https://aion2-la-chevrerie.netlify.app/api";
+/// L'API du site (fonction Netlify `netlify/functions/meter.mjs`).
+pub const SITE_API: &str = "https://aion2-la-chevrerie.netlify.app/api/meter";
 /// "false" coupe l'envoi ; absent ou autre chose : activé.
 pub const ENABLED_KEY: &str = "dpsMeter.chevrerieUpload";
 
@@ -531,5 +531,17 @@ mod tests {
         assert_eq!(p.players[0].dps, 6);
         assert_eq!(p.players[0].share, 60.0);
         assert!(build_payload(&record, Category::Boss, &HashSet::new(), "x").is_none());
+        // Le format attendu par netlify/lib/fights.mjs (validateFight) du site.
+        let json = serde_json::to_value(&p).unwrap();
+        if let Ok(path) = std::env::var("CHEVRERIE_PAYLOAD_OUT") {
+            std::fs::write(path, serde_json::to_string(&json).unwrap()).unwrap();
+        }
+        for key in ["v", "meter", "fightId", "category", "bossName", "mobCode", "dungeonId", "serverId",
+                    "startTimeMs", "durationMs", "totalDamage", "maxHp", "uploader", "players"] {
+            assert!(json.get(key).is_some(), "champ {key} manquant");
+        }
+        for key in ["name", "classe", "damage", "dps", "share", "heal"] {
+            assert!(json["players"][0].get(key).is_some(), "champ joueur {key} manquant");
+        }
     }
 }
