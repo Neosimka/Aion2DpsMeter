@@ -1423,10 +1423,10 @@ async fn show_update_window(
         tracing::info!("Update {} available (running {}); this install updates through its package manager", latest, current);
         return Ok(false);
     }
-    let msg = format!("A new update is available!\n\nCurrent: {}\nLatest: {}\n\nDownload and install now?", current, latest);
+    let msg = format!("Une nouvelle version est disponible !\n\nActuelle : {}\nNouvelle : {}\n\nTélécharger et installer maintenant ?", current, latest);
 
     let accepted = tokio::task::spawn_blocking(move || {
-        platform::dialog::ask_yes_no("A2Tools - Update Available", &msg)
+        platform::dialog::ask_yes_no("Aion2DpsMeter - Mise à jour disponible", &msg)
     }).await.unwrap_or(false);
 
     if accepted {
@@ -1439,7 +1439,7 @@ async fn show_update_window(
                 // Show error dialog
                 let _ = tokio::task::spawn_blocking(move || {
                     platform::dialog::show_error(
-                        "A2Tools - Update Error",
+                        "Aion2DpsMeter - Erreur de mise à jour",
                         &format!("Download failed: {}\n\nPlease download manually.", e),
                     );
                 }).await;
@@ -1957,7 +1957,7 @@ fn open_details_on_monitor_inner(
         tauri::WebviewUrl::App("index.html".into()),
     )
     .initialization_script("window.__A2_VIEW__ = 'details';")
-    .title("A2Tools DPS Meter — Details")
+    .title("Aion2DpsMeter — Details")
     .decorations(false)
     .transparent(false)
     // Intentional: the point of this window is to stay readable on a second
@@ -2325,7 +2325,7 @@ fn build_settings_window(app: &tauri::AppHandle) -> Result<(), String> {
     // Injected before any page script. WebviewUrl::App is a path, so a ?query
     // gets percent-encoded — this is the one channel that is reliable.
     .initialization_script(SETTINGS_WINDOW_SCRIPT)
-    .title("A2Tools DPS Meter — Settings")
+    .title("Aion2DpsMeter — Settings")
     .decorations(false)
     .transparent(false)
     // Matches Details: the overlay itself is always-on-top, so a settings window
@@ -2576,7 +2576,7 @@ fn open_fight_window(app: &tauri::AppHandle, label: &str) -> Result<(), String> 
         tauri::WebviewUrl::App("index.html".into()),
     )
     .initialization_script("window.__A2_VIEW__ = 'details';")
-    .title("A2Tools DPS Meter — Fight")
+    .title("Aion2DpsMeter — Fight")
     .decorations(false)
     .transparent(false)
     .always_on_top(true)
@@ -2602,7 +2602,7 @@ fn open_history_window_inner(app: &tauri::AppHandle) -> Result<(), String> {
         tauri::WebviewUrl::App("index.html".into()),
     )
     .initialization_script("window.__A2_VIEW__ = 'history';")
-    .title("A2Tools DPS Meter — Battle History")
+    .title("Aion2DpsMeter — Battle History")
     .decorations(false)
     .transparent(false)
     .always_on_top(true)
@@ -2642,7 +2642,7 @@ fn open_details_windowed(app: &tauri::AppHandle) -> Result<(), String> {
         tauri::WebviewUrl::App("index.html".into()),
     )
     .initialization_script("window.__A2_VIEW__ = 'details';")
-    .title("A2Tools DPS Meter — Details")
+    .title("Aion2DpsMeter — Details")
     .decorations(false)
     .transparent(false)
     .always_on_top(true)
@@ -3216,7 +3216,7 @@ pub fn run() {
                 // Load skill/NPC data in the user's language
                 let language = Settings::new(app_data_dir.clone())
                     .get("dpsMeter.language")
-                    .unwrap_or_else(|| "en".to_string());
+                    .unwrap_or_else(|| "fr".to_string());
                 i18n::lookup::load_language(&skill_lookup, &npc_lookup, data_dir, &language);
             } else {
                 tracing::warn!("Failed to find data directory!");

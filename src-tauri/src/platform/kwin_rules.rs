@@ -33,7 +33,7 @@ pub const WINDOW_CLASS_MATCH: &str = "^[aA]2tools-dps-meter$";
 /// `plugin_windows_rule_entries`).
 pub fn rule_entries() -> Vec<(&'static str, &'static str)> {
     vec![
-        ("Description", "A2Tools DPS Meter above fullscreen games (added by the meter)"),
+        ("Description", "Aion2DpsMeter above fullscreen games (added by the meter)"),
         ("wmclass", WINDOW_CLASS_MATCH),
         ("wmclassmatch", "3"),
         ("wmclasscomplete", "false"),
@@ -55,13 +55,13 @@ pub const NO_FOCUS_GROUP: &str = "a2tools-dps-meter-no-focus";
 /// The overlay's title. The meter's other windows (Settings, Details,
 /// Battle History, plugins) have their own titles and keep focus as usual:
 /// a window that takes no focus takes no typing either.
-pub const OVERLAY_TITLE: &str = "A2Tools DPS Meter";
+pub const OVERLAY_TITLE: &str = "Aion2DpsMeter";
 
 /// The no-focus rule: the overlay window only (class and exact title), and
 /// `acceptfocus` false, forced (`acceptfocusrule` 2). Clicks still reach it.
 pub fn no_focus_rule_entries() -> Vec<(&'static str, &'static str)> {
     vec![
-        ("Description", "A2Tools DPS Meter overlay keeps focus on the game (added by the meter)"),
+        ("Description", "Aion2DpsMeter overlay keeps focus on the game (added by the meter)"),
         ("wmclass", WINDOW_CLASS_MATCH),
         ("wmclassmatch", "3"),
         ("wmclasscomplete", "false"),
@@ -87,7 +87,7 @@ pub const ICON_TITLE_MARK: &str = " · ";
 /// above a fullscreen game like the overlay (they are overlays too).
 pub fn icons_rule_entries() -> Vec<(&'static str, &'static str)> {
     vec![
-        ("Description", "A2Tools DPS Meter plugin icons keep focus on the game (added by the meter)"),
+        ("Description", "Aion2DpsMeter plugin icons keep focus on the game (added by the meter)"),
         ("wmclass", WINDOW_CLASS_MATCH),
         ("wmclassmatch", "3"),
         ("wmclasscomplete", "false"),
@@ -116,7 +116,7 @@ pub const PLUGIN_WINDOWS_GROUP: &str = "a2tools-dps-meter-plugins";
 /// overlay. They keep taking focus, so a plugin's search box can be typed in.
 pub fn plugin_windows_rule_entries() -> Vec<(&'static str, &'static str)> {
     vec![
-        ("Description", "A2Tools DPS Meter plugin windows above fullscreen games (added by the meter)"),
+        ("Description", "Aion2DpsMeter plugin windows above fullscreen games (added by the meter)"),
         ("wmclass", WINDOW_CLASS_MATCH),
         ("wmclassmatch", "3"),
         ("wmclasscomplete", "false"),
@@ -242,7 +242,7 @@ mod tests {
     fn the_no_focus_rule_is_the_overlays_alone_and_joins_the_first() {
         let rule = no_focus_rule_entries();
         let value = |k: &str| rule.iter().find(|(key, _)| *key == k).map(|(_, v)| *v);
-        assert_eq!(value("title"), Some("A2Tools DPS Meter"));
+        assert_eq!(value("title"), Some("Aion2DpsMeter"));
         assert_eq!(value("titlematch"), Some("1"));
         assert_eq!((value("acceptfocus"), value("acceptfocusrule")), (Some("false"), Some("2")));
         let listed = format!("abc-1,{GROUP}");

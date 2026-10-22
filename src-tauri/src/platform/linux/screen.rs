@@ -170,11 +170,11 @@ pub fn capture(
     (clipboard, file)
 }
 
-/// `~/Pictures/A2Tools DPS Meter` (or the XDG Pictures folder wherever it is).
+/// `~/Pictures/Aion2DpsMeter` (or the XDG Pictures folder wherever it is).
 pub fn default_folder() -> Option<PathBuf> {
     let pictures = gtk::glib::user_special_dir(gtk::glib::UserDirectory::Pictures)
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join("Pictures")))?;
-    Some(pictures.join("A2Tools DPS Meter"))
+    Some(pictures.join("Aion2DpsMeter"))
 }
 
 /// The desktop's folder picker. Blocks until the player chooses or cancels.

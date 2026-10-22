@@ -47,10 +47,10 @@ fn texts(data_dir: Option<&Path>, lang: &str) -> Texts {
             .unwrap_or_else(|| fallback.to_string())
     };
     Texts {
-        title: "A2Tools DPS Meter".into(),
+        title: "Aion2DpsMeter".into(),
         ask: text(
             "ask",
-            "A2Tools DPS Meter needs Npcap to read the game's network traffic, and Npcap is missing or not working.\n\n\
+            "Aion2DpsMeter needs Npcap to read the game's network traffic, and Npcap is missing or not working.\n\n\
              Install it now? The meter downloads Npcap's installer from npcap.com and opens it. Once Npcap is \
              installed, the meter starts capturing by itself.\n\n\
              Choose No to install it yourself from https://npcap.com/#download",
@@ -133,7 +133,7 @@ pub fn offer(app: tauri::AppHandle, capturer: PcapCapturer) {
 fn offer_download(app: tauri::AppHandle, capturer: PcapCapturer) {
     tauri::async_runtime::spawn(async move {
         let Some(state) = app.try_state::<AppState>() else { return };
-        let lang = state.settings.get("dpsMeter.language").unwrap_or_else(|| "en".into());
+        let lang = state.settings.get("dpsMeter.language").unwrap_or_else(|| "fr".into());
         let t = texts(state.i18n_data_dir.as_deref(), &lang);
         let http = state.http.clone();
 

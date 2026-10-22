@@ -1,6 +1,6 @@
 {
   "header": {
-    "title": "A2Tools DPS Meter",
+    "title": "Aion2DpsMeter",
     "display": {
       "dps": "DPS",
       "total": "DMG",
@@ -750,7 +750,7 @@
     "stillMissing": "Npcap이 아직 작동하지 않습니다. 설치 프로그램을 끝까지 진행하지 않고 닫았다면 https://npcap.com/#download 에서 Npcap을 설치한 뒤 미터를 다시 여세요."
   },
   "pluginUpdatePrompt": {
-    "title": "A2Tools - 플러그인 업데이트",
+    "title": "Aion2DpsMeter - 플러그인 업데이트",
     "one": "플러그인 업데이트가 있습니다:",
     "many": "플러그인 업데이트가 있습니다:",
     "alsoAsks": "새 버전은 다음 권한도 요청합니다:",

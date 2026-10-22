@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "A2Tools DPS Meter",
+  "productName": "Aion2DpsMeter",
   "version": "2.0.75",
-  "identifier": "com.a2tools.dps-meter",
+  "identifier": "com.aion2dpsmeter.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "A2Tools DPS Meter",
+        "title": "Aion2DpsMeter",
         "width": 400,
         "height": 300,
         "decorations": false,

@@ -1,9 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  # Aion2DpsMeter : lancé à la main seulement, pour économiser les minutes GitHub.
   # By hand, for a branch: gh workflow run ci.yml --ref <branch>
   workflow_dispatch:
 

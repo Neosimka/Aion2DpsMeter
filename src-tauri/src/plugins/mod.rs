@@ -1031,7 +1031,7 @@ pub fn alert_updates_at_start(app: &tauri::AppHandle) {
         }
         let names = updates.iter().map(|(u, _)| format!("{} {} → {}", u.id, u.from, u.to)).collect::<Vec<_>>().join(", ");
         tracing::info!("Plugins: updates available: {names}");
-        let lang = state.settings.get("dpsMeter.language").unwrap_or_else(|| "en".into());
+        let lang = state.settings.get("dpsMeter.language").unwrap_or_else(|| "fr".into());
         let t = prompt_texts(state.i18n_data_dir.as_deref(), &lang);
         let prompt = update_prompt(&t, &updates.iter().map(|(u, _)| u).collect::<Vec<_>>());
         let title = t.title.clone();
@@ -1552,7 +1552,7 @@ pub fn plugin_hello(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Resu
     let character =
         if manifest.permissions.iter().any(|p| p == "events:character") { character(&app) } else { None };
     let reviewed = host.with(&id, |l| l.reviewed).unwrap_or(false);
-    let language = app.try_state::<AppState>().and_then(|s| s.settings.get("dpsMeter.language")).unwrap_or_else(|| "en".into());
+    let language = app.try_state::<AppState>().and_then(|s| s.settings.get("dpsMeter.language")).unwrap_or_else(|| "fr".into());
     Ok(serde_json::json!({
         "manifest": manifest,
         "replay": replay,

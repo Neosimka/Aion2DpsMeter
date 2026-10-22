@@ -151,8 +151,11 @@ class DpsApp {
     this._windowHidden = false;
     this.displayMode = "dps";
     this.betaUi = true;
-    this.theme = "aion2";
+    this.theme = "a2d-ether"; // Aion2DpsMeter : notre thème par défaut
     this.availableThemes = [
+      "a2d-ether",
+      "a2d-neon",
+      "a2d-braise",
       "aion2",
       "aion2-classes",
       "aion2-classes-vivid",
@@ -2696,7 +2699,7 @@ class DpsApp {
     this.fontDropdownBtn = document.querySelector(".fontDropdownBtn");
     this.fontDropdownMenu = document.querySelector(".fontDropdownMenu");
     this.settingsSelections = {
-      language: "en",
+      language: "fr",
       theme: this.theme,
       settingsTheme: "meter",
       font: "meter",
@@ -2772,6 +2775,11 @@ class DpsApp {
     this.applyFont(this.safeGetSetting(this.storageKeys.font));
     if (storedLanguage && storedLanguage !== this.i18n?.getLanguage?.()) {
       this.i18n?.setLanguage?.(storedLanguage, { persist: false });
+    } else if (!storedLanguage && syncBackend) {
+      // Aion2DpsMeter : français au premier lancement, enregistré pour que le
+      // moteur (noms de compétences, fenêtre Npcap) parle français lui aussi.
+      this.safeSetSetting(this.storageKeys.language, "fr");
+      this.i18n?.setLanguage?.("fr", { persist: false });
     }
 
     if (this.characterNameInput) {
@@ -3437,7 +3445,10 @@ class DpsApp {
     });
 
     this.settingsVersionLink?.addEventListener("click", () => {
-      const releases = "https://github.com/taengu/A2Tools-DPS-Meter/releases";
+      const repo = "__AION2DPS_REPO__";
+      const releases = repo.includes("__")
+        ? "https://github.com/taengu/A2Tools-DPS-Meter/releases"
+        : `https://github.com/${repo}/releases`;
       const version = /^v\d+\.\d+\.\d+$/.exec(this.settingsVersionValue?.textContent?.trim() || "")?.[0];
       window.javaBridge?.openBrowser?.(version ? `${releases}/tag/${version}` : releases);
     });
@@ -3748,6 +3759,9 @@ class DpsApp {
     ];
 
     const themeOptions = [
+      { value: "a2d-ether", label: this.i18n?.t("settings.theme.options.a2dEther", "Aion2DpsMeter · Éther doré") },
+      { value: "a2d-neon", label: this.i18n?.t("settings.theme.options.a2dNeon", "Aion2DpsMeter · Néon") },
+      { value: "a2d-braise", label: this.i18n?.t("settings.theme.options.a2dBraise", "Aion2DpsMeter · Braise") },
       { value: "aion2", label: this.i18n?.t("settings.theme.options.aion2", "AION2") },
       {
         value: "aion2-classes",
@@ -3778,6 +3792,8 @@ class DpsApp {
       const [vivid] = themeOptions.splice(vividAt, 1);
       themeOptions.splice(themeOptions.findIndex((o) => o.value === "aion2-classes") + 1, 0, vivid);
     }
+    // Aion2DpsMeter : nos thèmes en tête de liste.
+    themeOptions.sort((a, b) => Number(b.value.startsWith("a2d-")) - Number(a.value.startsWith("a2d-")));
 
     const allTargetsWindowOptions = [
       { value: "30000", label: this.i18n?.t("settings.allTargetsWindow.options.30s", "30 seconds") },
@@ -6311,7 +6327,7 @@ class DpsApp {
       }
       return this.i18n?.t("target.train", "Training Scarecrow") ?? "Training Scarecrow";
     }
-    return this.i18n?.t("header.title", "A2Tools DPS Meter") ?? "A2Tools DPS Meter";
+    return this.i18n?.t("header.title", "Aion2DpsMeter") ?? "Aion2DpsMeter";
   }
 
   // "Gatekeeper Pinopi · Level 2": a Nightmare boss's level is its own, and

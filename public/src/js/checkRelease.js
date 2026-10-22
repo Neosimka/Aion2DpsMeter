@@ -1,5 +1,12 @@
 (() => {
-  const CDN_MANIFEST = "https://a2tools.app/latest-v2.json";
+  // Aion2DpsMeter : nos mises à jour viennent de notre dépôt GitHub, jamais de
+  // celles d'A2Tools (elles remplaceraient notre meter par le leur).
+  // __AION2DPS_REPO__ est remplacé par "proprietaire/depot" lors de la
+  // compilation GitHub (.github/workflows/release.yml).
+  const REPO = "__AION2DPS_REPO__";
+  const CDN_MANIFEST = REPO.includes("__")
+    ? ""
+    : `https://raw.githubusercontent.com/${REPO}/main/latest.json`;
   const START_DELAY = 800,
     RETRY = 500,
     LIMIT = 5;
@@ -40,6 +47,9 @@
     const rawCurrent = String(window.dpsData.getVersion() || "").trim();
     const current = rawCurrent.startsWith("v") ? rawCurrent : "v" + rawCurrent;
     console.log("[A2Tools] Update check: current =", current);
+
+    // Compilation locale sans dépôt configuré : pas de vérification.
+    if (!CDN_MANIFEST) return { state: "current" };
 
     let result;
     try {

@@ -1,0 +1,77 @@
+name: Aion2DpsMeter - Compiler l'installateur Windows
+
+# Lancement : onglet "Actions" du dépôt → "Aion2DpsMeter - Compiler l'installateur
+# Windows" → "Run workflow". Au bout de ~15 à 25 min, l'installateur .msi est
+# dans l'onglet "Releases", et latest.json (lu par la mise à jour automatique
+# du meter) est mis à jour sur la branche main.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Brancher la mise à jour automatique sur ce dépôt
+        run: |
+          sed -i "s#__AION2DPS_REPO__#${GITHUB_REPOSITORY}#g" public/src/js/checkRelease.js public/src/js/core.js
+          grep -n "${GITHUB_REPOSITORY}" public/src/js/checkRelease.js public/src/js/core.js
+
+      - name: Dépendances
+        run: npm ci
+
+      - name: Compiler (Tauri → MSI)
+        run: npm run tauri build
+
+      - name: Publier la release et latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          TAG="v${VERSION}"
+          MSI_SRC=$(ls src-tauri/target/release/bundle/msi/*.msi | head -n1)
+          MSI="Aion2DpsMeter-${VERSION}-x64.msi"
+          cp "$MSI_SRC" "$MSI"
+          SHA=$(sha256sum "$MSI" | cut -d' ' -f1)
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${MSI}"
+          echo "Version ${VERSION} — ${MSI} — sha256 ${SHA}"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$MSI" --clobber
+          else
+            gh release create "$TAG" "$MSI" --title "Aion2DpsMeter ${VERSION}" \
+              --notes "Installateur Windows d'Aion2DpsMeter ${VERSION}. Prérequis : Npcap (npcap.com), mode compatible WinPcap coché."
+          fi
+
+          printf '{\n  "version": "%s",\n  "msiUrl": "%s",\n  "msiSha256": "%s"\n}\n' "$VERSION" "$URL" "$SHA" > latest.json
+          cat latest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git checkout -- public/src/js/checkRelease.js public/src/js/core.js
+          git add latest.json
+          git commit -m "latest.json : ${VERSION}" || echo "latest.json inchangé"
+          git push origin HEAD:main
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aion2DpsMeter-msi
+          path: Aion2DpsMeter-*.msi
