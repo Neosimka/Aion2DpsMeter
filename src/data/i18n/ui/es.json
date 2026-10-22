@@ -657,7 +657,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "Usa A2Tools",
     "dpsSuffix": "/s",
-    "others": "Otros"
+    "others": "Otros",
+    "critRate": "Tasa de críticos"
   },
   "skills": {
     "fallback": "Habilidad {code}",

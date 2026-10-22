@@ -268,10 +268,17 @@ impl DpsCalculator {
         // Collect actors from selected targets
         let mut combined_actors: HashMap<i32, i64> = HashMap::new();
         let mut combined_jobs: HashMap<i32, Option<JobClass>> = HashMap::new();
+        // Aion2DpsMeter : coups critiques / coups directs (hors DoT), par acteur.
+        let mut combined_crits: HashMap<i32, (i64, i64)> = HashMap::new();
         for &tid in &target_ids {
             if let Some(target_data) = combat_data.get(&tid) {
                 for (&actor_id, actor_data) in &target_data.actors {
                     *combined_actors.entry(actor_id).or_insert(0) += actor_data.total_damage;
+                    let c = combined_crits.entry(actor_id).or_insert((0, 0));
+                    for skill in actor_data.skills.values().filter(|s| !s.is_dot) {
+                        c.0 += skill.crit_count as i64;
+                        c.1 += skill.hit_count as i64;
+                    }
                     if actor_data.job.is_some() && combined_jobs.get(&actor_id).and_then(|j| j.as_ref()).is_none() {
                         combined_jobs.insert(actor_id, actor_data.job);
                     }
@@ -362,6 +369,10 @@ impl DpsCalculator {
             }
 
             entry.amount += damage as f64;
+            if let Some(&(crits, hits)) = combined_crits.get(&actor_id) {
+                entry.crit_hits += crits;
+                entry.direct_hits += hits;
+            }
 
             // The class this player is seen to play wins over the cache, which
             // is keyed by name alone and outlives the session's fights: a name
@@ -563,6 +574,11 @@ impl DpsCalculator {
                 }
             }
             data.dps = data.amount / bt as f64 * 1000.0;
+            data.crit_rate = if data.direct_hits > 0 {
+                data.crit_hits as f64 / data.direct_hits as f64 * 100.0
+            } else {
+                0.0
+            };
             data.damage_contribution = if total_damage > 0.0 {
                 data.amount / total_damage * 100.0
             } else {

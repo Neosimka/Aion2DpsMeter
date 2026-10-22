@@ -1095,6 +1095,16 @@ html:not(.hoverStale) .list .item:hover { background: rgba(255, 255, 255, 0.075)
   text-align: right;
 }
 
+/* Aion2DpsMeter : taux de critique global, entre le DPS et la part. */
+.list .item .dps .critRate {
+  font-variation-settings: "wght" 600, "wdth" 75;
+  font-size: 11px;
+  color: #f2c66d;
+  white-space: nowrap;
+}
+.list .item .dps .critRate[hidden] { display: none; }
+:is(.meter, .barPreviewPanel).slim .list .item .dps .critRate { font-size: 9px; }
+
 /* Party combat power in thousands ("864k"), sat between the name and the
    readout. Cyan sets it apart
    as a different kind of number from the white DPS figure — it is reference
@@ -8820,3 +8830,120 @@ html.a2-offline .historyUploadBtn {
   gap: 16px;
   padding: 10px 0;
 }
+
+/* ===== Aion2DpsMeter : polices des styles d'overlay (OFL, voir src/fonts) ===== */
+@font-face { font-family: "A2D Marcellus"; src: url("./fonts/Marcellus-latin-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "A2D Barlow Condensed"; src: url("./fonts/BarlowCondensed-latin-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "A2D Barlow Condensed"; src: url("./fonts/BarlowCondensed-latin-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+:root { --a2d-logo: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImdvbGQiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZjZkYzk2Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMC41NSIgc3RvcC1jb2xvcj0iI2Q5YjI1ZSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNiMzhhM2MiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9Imhvcm5MIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMC42Ij4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjZjdkZmEwIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2JmOTQ0NyIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZmllbGQiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMTcyNjNkIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzBmMWEyYyIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iaGVhZCIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzZmUzZWMiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMmNjOWQ2Ii8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8IS0tIEJvdWNsaWVyIC0tPgogIDxwYXRoIGQ9Ik0yNTYgMjYgTDQ1NCA4NCBMNDU0IDI0OCBDNDU0IDM2MiAzNjIgNDQyIDI1NiA0OTAgQzE1MCA0NDIgNTggMzYyIDU4IDI0OCBMNTggODQgWiIKICAgICAgICBmaWxsPSJ1cmwoI2ZpZWxkKSIgc3Ryb2tlPSJ1cmwoI2dvbGQpIiBzdHJva2Utd2lkdGg9IjE2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTI1NiA2MCBMNDI0IDEwOCBMNDI0IDI1MCBDNDI0IDM0NiAzNDYgNDE0IDI1NiA0NTYgQzE2NiA0MTQgODggMzQ2IDg4IDI1MCBMODggMTA4IFoiCiAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGE3NDQwIiBzdHJva2Utb3BhY2l0eT0iMC41NSIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPCEtLSBDb3JuZXMgLS0+CiAgPGcgaWQ9Imhvcm4iPgogICAgPHBhdGggZD0iTTEyMiAzMCBDIDg4IDgwIDg0IDE2MCAxNTAgMTg0IEMgMTg0IDE5NiAyMjAgMTgyIDI0MCAxNTIgQyAyMTYgMTU4IDE5NCAxNTQgMTc4IDE0MiBDIDE0OCAxMjAgMTMwIDg2IDEyMiAzMCBaIiBmaWxsPSJ1cmwoI2hvcm5MKSIvPgogIDwvZz4KICA8dXNlIGhyZWY9IiNob3JuIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MTIgMCkgc2NhbGUoLTEgMSkiLz4KICA8IS0tIFTDqnRlIGRlIGNow6h2cmUgLS0+CiAgPHBhdGggZD0iTTE5NCAxOTQgTDMxOCAxOTQgTDMwMiAzMDIgTDI1NiAzNjYgTDIxMCAzMDIgWiIgZmlsbD0idXJsKCNoZWFkKSIvPgogIDxwYXRoIGQ9Ik0xOTQgMTk0IEwzMTggMTk0IEwzMTQgMjIyIEwxOTggMjIyIFoiIGZpbGw9IiM4Y2YwZjMiLz4KICA8Y2lyY2xlIGN4PSIyMjUiIGN5PSIyNTAiIHI9IjEwIiBmaWxsPSIjMGQxNzI2Ii8+CiAgPGNpcmNsZSBjeD0iMjg3IiBjeT0iMjUwIiByPSIxMCIgZmlsbD0iIzBkMTcyNiIvPgogIDwhLS0gQmFyYmljaGUgLS0+CiAgPHBhdGggZD0iTTIzMiAzNzIgTDI4MCAzNzIgTDI1NiA0MTYgWiIgZmlsbD0idXJsKCNnb2xkKSIvPgo8L3N2Zz4K"); }
+
+/* ===== Aion2DpsMeter : styles d'overlay (data-a2d-skin) ===== */
+
+/* ---------- 1. Blason : l'identité La Chevrerie ---------- */
+:root[data-a2d-skin="blason"] .meter {
+  background: linear-gradient(180deg, rgba(14,21,36,.94), rgba(9,14,24,.90));
+  border: 1px solid rgba(232,196,106,.55);
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 10px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,232,170,.18);
+}
+:root[data-a2d-skin="blason"] .header {
+  background: linear-gradient(180deg, rgba(232,196,106,.16), rgba(232,196,106,0));
+  border-bottom: 1px solid rgba(232,196,106,.28);
+  padding: 6px 10px 6px 8px;
+}
+:root[data-a2d-skin="blason"] .header::before {
+  content: ""; order: 0; flex: 0 0 22px; height: 22px;
+  background: var(--a2d-logo) center / contain no-repeat;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.8));
+}
+:root[data-a2d-skin="blason"] .bossName {
+  font-family: "A2D Marcellus", Georgia, serif; font-size: 15px; letter-spacing: .03em;
+  text-transform: none; color: #f1d58a; text-shadow: 0 1px 2px rgba(0,0,0,.9);
+}
+:root[data-a2d-skin="blason"] .bossHpBar { background: rgba(0,0,0,.45); border-top: 1px solid rgba(232,196,106,.18); }
+:root[data-a2d-skin="blason"] .bossHpFill { background: linear-gradient(90deg, #b8862b, #f1d58a) !important; }
+:root[data-a2d-skin="blason"] .list .item {
+  background: rgba(255,255,255,.035); border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+}
+:root[data-a2d-skin="blason"] .list .item .fill {
+  --bar: var(--class-fill, var(--row-fill));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--bar) 18%, transparent), color-mix(in srgb, var(--bar) 55%, transparent));
+}
+:root[data-a2d-skin="blason"] .list .item .fill::after { background: color-mix(in srgb, var(--bar) 50%, white); }
+:root[data-a2d-skin="blason"] .list .item.isUser { box-shadow: inset 3px 0 0 #e8c46a, inset 0 0 0 1px rgba(232,196,106,.55); }
+:root[data-a2d-skin="blason"] .list .item.isUser .name { color: #f1d58a; }
+:root[data-a2d-skin="blason"] .list .item .rank { font-family: "A2D Marcellus", serif; color: #e8c46a; opacity: .9; }
+:root[data-a2d-skin="blason"] .list .item .dps p:first-child { font-family: "A2D Barlow Condensed", sans-serif; font-weight: 600; font-size: 1.08em; letter-spacing: .01em; }
+:root[data-a2d-skin="blason"] .meterFooter { border-top: 1px solid rgba(232,196,106,.22); }
+
+/* ---------- 2. Verre : discret, laisse voir le jeu ---------- */
+:root[data-a2d-skin="verre"] .meter {
+  background: rgba(8,10,16,.28);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2); backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid rgba(255,255,255,.10); border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+:root[data-a2d-skin="verre"] .header { background: none; }
+:root[data-a2d-skin="verre"] .bossName {
+  font-family: "A2 Saira", sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .14em;
+  text-transform: uppercase; color: rgba(255,255,255,.82);
+}
+:root[data-a2d-skin="verre"] .bossHpBar { height: 4px; background: rgba(255,255,255,.08); border-radius: 4px; margin: 0 10px 2px; }
+:root[data-a2d-skin="verre"] .bossHpBar .bossHpText { display: none; }
+:root[data-a2d-skin="verre"] .bossHpFill { background: rgba(255,255,255,.75) !important; border-radius: 4px; }
+:root[data-a2d-skin="verre"] .list .item { background: rgba(0,0,0,.38); border-radius: 999px; margin-bottom: 4px; }
+:root[data-a2d-skin="verre"] .list .item .fillTrack { inset: auto 14px 3px 14px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.07); }
+:root[data-a2d-skin="verre"] .list .item .fill {
+  --bar: var(--class-fill, var(--row-fill));
+  height: 3px; top: auto; border-radius: 3px; opacity: 1; background: var(--bar);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--bar) 70%, transparent);
+}
+:root[data-a2d-skin="verre"] .list .item .fill::after { display: none; }
+:root[data-a2d-skin="verre"] .list .item .rank { display: none; }
+:root[data-a2d-skin="verre"] .list .item .content { padding: 0 6px; }
+:root[data-a2d-skin="verre"] .list .item.isUser { background: rgba(255,255,255,.16); }
+:root[data-a2d-skin="verre"] .list .item .dps p:first-child { font-weight: 700; }
+:root[data-a2d-skin="verre"] .meterFooter { background: none; border: 0; opacity: .75; }
+
+/* ---------- 3. Bannière : arène, gros chiffres ---------- */
+:root[data-a2d-skin="banniere"] .meter {
+  background: rgba(11,13,18,.93); border: 0; border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.8), 0 10px 26px rgba(0,0,0,.6);
+  overflow: hidden;
+}
+:root[data-a2d-skin="banniere"] .header {
+  background: linear-gradient(90deg, #4a1218 0%, #2a0d12 45%, rgba(11,13,18,0) 100%);
+  border-bottom: 2px solid #c8323c;
+}
+:root[data-a2d-skin="banniere"] .bossName {
+  font-family: "A2D Barlow Condensed", sans-serif; font-weight: 700; font-size: 17px;
+  letter-spacing: .07em; text-transform: uppercase; color: #ffe1b0;
+}
+:root[data-a2d-skin="banniere"] .bossHpBar { height: 16px; background: #1a0d10; }
+:root[data-a2d-skin="banniere"] .bossHpFill { background: linear-gradient(90deg, #c8323c, #ff8a3c) !important; }
+:root[data-a2d-skin="banniere"] .bossHpText { font-family: "A2D Barlow Condensed", sans-serif; font-weight: 600; }
+:root[data-a2d-skin="banniere"] .list .item {
+  background: #161a23; border-radius: 2px;
+  box-shadow: inset 4px 0 0 var(--class-fill, var(--row-fill));
+}
+:root[data-a2d-skin="banniere"] .list .item .fill {
+  --bar: var(--class-fill, var(--row-fill));
+  background: repeating-linear-gradient(115deg,
+      color-mix(in srgb, var(--bar) 34%, transparent) 0 8px,
+      color-mix(in srgb, var(--bar) 24%, transparent) 8px 16px);
+  opacity: 1;
+}
+:root[data-a2d-skin="banniere"] .list .item .fill::after { width: 3px; background: var(--bar); box-shadow: none; }
+:root[data-a2d-skin="banniere"] .list .item .rank {
+  font-family: "A2D Barlow Condensed", sans-serif; font-weight: 700; color: rgba(255,255,255,.45); padding-left: 4px;
+}
+:root[data-a2d-skin="banniere"] .list .item .name { font-weight: 700; letter-spacing: .01em; }
+:root[data-a2d-skin="banniere"] .list .item .dps p:first-child { font-family: "A2D Barlow Condensed", sans-serif; font-weight: 700; font-size: 1.22em; }
+:root[data-a2d-skin="banniere"] .list .item .dpsContribution {
+  font-family: "A2D Barlow Condensed", sans-serif; font-weight: 600; background: rgba(255,255,255,.08); border-radius: 3px; padding: 0 4px;
+}
+:root[data-a2d-skin="banniere"] .list .item.isUser { box-shadow: inset 4px 0 0 #ffb400; background: #1f1a12; }
+:root[data-a2d-skin="banniere"] .list .item.isUser .name { color: #ffd27a; }
+:root[data-a2d-skin="verre"] .list .item .dps { background: none; box-shadow: none; }
+:root[data-a2d-skin="verre"] .list .item .dps > p { text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.6); }

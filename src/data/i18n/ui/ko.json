@@ -664,7 +664,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "A2Tools 사용",
     "dpsSuffix": "/초",
-    "others": "기타"
+    "others": "기타",
+    "critRate": "치명타 비율"
   },
   "skills": {
     "fallback": "스킬 {code}",

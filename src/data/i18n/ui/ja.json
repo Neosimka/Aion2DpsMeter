@@ -657,7 +657,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "A2Toolsを使用中",
     "dpsSuffix": "/s",
-    "others": "その他"
+    "others": "その他",
+    "critRate": "クリティカル率"
   },
   "skills": {
     "fallback": "スキル {code}",

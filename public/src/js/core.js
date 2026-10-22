@@ -16,6 +16,8 @@ const SETTING_CHOICES = {
   settingsTheme: { allowed: ["meter", "midnight", "graphite", "violet", "forest", "crimson", "ocean", "sapphire", "indigo", "rose", "sunset", "amber", "copper", "lime", "ice", "slate", "onyx"], fallback: "meter" },
   // The meter's font (styles.css, data-font): "meter" is its own (#98).
   font: { allowed: ["meter", "system", "inter", "exo2", "oxanium", "jetbrains", "atkinson", "lexend", "andika"], fallback: "meter" },
+  // Aion2DpsMeter : style de l'overlay (styles.css, data-a2d-skin).
+  a2dSkin: { allowed: ["standard", "blason", "verre", "banniere"], fallback: "blason" },
   barTexture: { allowed: ["none", "flames", "crystal", "glacier", "feathers", "wing", "storm", "nebula", "galaxy", "aura"], fallback: "none" },
 };
 // Themes whose bars differ from one another show those colours in the theme
@@ -77,6 +79,7 @@ class DpsApp {
     this.screenshotFolder = "";
     this.storageKeys = {
       userName: "dpsMeter.userName",
+      a2dSkin: "dpsMeter.a2dSkin",
       onlyShowUser: "dpsMeter.onlyShowUser",
       allTargetsWindowMs: "dpsMeter.allTargetsWindowMs",
       updateRateMs: "dpsMeter.updateRateMs",
@@ -1610,6 +1613,9 @@ class DpsApp {
       const totalDamage = Math.trunc(Number(isObj ? value.amount : 0)) || 0;
       const hps = Math.trunc(Number(isObj ? value.hps : 0)) || 0;
       const healAmount = Math.trunc(Number(isObj ? value.healAmount : 0)) || 0;
+      // Aion2DpsMeter : taux de critique global du joueur (en %).
+      const critRaw = isObj ? Number(value.critRate) : NaN;
+      const critRate = Number.isFinite(critRaw) ? critRaw : NaN;
 
       // 소수점 한자리
       const contribRaw = isObj ? Number(value.damageContribution) : NaN;
@@ -1635,6 +1641,7 @@ class DpsApp {
         hps,
         healAmount,
         damageContribution,
+        critRate,
         combatPower,
         gearScore,
         isUser: !isOthers && ((!!name && name === this.USER_NAME) || (hasLocalId && numericId === localId)),
@@ -2680,6 +2687,8 @@ class DpsApp {
     this.languageDropdownBtn = document.querySelector(".languageDropdownBtn");
     this.languageDropdownMenu = document.querySelector(".languageDropdownMenu");
     this.themeDropdownBtn = document.querySelector(".themeDropdownBtn");
+    this.a2dSkinDropdownBtn = document.querySelector(".a2dSkinDropdownBtn");
+    this.a2dSkinDropdownMenu = document.querySelector(".a2dSkinDropdownMenu");
     this.themeDropdownMenu = document.querySelector(".themeDropdownMenu");
     this.settingsThemeDropdownBtn = document.querySelector(".settingsThemeDropdownBtn");
     this.settingsThemeDropdownMenu = document.querySelector(".settingsThemeDropdownMenu");
@@ -2687,6 +2696,7 @@ class DpsApp {
     this.fontDropdownMenu = document.querySelector(".fontDropdownMenu");
     this.settingsSelections = {
       language: "fr",
+      a2dSkin: "blason",
       theme: this.theme,
       settingsTheme: "meter",
       font: "meter",
@@ -2758,6 +2768,7 @@ class DpsApp {
       reason: "default meter mode setting",
     });
     this.applyTheme(storedTheme || this.theme, { persist: false });
+    this.applyA2dSkin?.(this.safeGetSetting?.(this.storageKeys?.a2dSkin ?? "dpsMeter.a2dSkin"));
     this.applySettingsTheme(this.safeGetSetting(this.storageKeys.settingsTheme));
     this.applyFont(this.safeGetSetting(this.storageKeys.font));
     if (storedLanguage && storedLanguage !== this.i18n?.getLanguage?.()) {
@@ -3904,6 +3915,23 @@ class DpsApp {
         decorateItem: (item, value) => {
           item.style.fontFamily = FONT_PREVIEW[value] || "";
         },
+      }
+    );
+
+    // Aion2DpsMeter : style de l'overlay.
+    setupDropdown(
+      this.a2dSkinDropdownBtn,
+      this.a2dSkinDropdownMenu,
+      [
+        { value: "blason", label: "Blason (La Chevrerie)" },
+        { value: "verre", label: "Verre (discret)" },
+        { value: "banniere", label: "Bannière (arène)" },
+        { value: "standard", label: "Standard (A2Tools)" },
+      ],
+      this.settingsSelections.a2dSkin,
+      (value) => {
+        if (!value) return;
+        this.applyA2dSkin(value, { persist: true });
       }
     );
 
@@ -5312,6 +5340,21 @@ class DpsApp {
     this.updateTargetModeButton();
   }
 
+  // Aion2DpsMeter : style de l'overlay (Blason, Verre, Bannière ou Standard).
+  applyA2dSkin(value, { persist = false } = {}) {
+    const skin = pickSettingChoice("a2dSkin", value);
+    this.settingsSelections.a2dSkin = skin;
+    const root = document.documentElement;
+    if (skin === "standard") delete root.dataset.a2dSkin;
+    else root.dataset.a2dSkin = skin;
+    if (persist) this.safeSetSetting(this.storageKeys.a2dSkin, skin);
+    if (this.a2dSkinDropdownBtn && this.a2dSkinDropdownMenu) {
+      this.syncSettingsDropdownSelection(this.a2dSkinDropdownBtn, this.a2dSkinDropdownMenu, skin);
+    }
+    // Les styles changent la hauteur des lignes : la fenêtre se réajuste.
+    if (window.A2_VIEW === "main") requestAnimationFrame(() => window.javaBridge?.updateOverlaySize?.());
+  }
+
   applyTheme(themeId, { persist = false } = {}) {
     const normalized = this.availableThemes.includes(themeId) ? themeId : this.availableThemes[0];
     this.theme = normalized;
@@ -5628,6 +5671,10 @@ class DpsApp {
     }
     if (key === this.storageKeys.theme) {
       this.applyTheme(value, { persist: false });
+      return;
+    }
+    if (key === this.storageKeys.a2dSkin) {
+      this.applyA2dSkin(value);
       return;
     }
     if (key === this.storageKeys.font) {

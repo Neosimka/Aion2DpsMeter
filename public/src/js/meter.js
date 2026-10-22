@@ -152,7 +152,13 @@ const createMeterUI = ({
     const dpsContribution = document.createElement("p");
     dpsContribution.className = "dpsContribution";
 
+    // Aion2DpsMeter : taux de critique global, entre le DPS et la part.
+    const critRateEl = document.createElement("p");
+    critRateEl.className = "critRate";
+    critRateEl.title = window.i18n?.t?.("meter.critRate", "Taux de critique") ?? "Taux de critique";
+
     dpsContainer.appendChild(dpsNumber);
+    dpsContainer.appendChild(critRateEl);
     dpsContainer.appendChild(dpsContribution);
 
     contentEl.appendChild(rankEl);
@@ -179,6 +185,8 @@ const createMeterUI = ({
       classIconImg,
       dpsNumber,
       dpsContribution,
+      critRateEl,
+      lastCritText: null,
       fillEl,
       currentRow: null,
       lastSeenAt: 0,
@@ -477,6 +485,16 @@ const createMeterUI = ({
       if (view.lastContributionText !== contributionText) {
         view.dpsContribution.textContent = contributionText;
         view.lastContributionText = contributionText;
+      }
+
+      const critValue = Number(row.critRate);
+      const critText = !row.isOthers && Number.isFinite(critValue) && Number(row.totalDamage) > 0
+        ? `${Math.round(critValue)}% crit`
+        : "";
+      if (view.lastCritText !== critText) {
+        view.critRateEl.textContent = critText;
+        view.critRateEl.hidden = !critText;
+        view.lastCritText = critText;
       }
 
       const rankText = String(rankById?.get(id) ?? "");

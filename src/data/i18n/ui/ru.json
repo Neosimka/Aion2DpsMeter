@@ -662,7 +662,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "Пользуется A2Tools",
     "dpsSuffix": "/s",
-    "others": "Остальные"
+    "others": "Остальные",
+    "critRate": "Шанс крита"
   },
   "skills": {
     "fallback": "Умение {code}",

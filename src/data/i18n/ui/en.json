@@ -669,7 +669,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "Uses A2Tools",
     "dpsSuffix": "/s",
-    "others": "Others"
+    "others": "Others",
+    "critRate": "Critical hit rate"
   },
   "skills": {
     "fallback": "Skill {code}",
