@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
 use crate::app::AppState;
-use crate::entity::fight_record::{FightRecord, APP_VERSION};
+use crate::entity::fight_record::{obscure_nickname, FightRecord, APP_VERSION};
 
 /// L'API du site (fonction Netlify `netlify/functions/meter.mjs`).
 pub const SITE_API: &str = "https://aion2-la-chevrerie.netlify.app/api/meter";
@@ -185,7 +185,13 @@ pub fn build_payload(
     category: Category,
     members: &HashSet<String>,
     uploader: &str,
+    names: &HashMap<i32, String>,
 ) -> Option<FightPayload> {
+    // Les combats enregistrés masquent le pseudo des autres joueurs
+    // (« Pt**e ») : on prend le vrai nom retrouvé à la fin du combat.
+    let real = |a: &crate::entity::details_context::DetailsActorSummary| -> String {
+        names.get(&a.actor_id).cloned().unwrap_or_else(|| a.nickname.trim().to_string())
+    };
     let mut damage: HashMap<i32, i64> = HashMap::new();
     for skill in &record.details.skills {
         *damage.entry(skill.actor_id).or_default() += skill.dmg as i64;
@@ -201,13 +207,13 @@ pub fn build_payload(
     let mut players: Vec<PlayerLine> = record
         .actors
         .iter()
-        .filter(|a| !a.nickname.trim().is_empty())
-        .filter(|a| members.contains(&normalize_name(&a.nickname)))
-        .filter(|a| seen.insert(normalize_name(&a.nickname)))
+        .filter(|a| !real(a).is_empty())
+        .filter(|a| members.contains(&normalize_name(&real(a))))
+        .filter(|a| seen.insert(normalize_name(&real(a))))
         .map(|a| {
             let dmg = damage.get(&a.actor_id).copied().unwrap_or(0);
             PlayerLine {
-                name: a.nickname.trim().to_string(),
+                name: real(a),
                 classe: class_fr(&a.job).to_string(),
                 damage: dmg,
                 dps: (dmg as f64 / seconds).round() as i64,
@@ -240,6 +246,61 @@ pub fn build_payload(
     })
 }
 
+// ---------- Vrais pseudos ----------
+
+/// Le vrai pseudo de chaque joueur d'un combat enregistré, retrouvé pendant
+/// que le meter connaît encore le groupe : par l'identifiant du groupe (dbid),
+/// puis par le nom de l'entité, puis par un pseudo du groupe qui donne le même
+/// masque. Seulement quand la réponse est unique.
+pub fn resolve_names(
+    record: &FightRecord,
+    party: &HashMap<String, crate::combat::data_storage::PartyMember>,
+    nicknames: &HashMap<i32, String>,
+) -> HashMap<i32, String> {
+    let mut out = HashMap::new();
+    for a in &record.actors {
+        let shown = a.nickname.trim();
+        if shown.is_empty() {
+            continue;
+        }
+        if !shown.contains('*') {
+            out.insert(a.actor_id, shown.to_string());
+            continue;
+        }
+        if a.dbid != 0 {
+            if let Some((name, _)) = party.iter().find(|(_, m)| m.dbid == a.dbid) {
+                out.insert(a.actor_id, name.clone());
+                continue;
+            }
+        }
+        if let Some(name) = nicknames.get(&a.actor_id).filter(|n| obscure_nickname(n) == shown) {
+            out.insert(a.actor_id, name.clone());
+            continue;
+        }
+        let mut same: Vec<&String> = party.keys().filter(|n| obscure_nickname(n) == shown).collect();
+        same.dedup();
+        if same.len() == 1 {
+            out.insert(a.actor_id, same[0].clone());
+        }
+    }
+    out
+}
+
+/// Dernier recours, avec la liste des membres du site : le seul membre dont le
+/// pseudo donne ce masque.
+pub fn resolve_with_members(record: &FightRecord, names: &mut HashMap<i32, String>, members: &[String]) {
+    for a in &record.actors {
+        let shown = a.nickname.trim();
+        if names.contains_key(&a.actor_id) || !shown.contains('*') {
+            continue;
+        }
+        let same: Vec<&String> = members.iter().filter(|m| obscure_nickname(m) == shown).collect();
+        if same.len() == 1 {
+            names.insert(a.actor_id, same[0].clone());
+        }
+    }
+}
+
 // ---------- Suivi des envois (un fichier dans les données du meter) ----------
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -253,7 +314,18 @@ struct Entry {
     retry_at_ms: i64,
     #[serde(default)]
     end_ms: i64,
+    /// Vrais pseudos retrouvés à la fin du combat (id d'acteur → pseudo).
+    #[serde(default)]
+    names: HashMap<i32, String>,
+    /// Version de l'envoi : les combats envoyés avant la 2.0.80 (pseudos des
+    /// autres joueurs masqués, donc lignes manquantes) sont renvoyés une fois.
+    #[serde(default)]
+    rev: u8,
 }
+
+/// Envois faits avec les vrais pseudos des membres du groupe.
+const REV: u8 = 2;
+static BACKFILL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 static REGISTRY_LOCK: Mutex<()> = Mutex::new(());
 static IN_FLIGHT: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
@@ -335,10 +407,46 @@ pub fn on_fights_saved(app: &tauri::AppHandle, state: &AppState, records: &[Figh
     for record in records {
         let Some(category) = eligible(state, record, now) else { continue };
         let e = entry(&state.app_data_dir, &record.id);
-        if e.done || e.attempts > 0 {
+        if (e.done && e.rev >= REV) || (!e.done && e.attempts > 0) {
             continue; // déjà envoyé, ou entre les mains des réessais
         }
+        let names = resolve_names(
+            record,
+            &state.data_storage.get_party_members(),
+            &state.data_storage.get_nicknames(),
+        );
+        update_entry(&state.app_data_dir, &record.id, |e| {
+            e.names = names;
+            e.done = false;
+            e.attempts = 0;
+        });
         send(app.clone(), record.clone(), category);
+    }
+}
+
+/// Une fois par lancement : les combats récents (3 jours) jamais envoyés ou
+/// envoyés par une version qui perdait les autres membres du groupe.
+fn backfill(app: &tauri::AppHandle, state: &AppState, now: i64) {
+    if BACKFILL.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+    for summary in state.fight_history.list_fights() {
+        let end = summary.start_time_ms + summary.duration_ms;
+        if summary.is_train || now - end > MAX_AGE_MS || now - end < ENDED_AFTER_MS {
+            continue;
+        }
+        let e = entry(&state.app_data_dir, &summary.id);
+        if (e.done && e.rev >= REV) || (!e.done && e.attempts > 0) {
+            continue;
+        }
+        let Ok(record) = state.fight_history.load_fight(&summary.id) else { continue };
+        if let Some(category) = eligible(state, &record, now) {
+            update_entry(&state.app_data_dir, &record.id, |e| {
+                e.done = false;
+                e.attempts = 0;
+            });
+            send(app.clone(), record, category);
+        }
     }
 }
 
@@ -348,6 +456,7 @@ pub fn retry_due(app: &tauri::AppHandle, state: &AppState) {
         return;
     }
     let now = crate::clock::now_ms();
+    backfill(app, state, now);
     let due: Vec<String> = {
         let _guard = REGISTRY_LOCK.lock();
         read_registry(&state.app_data_dir)
@@ -368,9 +477,9 @@ pub fn retry_due(app: &tauri::AppHandle, state: &AppState) {
     }
 }
 
-static MEMBERS: Mutex<Option<(i64, HashSet<String>)>> = Mutex::new(None);
+static MEMBERS: Mutex<Option<(i64, Vec<String>)>> = Mutex::new(None);
 
-async fn members(http: &reqwest::Client) -> Result<HashSet<String>, String> {
+async fn members(http: &reqwest::Client) -> Result<Vec<String>, String> {
     let now = crate::clock::now_ms();
     if let Ok(cache) = MEMBERS.lock() {
         if let Some((at, set)) = cache.as_ref() {
@@ -396,11 +505,11 @@ async fn members(http: &reqwest::Client) -> Result<HashSet<String>, String> {
         .await
         .map_err(|e| e.to_string())
         .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))?;
-    let set: HashSet<String> = list.members.iter().map(|m| normalize_name(m)).filter(|m| !m.is_empty()).collect();
+    let list: Vec<String> = list.members.iter().map(|m| m.trim().to_string()).filter(|m| !m.is_empty()).collect();
     if let Ok(mut cache) = MEMBERS.lock() {
-        *cache = Some((now, set.clone()));
+        *cache = Some((now, list.clone()));
     }
-    Ok(set)
+    Ok(list)
 }
 
 enum Outcome {
@@ -411,12 +520,15 @@ enum Outcome {
 }
 
 async fn try_send(state: &AppState, record: &FightRecord, category: Category) -> Outcome {
-    let members = match members(&state.http).await {
+    let member_list = match members(&state.http).await {
         Ok(m) => m,
         Err(e) => return Outcome::Retry(format!("liste des membres : {e}")),
     };
+    let members: HashSet<String> = member_list.iter().map(|m| normalize_name(m)).collect();
+    let mut names = entry(&state.app_data_dir, &record.id).names;
+    resolve_with_members(record, &mut names, &member_list);
     let uploader = state.data_storage.local_character_name().unwrap_or_default();
-    let Some(payload) = build_payload(record, category, &members, &uploader) else {
+    let Some(payload) = build_payload(record, category, &members, &uploader, &names) else {
         return Outcome::Drop("aucun membre de la légion dans ce combat".into());
     };
     let response = state
@@ -453,6 +565,7 @@ fn send(app: tauri::AppHandle, record: FightRecord, category: Category) {
                 update_entry(&dir, &record.id, |e| {
                     e.done = true;
                     e.end_ms = end_ms;
+                    e.rev = REV;
                 });
             }
             Outcome::Drop(why) => {
@@ -460,6 +573,7 @@ fn send(app: tauri::AppHandle, record: FightRecord, category: Category) {
                 update_entry(&dir, &record.id, |e| {
                     e.done = true;
                     e.end_ms = end_ms;
+                    e.rev = REV;
                 });
             }
             Outcome::Retry(why) => {
@@ -467,6 +581,7 @@ fn send(app: tauri::AppHandle, record: FightRecord, category: Category) {
                 update_entry(&dir, &record.id, |e| {
                     e.attempts += 1;
                     e.end_ms = end_ms;
+                    e.rev = REV;
                     match RETRY_MINUTES.get(e.attempts as usize - 1) {
                         Some(m) => e.retry_at_ms = now + m * 60_000,
                         None => e.done = true,
@@ -492,6 +607,36 @@ mod tests {
             "2400002": {"name": "Wolf", "isBoss": false}
         }"#,
         )
+    }
+
+    #[test]
+    fn masked_party_members_are_found_again() {
+        let record: FightRecord = serde_json::from_value(serde_json::json!({
+            "id": "auto_9", "bossName": "Boss", "targetId": 1, "startTimeMs": 1_700_000_000_000i64,
+            "durationMs": 100_000, "totalDamage": 1000, "jobs": [], "jobIds": [],
+            "details": {"targetId": 1, "maxHp": 0, "totalTargetDamage": 1000, "battleTime": 100_000,
+                        "startTime": 0, "pingHistory": [], "healSkills": [],
+                        "skills": [
+                          {"actorId": 1, "code": 1, "name": "a", "time": 1, "dmg": 500, "multiHitCount": 0, "multiHitDamage": 0, "crit": 0, "parry": 0, "back": 0, "perfect": 0, "double": 0, "regen": 0},
+                          {"actorId": 2, "code": 1, "name": "a", "time": 1, "dmg": 300, "multiHitCount": 0, "multiHitDamage": 0, "crit": 0, "parry": 0, "back": 0, "perfect": 0, "double": 0, "regen": 0},
+                          {"actorId": 3, "code": 1, "name": "a", "time": 1, "dmg": 200, "multiHitCount": 0, "multiHitDamage": 0, "crit": 0, "parry": 0, "back": 0, "perfect": 0, "double": 0, "regen": 0}
+                        ]},
+            "actors": [
+                {"actorId": 1, "nickname": "NeoSimka", "job": "검성"},
+                {"actorId": 2, "nickname": obscure_nickname("Ptose"), "job": "치유성"},
+                {"actorId": 3, "nickname": obscure_nickname("Kyumy"), "job": "궁성"}
+            ],
+            "isTrain": false, "appVersion": "2.0.80", "mobCode": 1, "dungeonId": 600004, "serverId": 1303
+        }))
+        .unwrap();
+        // Ptose retrouvé par le nom de son entité, Kyumy par la liste du site.
+        let nicknames: HashMap<i32, String> = [(2, "Ptose".to_string())].into_iter().collect();
+        let mut names = resolve_names(&record, &HashMap::new(), &nicknames);
+        resolve_with_members(&record, &mut names, &["Ptose".into(), "Kyumy".into(), "NeoSimka".into(), "Pleasure".into()]);
+        let members: HashSet<String> = ["neosimka", "ptose", "kyumy"].iter().map(|s| s.to_string()).collect();
+        let p = build_payload(&record, Category::Donjon, &members, "NeoSimka", &names).unwrap();
+        let got: Vec<&str> = p.players.iter().map(|x| x.name.as_str()).collect();
+        assert_eq!(got, ["NeoSimka", "Ptose", "Kyumy"]);
     }
 
     #[test]
@@ -525,14 +670,14 @@ mod tests {
         }))
         .unwrap();
         let members: HashSet<String> = ["neosimka".to_string()].into_iter().collect();
-        let p = build_payload(&record, Category::Boss, &members, "NeoSimka").unwrap();
+        let p = build_payload(&record, Category::Boss, &members, "NeoSimka", &HashMap::new()).unwrap();
         assert_eq!(p.players.len(), 1);
         assert_eq!(p.players[0].name, "NeoSimka");
         assert_eq!(p.players[0].classe, "Gladiateur");
         assert_eq!(p.players[0].damage, 600);
         assert_eq!(p.players[0].dps, 6);
         assert_eq!(p.players[0].share, 60.0);
-        assert!(build_payload(&record, Category::Boss, &HashSet::new(), "x").is_none());
+        assert!(build_payload(&record, Category::Boss, &HashSet::new(), "x", &HashMap::new()).is_none());
         // Le format attendu par netlify/lib/fights.mjs (validateFight) du site.
         let json = serde_json::to_value(&p).unwrap();
         if let Ok(path) = std::env::var("CHEVRERIE_PAYLOAD_OUT") {
