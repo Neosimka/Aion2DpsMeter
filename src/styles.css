@@ -8748,3 +8748,14 @@ html.a2-offline .historyUploadBtn {
   color: #ffb4b4;
   border-color: rgba(229, 72, 77, 0.6);
 }
+
+/* ===== Aion2DpsMeter : éléments retirés des réglages =====
+   Masqués plutôt que supprimés du HTML, pour garder les mises à jour
+   d'A2Tools faciles à récupérer. */
+.settingsPanel .settingsNav .settingsVersionRow,
+.settingsPanel .settingsFooter .settingsFooterLinks {
+  display: none !important;
+}
+.settingsPanel .settingsFooter {
+  justify-content: flex-end;
+}
