@@ -8793,3 +8793,9 @@ html.a2-offline .historyUploadBtn {
 .settingsPanel #settingsSection-streaming {
   display: none !important;
 }
+
+/* Aion2DpsMeter : pas d'onglet Plugins. */
+.settingsPanel .settingsNav #settingsTab-plugins,
+.settingsPanel #settingsSection-plugins {
+  display: none !important;
+}
