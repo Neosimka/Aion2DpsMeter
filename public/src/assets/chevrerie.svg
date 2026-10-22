@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6dc96"/>
+      <stop offset="0.55" stop-color="#d9b25e"/>
+      <stop offset="1" stop-color="#b38a3c"/>
+    </linearGradient>
+    <linearGradient id="hornL" x1="0" y1="0" x2="1" y2="0.6">
+      <stop offset="0" stop-color="#f7dfa0"/>
+      <stop offset="1" stop-color="#bf9447"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17263d"/>
+      <stop offset="1" stop-color="#0f1a2c"/>
+    </linearGradient>
+    <linearGradient id="head" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fe3ec"/>
+      <stop offset="1" stop-color="#2cc9d6"/>
+    </linearGradient>
+  </defs>
+  <!-- Bouclier -->
+  <path d="M256 26 L454 84 L454 248 C454 362 362 442 256 490 C150 442 58 362 58 248 L58 84 Z"
+        fill="url(#field)" stroke="url(#gold)" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M256 60 L424 108 L424 250 C424 346 346 414 256 456 C166 414 88 346 88 250 L88 108 Z"
+        fill="none" stroke="#8a7440" stroke-opacity="0.55" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Cornes -->
+  <g id="horn">
+    <path d="M122 30 C 88 80 84 160 150 184 C 184 196 220 182 240 152 C 216 158 194 154 178 142 C 148 120 130 86 122 30 Z" fill="url(#hornL)"/>
+  </g>
+  <use href="#horn" transform="translate(512 0) scale(-1 1)"/>
+  <!-- Tête de chèvre -->
+  <path d="M194 194 L318 194 L302 302 L256 366 L210 302 Z" fill="url(#head)"/>
+  <path d="M194 194 L318 194 L314 222 L198 222 Z" fill="#8cf0f3"/>
+  <circle cx="225" cy="250" r="10" fill="#0d1726"/>
+  <circle cx="287" cy="250" r="10" fill="#0d1726"/>
+  <!-- Barbiche -->
+  <path d="M232 372 L280 372 L256 416 Z" fill="url(#gold)"/>
+</svg>

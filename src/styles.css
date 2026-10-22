@@ -8805,3 +8805,12 @@ html.a2-offline .historyUploadBtn {
 .settingsPanel .sendLogsRow {
   display: none !important;
 }
+.settingsPanel .chevrerieSection .chevrerieTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settingsPanel .chevrerieSection .chevrerieLogo {
+  width: 36px;
+  height: 36px;
+}
