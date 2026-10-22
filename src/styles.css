@@ -8759,3 +8759,31 @@ html.a2-offline .historyUploadBtn {
 .settingsPanel .settingsFooter {
   justify-content: flex-end;
 }
+
+/* Aion2DpsMeter : pas de compte A2Tools ni de badge A2 dans le groupe. */
+.settingsPanel .settingsNav #settingsTab-account,
+.settingsPanel #settingsSection-account,
+.settingsToggle:has(.partyPresenceCheckbox) {
+  display: none !important;
+}
+.settingsPanel .chevrerieSection .settingsRowStart {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.settingsPanel .chevrerieSection .chevrerieHint {
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.72;
+  white-space: normal;
+}
+.settingsPanel .chevrerieSection .settingsRow {
+  align-items: center;
+  gap: 16px;
+}
+.settingsPanel .chevrerieSection .settingsRow {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}

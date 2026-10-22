@@ -65,7 +65,8 @@ pub fn spawn(app: tauri::AppHandle) {
         loop {
             tokio::time::sleep(CHECK).await;
             let Some(state) = app.try_state::<AppState>() else { continue };
-            if state.settings.get(SETTING_KEY).as_deref() == Some("false") {
+            // Aion2DpsMeter : badge A2 désactivé sauf activation explicite.
+            if state.settings.get(SETTING_KEY).as_deref() != Some("true") {
                 if !users.is_empty() {
                     users.clear();
                     state.data_storage.set_a2tools_users(HashSet::new());

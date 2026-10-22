@@ -3130,6 +3130,7 @@ class DpsApp {
         if (ok) for (const group of document.querySelectorAll(".discordActivityGroup")) group.style.display = "";
         if (window.A2_VIEW !== "main") return;
         if (window.a2Build?.online === false) return;   // nothing to offer
+        return; // Aion2DpsMeter : pas de fenêtres d'invitation A2Tools (compte, Discord, badge A2).
         // At most one offer per launch: the account one waits for a launch
         // where the Discord one does not open.
         if (!(ok && this.maybeShowDiscordPromo()) && !this.maybeShowPartyPromo()) this.maybeShowAccountPromo();
@@ -3429,6 +3430,11 @@ class DpsApp {
       else if (found?.state === "installing") say(t("settings.update.installing", "Updating…"));
       else if (found?.state === "update") say(t("settings.update.available", "{version} is out").replace("{version}", latest));
       else say(t("settings.update.failed", "Couldn't check. Try again later."));
+    });
+
+    // Aion2DpsMeter : bouton du site de la légion (pas de onclick inline, la CSP l'interdit).
+    document.querySelector(".chevrerieSiteBtn")?.addEventListener("click", () => {
+      window.javaBridge?.openBrowser?.("https://aion2-la-chevrerie.netlify.app/");
     });
 
     this.settingsVersionLink?.addEventListener("click", () => {

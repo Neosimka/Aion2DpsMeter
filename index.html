@@ -452,6 +452,7 @@
             <nav class="settingsNav" aria-label="Settings sections">
               <div class="settingsTabs" role="tablist" aria-orientation="vertical">
                 <button class="settingsNavItem isActive" type="button" role="tab" id="settingsTab-connection" aria-controls="settingsSection-connection" aria-selected="true" tabindex="0" data-section="connection"><i data-lucide="plug" aria-hidden="true"></i><span data-i18n="settings.connection">Connection</span></button>
+                <button class="settingsNavItem" type="button" role="tab" id="settingsTab-chevrerie" aria-controls="settingsSection-chevrerie" aria-selected="false" tabindex="-1" data-section="chevrerie"><i data-lucide="shield" aria-hidden="true"></i><span>La Chevrerie</span></button>
                 <button class="settingsNavItem" type="button" role="tab" id="settingsTab-account" aria-controls="settingsSection-account" aria-selected="false" tabindex="-1" data-section="account"><i data-lucide="circle-user" aria-hidden="true"></i><span data-i18n="settings.account.title">A2 Tools Account</span></button>
                 <button class="settingsNavItem" type="button" role="tab" id="settingsTab-meter" aria-controls="settingsSection-meter" aria-selected="false" tabindex="-1" data-section="meter"><i data-lucide="gauge" aria-hidden="true"></i><span data-i18n="settings.meterSettings">Meter Settings</span></button>
                 <button class="settingsNavItem" type="button" role="tab" id="settingsTab-appearance" aria-controls="settingsSection-appearance" aria-selected="false" tabindex="-1" data-section="appearance"><i data-lucide="palette" aria-hidden="true"></i><span data-i18n="settings.appearance">Appearance</span></button>
@@ -581,6 +582,33 @@
                   <div class="accountCodeLabel" data-i18n="settings.account.codePrompt">Approve this code in your browser:</div>
                   <div class="accountCode"></div>
                   <div class="accountCodeHint" data-i18n="settings.account.codeHint">The page should have opened already. The code expires in 10 minutes.</div>
+                </div>
+              </section>
+              <!-- Aion2DpsMeter : onglet de la légion La Chevrerie -->
+              <section class="settingsSection chevrerieSection" id="settingsSection-chevrerie" role="tabpanel" aria-labelledby="settingsTab-chevrerie" data-section="chevrerie" hidden>
+                <h2 class="settingsSectionTitle">La Chevrerie</h2>
+                <div class="settingsGroupBody">
+                  <div class="settingsRow">
+                    <div class="settingsRowStart">
+                      <div class="settingsLabel">Légion La Chevrerie</div>
+                      <div class="chevrerieHint">Le meter de la légion. Membres, groupes et nouveautés sont sur le site.</div>
+                    </div>
+                    <div class="settingsRowEnd">
+                      <button class="settingsAction chevrerieSiteBtn" type="button">Ouvrir le site</button>
+                    </div>
+                  </div>
+                  <div class="settingsRow">
+                    <div class="settingsRowStart">
+                      <div class="settingsLabel">Partager un combat</div>
+                      <div class="chevrerieHint">Ouvre le détail d'un combat (clic sur un joueur ou dans l'historique), puis clique sur l'appareil photo : l'image est copiée, prête à coller sur le Discord de la légion.</div>
+                    </div>
+                  </div>
+                  <div class="settingsRow">
+                    <div class="settingsRowStart">
+                      <div class="settingsLabel">Tes données restent chez toi</div>
+                      <div class="chevrerieHint">Pas de compte, et tes combats ne sont envoyés nulle part : ils sont enregistrés sur ton PC.</div>
+                    </div>
+                  </div>
                 </div>
               </section>
               <section class="settingsSection" id="settingsSection-meter" role="tabpanel" aria-labelledby="settingsTab-meter" data-section="meter" hidden>
