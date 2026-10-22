@@ -8787,3 +8787,9 @@ html.a2-offline .historyUploadBtn {
   padding-top: 10px;
   padding-bottom: 10px;
 }
+
+/* Aion2DpsMeter : pas d'onglet Streaming (overlay OBS). */
+.settingsPanel .settingsNav #settingsTab-streaming,
+.settingsPanel #settingsSection-streaming {
+  display: none !important;
+}
