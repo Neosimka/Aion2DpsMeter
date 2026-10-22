@@ -8799,3 +8799,9 @@ html.a2-offline .historyUploadBtn {
 .settingsPanel #settingsSection-plugins {
   display: none !important;
 }
+
+/* Aion2DpsMeter : pas de partage des timers de boss ni d'envoi des journaux au dev d'A2Tools. */
+.settingsToggle:has(.shareBossTimersCheckbox),
+.settingsPanel .sendLogsRow {
+  display: none !important;
+}

@@ -44,6 +44,7 @@ use crate::capture::abyss_artifacts::ArtifactState;
 use crate::capture::boss_map::BossMap;
 use crate::combat::data_storage::{BossEvent, BossEventKind, BossHp};
 
+// Aion2DpsMeter : partage des timers de boss désactivé sauf activation explicite.
 pub const SETTING_KEY: &str = "dpsMeter.shareBossTimers";
 const CHECK: Duration = Duration::from_secs(2);
 /// The same map, unchanged, is sent again after this long at the earliest.
@@ -259,7 +260,7 @@ fn spawn_events(app: tauri::AppHandle) {
                 last_hp = std::time::Instant::now();
                 let changed = state.data_storage.take_boss_hp(now);
                 let server = report_server(&state);
-                let off = state.settings.get(SETTING_KEY).as_deref() == Some("false");
+                let off = state.settings.get(SETTING_KEY).as_deref() != Some("true");
                 let requests = [("/api/boss-timers/hp", hp_request(server, &changed)),
                                 ("/api/boss-timers/cores", cores_hp_request(server, &changed, now))];
                 for (path, body) in requests {
@@ -286,7 +287,7 @@ fn spawn_events(app: tauri::AppHandle) {
             waiting.extend(events.into_iter().map(|e| (now, e)));
             // Orb kills no holder came for in time: "unknown".
             let expired = orb_killers().lock().unwrap_or_else(|p| p.into_inner()).expired(now);
-            if !expired.is_empty() && state.settings.get(SETTING_KEY).as_deref() != Some("false") {
+            if !expired.is_empty() && state.settings.get(SETTING_KEY).as_deref() == Some("true") {
                 let server = report_server(&state);
                 if server != 0 {
                     send_orb_killers(&state, server, expired).await;
@@ -295,7 +296,7 @@ fn spawn_events(app: tauri::AppHandle) {
             if waiting.is_empty() {
                 continue;
             }
-            if state.settings.get(SETTING_KEY).as_deref() == Some("false") {
+            if state.settings.get(SETTING_KEY).as_deref() != Some("true") {
                 waiting.clear();
                 continue;
             }
@@ -335,7 +336,7 @@ pub fn spawn(app: tauri::AppHandle) {
             let Some(state) = app.try_state::<AppState>() else { continue };
             send_artifacts(&state, &mut artifacts_seq, &mut artifacts_sent).await;
             let Some((next, maps)) = state.data_storage.boss_maps_since(seq) else { continue };
-            if state.settings.get(SETTING_KEY).as_deref() == Some("false") {
+            if state.settings.get(SETTING_KEY).as_deref() != Some("true") {
                 seq = next;
                 continue;
             }
@@ -379,7 +380,7 @@ pub fn spawn(app: tauri::AppHandle) {
 /// `seq` that wasn't sent for this server lately.
 async fn send_artifacts(state: &AppState, seq: &mut u64, sent: &mut HashMap<u16, (i64, String)>) {
     let Some((next, artifacts, seen_ms)) = state.data_storage.abyss_artifacts_since(*seq) else { return };
-    if state.settings.get(SETTING_KEY).as_deref() == Some("false") {
+    if state.settings.get(SETTING_KEY).as_deref() != Some("true") {
         *seq = next;
         return;
     }
