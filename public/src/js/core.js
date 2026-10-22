@@ -152,25 +152,12 @@ class DpsApp {
     this.displayMode = "dps";
     this.betaUi = true;
     this.theme = "a2d-ether"; // Aion2DpsMeter : notre thème par défaut
+    // Aion2DpsMeter : seulement nos 3 thèmes (les autres restent dans le CSS,
+    // pour faciliter la récupération des mises à jour d'A2Tools).
     this.availableThemes = [
       "a2d-ether",
       "a2d-neon",
       "a2d-braise",
-      "aion2",
-      "aion2-classes",
-      "aion2-classes-vivid",
-      "aion2-spectrum",
-      "aion2-aurora",
-      "aion2-sunset",
-      "asmodian",
-      "cogni",
-      "elyos",
-      "ember",
-      "fera",
-      "frost",
-      "natura",
-      "obsidian",
-      "varian",
     ];
     this.supportQrImages = {
       afdian: "./assets/afdian.png",
@@ -3792,8 +3779,10 @@ class DpsApp {
       const [vivid] = themeOptions.splice(vividAt, 1);
       themeOptions.splice(themeOptions.findIndex((o) => o.value === "aion2-classes") + 1, 0, vivid);
     }
-    // Aion2DpsMeter : nos thèmes en tête de liste.
-    themeOptions.sort((a, b) => Number(b.value.startsWith("a2d-")) - Number(a.value.startsWith("a2d-")));
+    // Aion2DpsMeter : on ne propose que nos thèmes.
+    for (let i = themeOptions.length - 1; i >= 0; i--) {
+      if (!themeOptions[i].value.startsWith("a2d-")) themeOptions.splice(i, 1);
+    }
 
     const allTargetsWindowOptions = [
       { value: "30000", label: this.i18n?.t("settings.allTargetsWindow.options.30s", "30 seconds") },
