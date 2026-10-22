@@ -35,6 +35,16 @@ jobs:
           sed -i "s#__AION2DPS_REPO__#${GITHUB_REPOSITORY}#g" public/src/js/checkRelease.js public/src/js/core.js
           grep -n "${GITHUB_REPOSITORY}" public/src/js/checkRelease.js public/src/js/core.js
 
+      - name: Vérifier la clé de légion
+        env:
+          CHEVRERIE_KEY: ${{ secrets.CHEVRERIE_KEY }}
+        run: |
+          if [ -z "$CHEVRERIE_KEY" ]; then
+            echo "::error::Le secret CHEVRERIE_KEY est absent (Settings → Secrets and variables → Actions). Sans lui, le meter n'enverrait aucun combat au site."
+            exit 1
+          fi
+          echo "Clé de légion présente (${#CHEVRERIE_KEY} caractères)."
+
       - name: Dépendances
         run: npm ci
 
