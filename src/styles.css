@@ -8814,3 +8814,9 @@ html.a2-offline .historyUploadBtn {
   width: 36px;
   height: 36px;
 }
+.settingsPanel .chevrerieSection .chevrerieUploadRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+}

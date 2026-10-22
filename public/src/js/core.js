@@ -3432,6 +3432,15 @@ class DpsApp {
       else say(t("settings.update.failed", "Couldn't check. Try again later."));
     });
 
+    // Aion2DpsMeter : envoi automatique des combats au site (activé par défaut).
+    const chevrerieUpload = document.querySelector(".chevrerieUploadCheckbox");
+    if (chevrerieUpload) {
+      chevrerieUpload.checked = this.safeGetSetting("dpsMeter.chevrerieUpload") !== "false";
+      chevrerieUpload.addEventListener("change", () => {
+        this.safeSetSetting("dpsMeter.chevrerieUpload", String(chevrerieUpload.checked));
+      });
+    }
+
     // Aion2DpsMeter : bouton du site de la légion (pas de onclick inline, la CSP l'interdit).
     document.querySelector(".chevrerieSiteBtn")?.addEventListener("click", () => {
       window.javaBridge?.openBrowser?.("https://aion2-la-chevrerie.netlify.app/");

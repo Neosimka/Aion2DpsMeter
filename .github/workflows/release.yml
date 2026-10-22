@@ -39,6 +39,9 @@ jobs:
         run: npm ci
 
       - name: Compiler (Tauri → MSI)
+        env:
+          # Clé de la légion pour envoyer les combats au site La Chevrerie.
+          CHEVRERIE_KEY: ${{ secrets.CHEVRERIE_KEY }}
         run: npm run tauri build
 
       - name: Publier la release et latest.json

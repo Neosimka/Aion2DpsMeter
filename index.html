@@ -603,12 +603,16 @@
                       <div class="chevrerieHint">Ouvre le détail d'un combat (clic sur un joueur ou dans l'historique), puis clique sur l'appareil photo : l'image est copiée, prête à coller sur le Discord de la légion.</div>
                     </div>
                   </div>
-                  <div class="settingsRow">
-                    <div class="settingsRowStart">
-                      <div class="settingsLabel">Tes données restent chez toi</div>
-                      <div class="chevrerieHint">Pas de compte, et tes combats ne sont envoyés nulle part : ils sont enregistrés sur ton PC.</div>
-                    </div>
-                  </div>
+                  <label class="settingsToggle chevrerieUploadRow">
+                    <span class="settingsRowStart">
+                      <span class="settingsLabel">Envoyer mes combats au site</span>
+                      <span class="chevrerieHint">À la fin de chaque combat de boss, de donjon ou de Cauchemar, le résultat part sur le site de la légion. Seuls les membres de La Chevrerie sont envoyés : les autres joueurs du groupe ne le sont jamais.</span>
+                    </span>
+                    <span class="settingsToggleControl">
+                      <input type="checkbox" class="chevrerieUploadCheckbox" checked />
+                      <span class="settingsToggleTrack" aria-hidden="true"></span>
+                    </span>
+                  </label>
                 </div>
               </section>
               <section class="settingsSection" id="settingsSection-meter" role="tabpanel" aria-labelledby="settingsTab-meter" data-section="meter" hidden>

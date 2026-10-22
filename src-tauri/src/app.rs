@@ -576,6 +576,9 @@ fn save_fight_records(app: &tauri::AppHandle, state: &AppState, records: Vec<Fig
     if !records.is_empty() {
         share::prune_slices(&state.app_data_dir);
     }
+    // Aion2DpsMeter : les combats terminés partent sur le site de La Chevrerie.
+    #[cfg(feature = "online")]
+    crate::chevrerie::on_fights_saved(app, state, &records);
     #[cfg(feature = "online")]
     if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
         let now = crate::clock::now_ms();
@@ -3680,6 +3683,9 @@ pub fn run() {
                                 save_fight_records(&handle, &state, records, &names);
                             }
                         }
+                        // Aion2DpsMeter : envois au site de La Chevrerie à refaire.
+                        #[cfg(feature = "online")]
+                        crate::chevrerie::retry_due(&handle, &state);
                         // Automatic uploads that failed and are due again,
                         // fighting or not: a meter left open after the
                         // connection came back catches up on its own.
