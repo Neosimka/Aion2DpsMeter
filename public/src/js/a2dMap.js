@@ -23,9 +23,10 @@
   }
 
   // Distance au sol (m), différence de hauteur (m), angle à l'écran (degrés, 0 = haut).
-  // Une position de plus de 15 s n'est pas montrée : le meter ne sait pas
-  // encore suivre tes déplacements en continu.
-  const FRESH_MS = 15_000;
+  // Ta position n'arrive que quand tu utilises une compétence ou te
+  // téléportes (le jeu ne la renvoie pas pendant que tu marches) : au-delà de
+  // 30 s elle n'est plus montrée.
+  const FRESH_MS = 30_000;
   const fresh = (me) => !!me && Date.now() - me.at < FRESH_MS;
 
   function rel(me, p) {
@@ -80,10 +81,10 @@
 
   // Le bloc complet : la carte, et une ligne d'état sous elle.
   function block(me, points, now) {
-    if (!fresh(me)) return `<li class="a2dEvNote">Carte du radar en mise au point : le meter ne sait pas encore suivre ta position en continu.</li>`;
+    if (!fresh(me)) return `<li class="a2dEvNote">Carte : utilise une compétence (ou téléporte-toi) pour la caler. Le jeu ne renvoie ta position qu'à ces moments-là, pas pendant que tu marches.</li>`;
     const age = Math.round(((now || Date.now()) - me.at) / 1000);
     return `<li class="a2dMapBox">${svg(me, points)}
-      <span class="a2dMapFoot"><span>${age > 30 ? `position d'il y a ${age < 120 ? `${age} s` : `${Math.round(age / 60)} min`}` : "position lue sur le réseau"}</span>
+      <span class="a2dMapFoot"><span>${age >= 5 ? `calée il y a ${age} s (à ta dernière compétence)` : "calée à l'instant"}</span>
       <button type="button" class="a2dCubeOpt" data-map-rot="1" title="Faire pivoter la carte d'un quart de tour">↻</button></span></li>`;
   }
 

@@ -12,12 +12,16 @@
 //!        <entité varint> <drapeau> [+1 octet si drapeau & 1] <x> <y> <z> …
 //! 41 36  (apparition d'un monstre) <entité varint> <9 octets> <x> <y> <z> …
 //! 34 36  (apparition d'un objet)   <entité varint> <u16> <code u32> <x> <y> <z> …
-//! 23 36  (téléportation, entité 0 = toi) <00> <x> <y> <z> …
+//! 23 36  (téléportation, entité 0 = toi) <00> <5 octets> <x> <y> <z> …
+//! 21 36  (chargement de carte) <u32> <u32 carte> <8 octets> <x> <y> <z> …
+//! 2a 38, 2b 38 (une compétence) <entité varint> … <x> <y> <z> (fin de trame)
+//! 3c 37  <entité varint> <1 octet> <x> <y> <z> …
 //! ```
 //!
-//! Le serveur renvoie aussi tes propres déplacements : sur la capture, le
-//! centre de la zone où les monstres apparaissaient tombait à 6 m de toi, et
-//! ta trace menait au cube que tu as ouvert.
+//! Ta propre position n'arrive pas pendant que tu marches (le jeu ne la renvoie
+//! pas, capture du 2026-10-23 17:44) : seulement quand tu utilises une
+//! compétence, te téléportes ou changes de carte.
+//!
 
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
@@ -88,6 +92,10 @@ pub fn parse(packet: &[u8]) -> Option<(i32, (f32, f32, f32), Option<u32>)> {
     let at = len as usize;
     let op = packet.get(at..at + 2)?;
     let b = &packet[at + 2..];
+    // 21 36 (chargement de carte) : <u32> <u32 carte> <8 octets> puis ta position.
+    if op == [0x21, 0x36] {
+        return Some((0, xyz(b, 16)?, None));
+    }
     let ent = crate::capture::stream_processor::read_varint(b, 0);
     if ent.length <= 0 {
         return None;
@@ -99,7 +107,12 @@ pub fn parse(packet: &[u8]) -> Option<(i32, (f32, f32, f32), Option<u32>)> {
         (0x1B | 0x1C | 0x1E | 0x28 | 0x29 | 0x2B, 0x37) => (k + 1 + (*b.get(k)? & 1) as usize, None),
         (0x41, 0x36) => (k + 9, None),
         (0x34, 0x36) => (k + 6, Some(u32::from_le_bytes(b.get(k + 2..k + 6)?.try_into().ok()?))),
-        (0x23, 0x36) if ent.value == 0 => (k, None),
+        // 23 36 : <entité 0> <5 octets> puis ta position.
+        (0x23, 0x36) if ent.value == 0 => (k + 5, None),
+        // 3c 37 : <entité> <1 octet> <x> <y> <z>.
+        (0x3C, 0x37) => (k + 1, None),
+        // 2a 38, 2b 38 (une compétence) : celui qui agit, puis sa position en fin de trame.
+        (0x2A | 0x2B, 0x38) if b.len() >= k + 12 => (b.len() - 12, None),
         _ => return None,
     };
     Some((ent.value, xyz(b, i)?, code))
@@ -201,6 +214,22 @@ mod tests {
         let (e, (x, y, z), code) = parse(&f).unwrap();
         assert_eq!((e, code), (46917, Some(1_500_020)));
         assert_eq!((x.round(), y.round(), z.round()), (18702.0, 48847.0, 26901.0));
+    }
+
+    /// Toi (848) sur la capture du 2026-10-23 17:44 : une compétence, le chargement de carte, la téléportation.
+    #[test]
+    fn reads_your_own_fixes() {
+        let framed = |op: [u8; 2], body: &str| {
+            let mut f = vec![0x40, op[0], op[1]];
+            f.extend(hex(body));
+            f
+        };
+        let (e, (x, y, z), _) = parse(&framed([0x2A, 0x38], "d0060111e41fc80000002c01000000000000cb407069a1010000d006010044ded7471d09c94600f0d846")).unwrap();
+        assert_eq!((e, x.round(), y.round(), z.round()), (848, 110525.0, 25733.0, 27768.0));
+        let (e, (x, y, _), _) = parse(&framed([0x21, 0x36], "12000000f2030000afbece000000000010f40f4779c0694700a0ec46f0ffb3c2")).unwrap();
+        assert_eq!((e, x.round(), y.round()), (0, 36852.0, 59840.0));
+        let (e, (x, y, _), _) = parse(&framed([0x23, 0x36], "00000000000010f40f4779c0694700a0ec4601000000a64b")).unwrap();
+        assert_eq!((e, x.round(), y.round()), (0, 36852.0, 59840.0));
     }
 
     #[test]
