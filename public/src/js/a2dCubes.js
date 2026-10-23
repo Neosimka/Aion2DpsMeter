@@ -40,7 +40,7 @@
   };
 
   let sound = ["red", "all", "off"].includes(store.get(SOUND_KEY)) ? store.get(SOUND_KEY) : "red";
-  let state = { map: null, spots: 0, cubes: [], now: Date.now() };
+  let state = { map: null, spots: 0, cubes: [], around: [], me: null, now: Date.now() };
   const known = new Set();
   let firstPoll = true;
   let lastAlert = 0;
@@ -65,17 +65,26 @@
     return `<li class="a2dCubeSound"><span>Alerte quand un cube apparaît</span><span class="a2dCubeOpts">${opt("red", "Rouges")}${opt("all", "Tous")}${opt("off", "Aucune")}</span></li>`;
   }
 
+  const RED = "#e0523f", YELLOW = "#f0c64a";
+  // Pour la carte : les cubes (pleins), et les emplacements connus (creux).
+  function mapPoints() {
+    const out = state.around.map((p) => ({ ...p, kind: "spot", color: p.red ? RED : YELLOW }));
+    for (const c of state.cubes) if (c.x != null) out.push({ x: c.x, y: c.y, z: c.z, kind: "cube", color: c.red ? RED : YELLOW });
+    return out;
+  }
+
   function rows() {
     if (!state.cubes.length) return `<li class="a2dEvNote">Aucun cube caché à portée. Le jeu n'envoie que les cubes à environ 110 m de toi.</li>`;
     return state.cubes.map((c) => `<li class="a2dEvRow${c.red ? " isSoon" : ""}">
         <span class="a2dCubeDot ${c.red ? "isRed" : "isYellow"}" aria-hidden="true"></span>
         <span class="a2dEvWho"><b>Cube caché ${colour(c)}</b><small>${esc(areaName(c.area) || MAPS[state.map] || "")}</small></span>
-        <span class="a2dEvWhen"><b>${ago(state.now - c.since)}</b><small>${c.water ? "sous l'eau" : ""}</small></span>
+        <span class="a2dEvWhen"><b>${(() => { const r = window.A2dMap?.rel(state.me, c); return r ? window.A2dMap.label(r) : ago(state.now - c.since); })()}</b><small>${window.A2dMap?.rel(state.me, c) ? `apparu ${ago(state.now - c.since)}` : ""}${c.water ? `${window.A2dMap?.rel(state.me, c) ? " · " : ""}sous l'eau` : ""}</small></span>
       </li>`).join("");
   }
 
   function render() {
-    return `${header()}${soundRow()}<li class="a2dEvHead isLive">Autour de toi</li>${rows()}`;
+    const map = MAPS[state.map] || state.cubes.length ? (window.A2dMap?.block(state.me, mapPoints(), state.now) || "") : "";
+    return `${header()}${soundRow()}${map}<li class="a2dEvHead isLive">Autour de toi</li>${rows()}`;
   }
 
   function setSound(v) {
@@ -107,7 +116,7 @@
     try {
       const s = await invoke("a2d_cubes_state");
       if (s && typeof s === "object") {
-        state = { map: s.map ?? null, spots: s.spots || 0, cubes: Array.isArray(s.cubes) ? s.cubes : [], now: s.now || Date.now() };
+        state = { map: s.map ?? null, spots: s.spots || 0, cubes: Array.isArray(s.cubes) ? s.cubes : [], around: Array.isArray(s.around) ? s.around : [], me: s.me || null, now: s.now || Date.now() };
         checkNew();
       }
     } catch {}
@@ -115,5 +124,5 @@
   setInterval(poll, 2000);
   poll();
 
-  window.A2dCubes = { render, setSound, poll, count: () => state.cubes.length };
+  window.A2dCubes = { render, setSound, poll, mapPoints, count: () => state.cubes.length };
 })();

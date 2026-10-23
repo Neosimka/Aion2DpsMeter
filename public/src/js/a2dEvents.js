@@ -373,6 +373,7 @@
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!open); }
     });
     el.querySelector(".a2dEvList").addEventListener("click", (e) => {
+      if (e.target.closest("[data-map-rot]")) { window.A2dMap?.rotate?.(); render(); return; }
       const pv = e.target.closest("[data-pet-view]");
       if (pv) { window.A2dPets?.setView?.(pv.dataset.petView); render(); return; }
       const pc = e.target.closest("[data-pet-capture]");

@@ -31,7 +31,7 @@
   }
 
   let pins = new Set((() => { try { return JSON.parse(store.get(PINS_KEY) || "[]").map(String); } catch { return []; } })());
-  let state = { pets: null, nearby: [] };
+  let state = { pets: null, nearby: [], points: [], me: null, now: Date.now() };
   const lastSeenByCode = new Map();
   const lastAlertByCode = new Map();
   let firstPoll = true;
@@ -78,6 +78,31 @@
     return `<span class="a2dPetProg"><span class="a2dPetDots">${dots}</span>${bar}</span>`;
   }
 
+  // Le plus proche de toi parmi les monstres d'un code.
+  function nearest(code) {
+    const M = window.A2dMap;
+    if (!M || !state.me) return null;
+    let best = null;
+    for (const p of state.points) {
+      if (p.code !== code) continue;
+      const r = M.rel(state.me, p);
+      if (r && (!best || r.dist < best.dist)) best = r;
+    }
+    return best;
+  }
+
+  // Les points de la carte : monstres des familiers qu'il te manque, cubes, emplacements.
+  function mapPoints() {
+    const out = [];
+    for (const p of state.points) {
+      const pets = petsOf(p.code);
+      if (!npcInfo[p.code] || !pets.length) continue;
+      const main = pets.find((x) => pins.has(x.pet)) || pets[0];
+      out.push({ ...p, kind: "mob", color: genusColor(DATA.pets[main.pet]?.genus), big: pins.has(main.pet) });
+    }
+    return out.concat(window.A2dCubes?.mapPoints?.() || []);
+  }
+
   function nearbyRows() {
     if (!known()) return `<li class="a2dEvNote">Le radar attend la liste de tes familiers pour n'afficher que ceux qu'il te manque.</li>`;
     const rows = state.nearby
@@ -86,6 +111,8 @@
       .sort((a, b) => Number(b.pets.some((p) => pins.has(p.pet))) - Number(a.pets.some((p) => pins.has(p.pet)))
         || b.count - a.count || a.info.name.localeCompare(b.info.name, "fr"));
     if (!rows.length) return `<li class="a2dEvNote">Aucun monstre autour de toi ne donne l'âme d'un familier qu'il te manque.</li>`;
+    for (const n of rows) n.rel = nearest(n.code);
+    rows.sort((a, b) => (a.rel?.dist ?? 1e9) - (b.rel?.dist ?? 1e9));
     return rows.slice(0, 20).map((n) => {
       const main = n.pets.slice().sort((a, b) => Number(pins.has(b.pet)) - Number(pins.has(a.pet)))[0];
       const more = n.pets.length > 1 ? ` +${n.pets.length - 1}` : "";
@@ -93,7 +120,7 @@
       return `<li class="a2dEvRow${pinned ? " isSoon" : ""}">
         ${bell(main.pet)}
         <span class="a2dEvWho"><b>${esc(n.info.name)}${n.count > 1 ? ` ×${n.count}` : ""}</b><small>${esc(soulOf(main.pet))}${more} · ${esc(main.chance)}</small>${progress(main.pet)}</span>
-        <span class="a2dEvWhen"><b>${main.left == null ? `niv. ${n.info.level}` : `−${main.left} âmes`}</b><small>${esc(n.info.zone || n.info.map || "")}</small></span>
+        <span class="a2dEvWhen"><b>${n.rel ? window.A2dMap.label(n.rel) : main.left == null ? `niv. ${n.info.level}` : `−${main.left} âmes`}</b><small>${n.rel ? `−${main.left} âmes` : esc(n.info.zone || n.info.map || "")}</small></span>
       </li>`;
     }).join("");
   }
@@ -162,6 +189,7 @@
     const special = owned.length - inData.length;
     if (special > 0) html += `<li class="a2dPetGenus" style="--c:#f07aa8"><span class="a2dPetGName">Spéciaux</span><span></span><span class="a2dPetPts">${special}</span></li>`;
     html += `<li class="a2dEvNote">Niveaux : <b>${stage(3)}</b> MAX · <b>${stage(2)}</b> au niv. 2 · <b>${stage(1)}</b> au niv. 1${special > 0 ? " · les spéciaux ne comptent pas dans le total" : ""}</li>`;
+    html += captureRow();
     html += `<li class="a2dEvNote">Cette session : +${session.souls} âme${session.souls > 1 ? "s" : ""} · ${session.ups} niveau${session.ups > 1 ? "x" : ""} · ${session.fresh} nouveau${session.fresh > 1 ? "x" : ""}</li>`;
     return html;
   }
@@ -174,8 +202,8 @@
       ? `<button type="button" class="a2dCubeOpt isOn" data-pet-capture="stop">Arrêter (${left} s)</button>`
       : `<button type="button" class="a2dCubeOpt" data-pet-capture="start">Enregistrer 2 min</button>`;
     const done = !c?.recording && c?.path ? ` <button type="button" class="a2dCubeOpt" data-pet-capture="reveal">Voir le fichier</button>` : "";
-    return `<li class="a2dEvHead">Carte du radar (en préparation)</li>
-      <li class="a2dEvNote">Pour afficher les monstres et les cubes sur une carte avec leur distance, le meter doit apprendre à lire les positions. Enregistre 2 min en te déplaçant près de monstres et envoie le fichier.</li>
+    return `<li class="a2dEvHead">Capture pour le développement</li>
+      <li class="a2dEvNote">Si la carte ou les cubes se trompent, enregistre 2 min de jeu et envoie le fichier : il contient les noms des joueurs autour de toi et le chat.</li>
       <li class="a2dCubeSound"><span>${c?.recording ? `Enregistrement… ${((c.bytes || 0) / 1048576).toFixed(1)} Mo` : c?.path ? "Capture prête" : "Capture du trafic du jeu"}</span><span class="a2dCubeOpts">${btn}${done}</span></li>`;
   }
 
@@ -187,7 +215,8 @@
   function render() {
     if (view === "collection") return `${nav()}${collection()}`;
     if (view === "missing") return `${nav()}${summary()}${pinnedRows()}${missingRows(60)}`;
-    return `${nav()}${summary()}<li class="a2dEvHead isLive">Autour de toi</li>${nearbyRows()}${pinnedRows()}${captureRow()}`;
+    const map = known() && window.A2dMap ? window.A2dMap.block(state.me, mapPoints(), state.now) : "";
+    return `${nav()}${summary()}${map}<li class="a2dEvHead isLive">Autour de toi</li>${nearbyRows()}${pinnedRows()}`;
   }
 
   function setView(v) {
@@ -253,7 +282,7 @@
     try {
       const s = await invoke("a2d_radar_state");
       if (s && typeof s === "object") {
-        state = { pets: s.pets || null, nearby: Array.isArray(s.nearby) ? s.nearby : [] };
+        state = { pets: s.pets || null, nearby: Array.isArray(s.nearby) ? s.nearby : [], points: Array.isArray(s.points) ? s.points : [], me: s.me || null, now: s.now || Date.now() };
         countSession(state.pets);
         checkSpawns();
       }

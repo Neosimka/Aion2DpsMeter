@@ -51,6 +51,10 @@ const RAW_TTL_MS: i64 = 180_000;
 /// Une trame brute et l'apparition d'un même cube arrivent ensemble.
 const LINK_MS: i64 = 2_000;
 const MAX_LOGGED: u32 = 25;
+/// Un cube que le jeu n'a jamais retiré est oublié après 15 min.
+const KEEP_MS: i64 = 15 * 60_000;
+/// Les emplacements montrés sur la carte du radar, autour de toi.
+const SPOTS_AROUND_CM: f32 = 25_000.0;
 
 fn cube(code: u32) -> Option<(bool, bool)> {
     CUBES.iter().find(|c| c.0 == code).map(|c| (c.1, c.2))
@@ -59,6 +63,8 @@ fn cube(code: u32) -> Option<(bool, bool)> {
 struct Spot {
     map: i32,
     area: &'static str,
+    /// Rouge, ou « l'un ou l'autre » (`either`) : compté comme rouge possible.
+    red: bool,
     x: f32,
     y: f32,
     z: f32,
@@ -78,6 +84,7 @@ fn spots() -> &'static Vec<Spot> {
                 Some(Spot {
                     map: f[0].parse().ok()?,
                     area: f[2],
+                    red: f[1] != "yellow",
                     x: f[3].parse().ok()?,
                     y: f[4].parse().ok()?,
                     z: f[5].parse().ok()?,
@@ -146,6 +153,8 @@ struct Seen {
     at: i64,
     last: i64,
     spot: Option<usize>,
+    /// Position exacte, si le jeu l'a envoyée (`34 36`).
+    pos: Option<(f32, f32, f32)>,
     /// Vu seulement dans une trame brute : pas d'entité, pas de disparition.
     raw: bool,
 }
@@ -179,6 +188,21 @@ fn raw_key(code: u32, spot: Option<usize>) -> i64 {
 
 /// Chaque trame lue par le meter.
 pub fn frame(packet: &[u8]) {
+    // L'apparition d'un objet (`34 36`) : entité, code et position exacts.
+    if let Some((entity, (x, y, z), Some(code))) = crate::a2d_pos::parse(packet) {
+        if cube(code).is_some() {
+            let Ok(mut c) = state().lock() else { return };
+            let at = now_ms();
+            let spot = spot_at(c.map, x, y, z).or_else(|| spot_at(None, x, y, z));
+            if c.logged < MAX_LOGGED {
+                c.logged += 1;
+                tracing::info!("a2d-cube: objet {entity} code {code} à ({x:.0}, {y:.0}, {z:.0}) emplacement {spot:?}");
+            }
+            let prev = c.seen.get(&(entity as i64)).map(|p| p.at);
+            c.seen.insert(entity as i64, Seen { code, at: prev.unwrap_or(at), last: at, spot, pos: Some((x, y, z)), raw: false });
+        }
+        return;
+    }
     let codes = codes_in(packet);
     if codes.is_empty() {
         return;
@@ -228,7 +252,8 @@ pub fn note_spawn(entity: i32, code: i32) {
             code,
             at: prev.as_ref().map_or(at, |p| p.at),
             last: at,
-            spot: spot.or(prev.and_then(|p| p.spot)),
+            spot: spot.or(prev.as_ref().and_then(|p| p.spot)),
+            pos: prev.and_then(|p| p.pos),
             raw: false,
         },
     );
@@ -266,10 +291,10 @@ fn settle(c: &mut Cubes, now: i64) {
     c.pending = keep;
     for (code, at, spot) in old {
         let key = raw_key(code, spot);
-        let e = c.seen.entry(key).or_insert(Seen { code, at, last: at, spot, raw: true });
+        let e = c.seen.entry(key).or_insert(Seen { code, at, last: at, spot, pos: None, raw: true });
         e.last = e.last.max(at);
     }
-    c.seen.retain(|_, s| !s.raw || now - s.last < RAW_TTL_MS);
+    c.seen.retain(|_, s| now - s.last < if s.raw { RAW_TTL_MS } else { KEEP_MS });
 }
 
 #[derive(Serialize)]
@@ -284,6 +309,7 @@ struct CubeOut {
     area: Option<&'static str>,
     x: Option<f32>,
     y: Option<f32>,
+    z: Option<f32>,
 }
 
 /// Pour l'onglet Cubes : les cubes autour de toi et la carte.
@@ -298,6 +324,7 @@ pub fn a2d_cubes_state() -> Value {
         .map(|(&id, s)| {
             let (red, water) = cube(s.code).unwrap_or((false, false));
             let sp = s.spot.and_then(|i| spots().get(i));
+            let p = s.pos.or(sp.map(|p| (p.x, p.y, p.z)));
             CubeOut {
                 id,
                 code: s.code,
@@ -306,15 +333,29 @@ pub fn a2d_cubes_state() -> Value {
                 since: s.at,
                 last_seen: s.last,
                 area: sp.map(|p| p.area),
-                x: sp.map(|p| p.x),
-                y: sp.map(|p| p.y),
+                x: p.map(|p| p.0),
+                y: p.map(|p| p.1),
+                z: p.map(|p| p.2),
             }
         })
         .collect();
     list.sort_by_key(|o| (!o.red, -o.since));
     let map = c.map;
     let known = map.map_or(0, |m| spots().iter().filter(|s| s.map == m).count());
-    serde_json::json!({ "map": map, "spots": known, "cubes": list, "now": now })
+    // Les emplacements connus autour de toi (carrés creux sur la carte).
+    let me = crate::a2d_pos::me();
+    let around: Vec<Value> = me
+        .map(|m| {
+            spots()
+                .iter()
+                .filter(|s| map.is_none_or(|mm| mm == s.map))
+                .filter(|s| ((s.x - m.x).powi(2) + (s.y - m.y).powi(2)).sqrt() <= SPOTS_AROUND_CM)
+                .take(400)
+                .map(|s| serde_json::json!({ "x": s.x, "y": s.y, "z": s.z, "red": s.red }))
+                .collect()
+        })
+        .unwrap_or_default();
+    serde_json::json!({ "map": map, "spots": known, "cubes": list, "around": around, "me": me, "now": now })
 }
 
 #[cfg(test)]
