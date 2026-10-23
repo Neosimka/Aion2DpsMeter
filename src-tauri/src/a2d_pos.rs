@@ -52,6 +52,10 @@ struct Positions {
     me: Option<Me>,
     /// Le point d'où le cap a été calculé (on attend 1 m de déplacement).
     heading_from: Option<(f32, f32)>,
+    /// Ton numéro d'entité, tel que le meter le connaît (pour les captures).
+    local: Option<i64>,
+    /// D'où vient ta dernière position : (entité, type de trame).
+    me_from: Option<(i32, [u8; 2])>,
 }
 
 static POSITIONS: OnceLock<Mutex<Positions>> = OnceLock::new();
@@ -103,6 +107,9 @@ pub fn parse(packet: &[u8]) -> Option<(i32, (f32, f32, f32), Option<u32>)> {
 
 /// Chaque trame lue par le meter. `local` : ton numéro d'entité, s'il est connu.
 pub fn frame(packet: &[u8], local: Option<i64>) {
+    let Ok(mut s) = state().lock() else { return };
+    s.local = local;
+    drop(s);
     let Some((entity, (x, y, z), _)) = parse(packet) else { return };
     let Ok(mut s) = state().lock() else { return };
     let at = now_ms();
@@ -120,6 +127,12 @@ pub fn frame(packet: &[u8], local: Option<i64>) {
             _ => s.heading_from = Some((x, y)),
         }
         s.me = Some(Me { x, y, z, at, heading });
+        let len = crate::capture::stream_processor::read_varint(packet, 0).length.max(0) as usize;
+        let op = [packet.get(len).copied().unwrap_or(0), packet.get(len + 1).copied().unwrap_or(0)];
+        if s.me_from != Some((entity, op)) {
+            tracing::info!("a2d-pos: ta position vient de l'entité {entity} (trame {:02x} {:02x}), à ({x:.0}, {y:.0}, {z:.0})", op[0], op[1]);
+            s.me_from = Some((entity, op));
+        }
         if entity == 0 {
             return;
         }
@@ -136,6 +149,13 @@ pub fn frame(packet: &[u8], local: Option<i64>) {
 
 pub fn of(entity: i32) -> Option<Pos> {
     state().lock().ok()?.by_entity.get(&entity).copied()
+}
+
+/// Ton numéro d'entité et ta position, pour les captures.
+pub fn debug_line() -> String {
+    let Ok(s) = state().lock() else { return String::new() };
+    let me = s.me.map(|m| format!("{:.0} {:.0} {:.0} {}", m.x, m.y, m.z, m.at)).unwrap_or_default();
+    format!("local={:?} me={me} from={:?}", s.local, s.me_from)
 }
 
 pub fn me() -> Option<Me> {

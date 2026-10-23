@@ -23,8 +23,13 @@
   }
 
   // Distance au sol (m), différence de hauteur (m), angle à l'écran (degrés, 0 = haut).
+  // Une position de plus de 15 s n'est pas montrée : le meter ne sait pas
+  // encore suivre tes déplacements en continu.
+  const FRESH_MS = 15_000;
+  const fresh = (me) => !!me && Date.now() - me.at < FRESH_MS;
+
   function rel(me, p) {
-    if (!me || !p || p.x == null) return null;
+    if (!fresh(me) || !p || p.x == null) return null;
     const { sx, sy } = toScreen(me, p);
     return {
       dist: Math.hypot(sx, sy),
@@ -75,7 +80,7 @@
 
   // Le bloc complet : la carte, et une ligne d'état sous elle.
   function block(me, points, now) {
-    if (!me) return `<li class="a2dEvNote">Position inconnue : bouge un peu (ou change de zone) avec le meter ouvert, et vérifie que ton personnage est reconnu.</li>`;
+    if (!fresh(me)) return `<li class="a2dEvNote">Carte du radar en mise au point : le meter ne sait pas encore suivre ta position en continu.</li>`;
     const age = Math.round(((now || Date.now()) - me.at) / 1000);
     return `<li class="a2dMapBox">${svg(me, points)}
       <span class="a2dMapFoot"><span>${age > 30 ? `position d'il y a ${age < 120 ? `${age} s` : `${Math.round(age / 60)} min`}` : "position lue sur le réseau"}</span>
