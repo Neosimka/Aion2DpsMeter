@@ -35,6 +35,20 @@
   let open = false;
   let tab = store.get(TAB_KEY) === "bosses" ? "bosses" : "events";
 
+  // ---------- alertes ----------
+  // Une cloche par ligne : son + popup quelques minutes avant le début.
+  const ALERTS_KEY = "a2d.alerts";
+  const LEAD_KEY = "a2d.alertLead";
+  const FIRED_KEY = "a2d.alertsFired";
+  const LEADS = [1, 3, 5, 10, 15];
+  const readJson = (k, d) => { try { return JSON.parse(store.get(k) || "") ?? d; } catch { return d; } };
+  const alerts = new Set(readJson(ALERTS_KEY, []));
+  let lead = LEADS.includes(Number(store.get(LEAD_KEY))) ? Number(store.get(LEAD_KEY)) : 5;
+  const fired = new Set(readJson(FIRED_KEY, []).slice(-300));
+  const saveAlerts = () => store.set(ALERTS_KEY, JSON.stringify([...alerts]));
+  const hasBossAlerts = () => [...alerts].some((k) => k.startsWith("boss:"));
+  const BELL = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+
   const region = () => (serverId >= 1000 ? Number(String(serverId)[1]) : 3); // Europe par défaut
   const side = () => (serverId >= 1000 ? (String(serverId)[0] === "1" ? "elyos" : String(serverId)[0] === "2" ? "asmodian" : null) : null);
   const timeZone = () => REGIONS[region()] || "Europe/Berlin";
@@ -102,8 +116,9 @@
   const meter = () => document.querySelector(".meter");
   const resize = () => requestAnimationFrame(() => window.javaBridge?.updateOverlaySize?.());
 
-  const row = ({ name, where, countdown, at, cls = "", hp = null }) =>
+  const row = ({ name, where, countdown, at, cls = "", hp = null, alert = "" }) =>
     `<li class="a2dEvRow ${cls}"${hp != null ? ` style="--hp:${Math.max(0, Math.min(100, hp))}%"` : ""}>
+      ${alert ? `<button type="button" class="a2dEvBell${alerts.has(alert) ? " isOn" : ""}" data-alert="${esc(alert)}" title="${alerts.has(alert) ? "Alerte activée : clique pour l'enlever" : `M'alerter ${lead} min avant`}">${BELL}</button>` : ""}
       <span class="a2dEvWho"><b>${esc(name)}</b>${where ? `<small>${esc(where)}</small>` : ""}</span>
       <span class="a2dEvWhen"><b>${esc(countdown)}</b><small>${esc(at)}</small></span>
     </li>`;
@@ -131,6 +146,7 @@
         countdown: running ? `en cours · ${span(next.end - now)}` : `dans ${span(next.start - now)}`,
         at: running ? "maintenant" : clock(next.start, now),
         cls: running ? "isLive" : next.start - now <= SOON_MS ? "isSoon" : "",
+        alert: `ev:${key}`,
       }));
     }
     return rows.join("");
@@ -155,7 +171,7 @@
     let html = "";
     let last = "";
     let unknown = 0;
-    for (const { b, t, next, group } of bosses) {
+    for (const { id, b, t, next, group } of bosses) {
       if (group === "unknown") { unknown++; continue; }
       if (group !== last) { last = group; html += `<li class="a2dEvHead ${group}">${heads[group]}</li>`; }
       const name = `${text(b.name) || "Boss"}${b.level ? ` · niv. ${b.level}` : ""}`;
@@ -166,12 +182,12 @@
           name, where,
           countdown: hp != null ? `${Math.round(hp)} % PV` : "en vie",
           at: t.upSince ? `depuis ${ago(now - t.upSince * 1000)}` : t.reportedAt ? `vu il y a ${ago(now - t.reportedAt * 1000)}` : "",
-          cls: "isLive", hp,
+          cls: "isLive", hp, alert: `boss:${id}`,
         });
       } else if (group === "window") {
-        html += row({ name, where, countdown: `prévu il y a ${ago(now - next)}`, at: clock(next, now), cls: "isSoon" });
+        html += row({ name, where, countdown: `prévu il y a ${ago(now - next)}`, at: clock(next, now), cls: "isSoon", alert: `boss:${id}` });
       } else {
-        html += row({ name, where, countdown: `dans ${span(next - now)}`, at: clock(next, now), cls: next - now <= SOON_MS ? "isSoon" : "" });
+        html += row({ name, where, countdown: `dans ${span(next - now)}`, at: clock(next, now), cls: next - now <= SOON_MS ? "isSoon" : "", alert: `boss:${id}` });
       }
     }
     let note = "";
@@ -191,6 +207,106 @@
     el.querySelector(".a2dEvServer").textContent = `${serverName ? `${serverName} · ` : ""}heure serveur ${serverClock}`;
     el.querySelectorAll(".a2dEvTab").forEach((b) => b.classList.toggle("isActive", b.dataset.tab === tab));
     el.querySelector(".a2dEvList").innerHTML = tab === "bosses" ? renderBosses(now) : renderEvents(now);
+    const foot = el.querySelector(".a2dEvFoot");
+    if (foot && !foot.dataset.ready) {
+      foot.dataset.ready = "1";
+      foot.innerHTML = `<label>${BELL}<span>Alerte</span>
+          <select class="a2dEvLead">${LEADS.map((m) => `<option value="${m}">${m} min avant</option>`).join("")}</select></label>
+        <span class="a2dEvCount"></span>
+        <button type="button" class="a2dEvTest">Tester</button>`;
+      foot.querySelector(".a2dEvLead").value = String(lead);
+      foot.querySelector(".a2dEvLead").addEventListener("change", (e) => {
+        lead = Number(e.target.value) || 5;
+        store.set(LEAD_KEY, String(lead));
+        unlockAudio();
+        render();
+      });
+      foot.querySelector(".a2dEvTest").addEventListener("click", () => {
+        unlockAudio();
+        notify({ title: "Faille spatio-temporelle", detail: `dans ${lead} min · exemple d'alerte` });
+      });
+    }
+    if (foot) foot.querySelector(".a2dEvCount").textContent = alerts.size ? `${alerts.size} alerte${alerts.size > 1 ? "s" : ""} active${alerts.size > 1 ? "s" : ""}` : "Clique sur une cloche";
+  }
+
+  // ---------- son ----------
+  let audio = null;
+  function unlockAudio() {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === "suspended") audio.resume();
+    } catch {}
+  }
+  // Petit carillon de trois notes, fabriqué sur place (aucun fichier son).
+  function chime() {
+    unlockAudio();
+    if (!audio) return;
+    const t0 = audio.currentTime + 0.02;
+    [[880, 0], [1174.66, 0.16], [1567.98, 0.32]].forEach(([f, d]) => {
+      const o = audio.createOscillator();
+      const g = audio.createGain();
+      o.type = "sine";
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0 + d);
+      g.gain.exponentialRampToValueAtTime(0.35, t0 + d + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.9);
+      o.connect(g).connect(audio.destination);
+      o.start(t0 + d);
+      o.stop(t0 + d + 1);
+    });
+  }
+
+  // ---------- popup ----------
+  function notify({ title, detail }) {
+    chime();
+    const m = meter();
+    if (!m) return;
+    const toast = document.createElement("div");
+    toast.className = "a2dToast";
+    toast.innerHTML = `<span class="a2dToastIcon">${BELL}</span>
+      <span class="a2dToastText"><b>${esc(title)}</b><small>${esc(detail)}</small></span>
+      <button type="button" class="a2dToastClose" aria-label="Fermer">×</button>`;
+    const header = m.querySelector(".header");
+    header ? header.after(toast) : m.prepend(toast);
+    const close = () => { toast.remove(); resize(); };
+    toast.querySelector(".a2dToastClose").addEventListener("click", close);
+    setTimeout(close, 30_000);
+    // Sans quoi la fenêtre reste à sa taille et coupe le popup.
+    resize();
+  }
+
+  // ---------- vérification des alertes (toutes les 5 s, panneau ouvert ou non) ----------
+  function checkAlerts() {
+    if (!alerts.size) return;
+    const now = Date.now();
+    const leadMs = lead * 60_000;
+    const due = [];
+    const tz = timeZone();
+    const s = side();
+    for (const ev of DATA.events) {
+      if (ev.side && s && ev.side !== s) continue;
+      const key = `ev:${ev.id.replace(/-(elyos|asmodian)$/, "")}`;
+      if (!alerts.has(key)) continue;
+      const next = nextOf(ev, tz, now);
+      if (next) due.push({ key, start: next.start, title: text(ev.name) || ev.id, where: (ev.where || []).map(text).filter(Boolean)[0] || "" });
+    }
+    if (feed && feed.server === serverId) {
+      for (const [id, b] of Object.entries(DATA.fieldBosses)) {
+        const key = `boss:${id}`;
+        const t = feed.bosses?.[id];
+        if (!alerts.has(key) || t?.state !== "dead" || !t.nextSpawn) continue;
+        due.push({ key, start: t.nextSpawn * 1000, title: text(b.name) || "Boss de terrain", where: text(b.where) });
+      }
+    }
+    for (const d of due) {
+      const left = d.start - now;
+      const firedKey = `${d.key}@${d.start}`;
+      if (left > leadMs || left < -60_000 || fired.has(firedKey)) continue;
+      fired.add(firedKey);
+      store.set(FIRED_KEY, JSON.stringify([...fired].slice(-300)));
+      const when = left > 30_000 ? `dans ${Math.round(left / 60_000)} min` : "maintenant";
+      notify({ title: d.title, detail: `${when} · ${clock(d.start, now)}${d.where ? ` · ${d.where}` : ""}` });
+    }
   }
 
   async function readCharacter() {
@@ -208,15 +324,17 @@
   async function readFeed() {
     clearTimeout(feedTimer);
     feedTimer = setTimeout(readFeed, FEED_EVERY_MS);
-    if (!open || !serverId) return;
+    if ((!open && !hasBossAlerts()) || !serverId) return;
     try {
       const data = await invoke("a2d_boss_timers", { server: serverId });
       feed = { server: serverId, bosses: data?.bosses || {}, at: Date.now(), error: false };
     } catch {
       feed = { server: serverId, bosses: feed?.server === serverId ? feed.bosses : {}, at: Date.now(), error: true };
     }
-    render();
-    resize();
+    if (open) {
+      render();
+      resize();
+    }
   }
 
   async function setOpen(next) {
@@ -235,6 +353,7 @@
       readFeed();
     } else {
       resize();
+      if (hasBossAlerts()) readFeed();
     }
   }
 
@@ -250,6 +369,25 @@
     btn.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!open); }
     });
+    el.querySelector(".a2dEvList").addEventListener("click", (e) => {
+      const bell = e.target.closest(".a2dEvBell");
+      if (!bell) return;
+      unlockAudio();
+      const key = bell.dataset.alert;
+      if (alerts.has(key)) alerts.delete(key); else alerts.add(key);
+      saveAlerts();
+      if (key.startsWith("boss:") && hasBossAlerts()) readFeed();
+      render();
+    });
+    setInterval(checkAlerts, 5000);
+    // Windows ne laisse jouer un son qu'après une action dans la fenêtre : le
+    // premier clic (ou touche) dans le meter débloque le son des alertes.
+    const unlockOnce = () => unlockAudio();
+    document.addEventListener("pointerdown", unlockOnce, { capture: true, passive: true });
+    document.addEventListener("keydown", unlockOnce, { capture: true });
+    // Le serveur (heure, faction, boss) même panneau fermé, pour les alertes.
+    readCharacter().then(() => { if (hasBossAlerts()) readFeed(); });
+    setInterval(readCharacter, 5 * 60_000);
     el.querySelectorAll(".a2dEvTab").forEach((b) => b.addEventListener("click", () => {
       tab = b.dataset.tab;
       store.set(TAB_KEY, tab);
@@ -258,7 +396,7 @@
     }));
   }
 
-  window.A2dEvents = { open: () => setOpen(true), close: () => setOpen(false), toggle: () => setOpen(!open), nextOf };
+  window.A2dEvents = { open: () => setOpen(true), close: () => setOpen(false), toggle: () => setOpen(!open), nextOf, notify, checkAlerts };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();

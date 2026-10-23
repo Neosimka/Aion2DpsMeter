@@ -8990,3 +8990,43 @@ html.a2-offline .historyUploadBtn {
 :root[data-a2d-skin="blason"] .a2dEvents .a2dEvWho b { font-family: "A2D Marcellus", serif; font-weight: 400; }
 :root[data-a2d-skin="banniere"] .a2dEvents .a2dEvWhen b { font-family: "A2D Barlow Condensed", sans-serif; font-weight: 700; font-size: 14px; }
 :root[data-a2d-skin="verre"] .a2dEvents .a2dEvRow { background: rgba(0,0,0,.38); border-radius: 999px; padding: 5px 12px; }
+
+/* Aion2DpsMeter : alertes du panneau Événements */
+.a2dEvents .a2dEvBell {
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; margin-right: -2px; border: 0; border-radius: 50%;
+  background: transparent; color: rgba(255,255,255,.28); cursor: pointer;
+}
+.a2dEvents .a2dEvBell:hover { color: rgba(255,255,255,.75); background: rgba(255,255,255,.08); }
+.a2dEvents .a2dEvBell.isOn { color: #f2c66d; }
+.a2dEvents .a2dEvBell.isOn svg { fill: rgba(242,198,109,.35); }
+.a2dEvents .a2dEvWho { flex: 1 1 auto; }
+.a2dEvents .a2dEvFoot {
+  display: flex; align-items: center; gap: 8px; margin-top: 6px; padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,.08); font-size: 11px; color: rgba(255,255,255,.7);
+}
+.a2dEvents .a2dEvFoot label { display: inline-flex; align-items: center; gap: 5px; color: #f2c66d; }
+.a2dEvents .a2dEvFoot label span { color: rgba(255,255,255,.75); }
+.a2dEvents .a2dEvFoot select {
+  background: rgba(0,0,0,.35); color: #fff; border: 1px solid rgba(255,255,255,.15); border-radius: 4px;
+  font: inherit; font-size: 11px; padding: 2px 4px;
+}
+.a2dEvents .a2dEvCount { flex: 1 1 auto; color: rgba(255,255,255,.5); }
+.a2dEvents .a2dEvTest {
+  background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.15); border-radius: 4px;
+  font: inherit; font-size: 11px; padding: 2px 8px; cursor: pointer;
+}
+.a2dToast {
+  display: flex; align-items: center; gap: 9px; margin: 6px 8px 0; padding: 8px 10px;
+  border-radius: 6px; background: linear-gradient(90deg, rgba(242,198,109,.28), rgba(242,198,109,.10));
+  border: 1px solid rgba(242,198,109,.6); box-shadow: 0 4px 16px rgba(0,0,0,.45);
+  animation: a2dToastIn .35s ease-out, a2dToastPulse 1.6s ease-in-out 3;
+}
+.a2dToast .a2dToastIcon { color: #f2c66d; display: inline-flex; }
+.a2dToast .a2dToastIcon svg { width: 20px; height: 20px; fill: rgba(242,198,109,.35); }
+.a2dToast .a2dToastText { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.a2dToast .a2dToastText b { font-size: 13px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.9); }
+.a2dToast .a2dToastText small { font-size: 11px; color: rgba(255,255,255,.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a2dToast .a2dToastClose { border: 0; background: none; color: rgba(255,255,255,.7); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 2px; }
+@keyframes a2dToastIn { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes a2dToastPulse { 50% { box-shadow: 0 0 0 3px rgba(242,198,109,.35), 0 4px 16px rgba(0,0,0,.45); } }
