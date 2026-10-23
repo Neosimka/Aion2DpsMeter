@@ -43,7 +43,7 @@
   const LEADS = [1, 3, 5, 10, 15];
   const readJson = (k, d) => { try { return JSON.parse(store.get(k) || "") ?? d; } catch { return d; } };
   const alerts = new Set(readJson(ALERTS_KEY, []));
-  let lead = LEADS.includes(Number(store.get(LEAD_KEY))) ? Number(store.get(LEAD_KEY)) : 5;
+  let lead = LEADS.includes(Number(store.get(LEAD_KEY))) ? Number(store.get(LEAD_KEY)) : 10;
   const fired = new Set(readJson(FIRED_KEY, []).slice(-300));
   const saveAlerts = () => store.set(ALERTS_KEY, JSON.stringify([...alerts]));
   const hasBossAlerts = () => [...alerts].some((k) => k.startsWith("boss:"));
@@ -216,14 +216,14 @@
         <button type="button" class="a2dEvTest">Tester</button>`;
       foot.querySelector(".a2dEvLead").value = String(lead);
       foot.querySelector(".a2dEvLead").addEventListener("change", (e) => {
-        lead = Number(e.target.value) || 5;
+        lead = Number(e.target.value) || 10;
         store.set(LEAD_KEY, String(lead));
         unlockAudio();
         render();
       });
       foot.querySelector(".a2dEvTest").addEventListener("click", () => {
         unlockAudio();
-        notify({ title: "Faille spatio-temporelle", detail: `dans ${lead} min · exemple d'alerte` });
+        notify({ title: "Faille spatio-temporelle", detail: `commence dans ${lead} min · exemple d'alerte` });
       });
     }
     if (foot) foot.querySelector(".a2dEvCount").textContent = alerts.size ? `${alerts.size} alerte${alerts.size > 1 ? "s" : ""} active${alerts.size > 1 ? "s" : ""}` : "Clique sur une cloche";
@@ -288,14 +288,14 @@
       const key = `ev:${ev.id.replace(/-(elyos|asmodian)$/, "")}`;
       if (!alerts.has(key)) continue;
       const next = nextOf(ev, tz, now);
-      if (next) due.push({ key, start: next.start, title: text(ev.name) || ev.id, where: (ev.where || []).map(text).filter(Boolean)[0] || "" });
+      if (next) due.push({ key, start: next.start, verb: "commence", title: text(ev.name) || ev.id, where: (ev.where || []).map(text).filter(Boolean)[0] || "" });
     }
     if (feed && feed.server === serverId) {
       for (const [id, b] of Object.entries(DATA.fieldBosses)) {
         const key = `boss:${id}`;
         const t = feed.bosses?.[id];
         if (!alerts.has(key) || t?.state !== "dead" || !t.nextSpawn) continue;
-        due.push({ key, start: t.nextSpawn * 1000, title: text(b.name) || "Boss de terrain", where: text(b.where) });
+        due.push({ key, start: t.nextSpawn * 1000, verb: "apparaît", title: text(b.name) || "Boss de terrain", where: text(b.where) });
       }
     }
     for (const d of due) {
@@ -304,7 +304,7 @@
       if (left > leadMs || left < -60_000 || fired.has(firedKey)) continue;
       fired.add(firedKey);
       store.set(FIRED_KEY, JSON.stringify([...fired].slice(-300)));
-      const when = left > 30_000 ? `dans ${Math.round(left / 60_000)} min` : "maintenant";
+      const when = left > 30_000 ? `${d.verb} dans ${Math.round(left / 60_000)} min` : `${d.verb} maintenant`;
       notify({ title: d.title, detail: `${when} · ${clock(d.start, now)}${d.where ? ` · ${d.where}` : ""}` });
     }
   }
