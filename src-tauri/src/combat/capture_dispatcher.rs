@@ -412,6 +412,12 @@ impl CaptureDispatcher {
                 }
             }
 
+            // Aion2DpsMeter : capture à la demande (les deux sens), pour décoder les positions.
+            #[cfg(feature = "desktop")]
+            if let Some(port) = current_port {
+                crate::a2d_capture::record(&cap, port);
+            }
+
             // Only parse server->client (src == locked port)
             if let Some(port) = current_port {
                 if cap.src_port != port {

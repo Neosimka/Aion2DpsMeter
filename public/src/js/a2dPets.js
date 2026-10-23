@@ -35,6 +35,14 @@
   const lastSeenByCode = new Map();
   const lastAlertByCode = new Map();
   let firstPoll = true;
+  const VIEW_KEY = "a2d.petView";
+  let view = ["near", "missing", "collection"].includes(store.get(VIEW_KEY)) ? store.get(VIEW_KEY) : "near";
+  // Cette session : âmes ramassées, montées de niveau, nouveaux familiers.
+  const session = { souls: 0, ups: 0, fresh: 0 };
+  let prevPets = null;
+  let capture = null;
+  const GENUS = [["fera", "Bestia", "#f0a13c"], ["natura", "Natura", "#5fd08a"], ["varian", "Varius", "#c49bf0"], ["cogni", "Intellia", "#59c2e8"]];
+  const genusColor = (g) => (GENUS.find((x) => x[0] === g) || [0, 0, "#aaa"])[2];
 
   const petLevel = (id) => Number(state.pets?.levels?.[id] ?? 0);
   const petPoints = (id) => Number(state.pets?.points?.[id] ?? 0);
@@ -59,6 +67,17 @@
     return `<button type="button" class="a2dEvBell a2dPetBell${on ? " isOn" : ""}" data-pet="${esc(pet)}" title="${on ? "Suivi : clique pour arrêter" : "Suivre ce familier : alerte quand un de ses monstres apparaît"}">${BELL}</button>`;
   }
 
+  // ●○○ : le niveau du familier ; la barre : ses âmes vers le niveau suivant.
+  function progress(id) {
+    const l = Math.min(petLevel(id), NEEDED.length);
+    const need = NEEDED[l];
+    const pts = petPoints(id);
+    const col = genusColor(DATA.pets[id]?.genus);
+    const dots = [0, 1, 2].map((i) => `<i class="${i < l ? "isOn" : ""}" style="--c:${col}"></i>`).join("");
+    const bar = need ? `<span class="a2dPetBar" style="--c:${col}"><b style="width:${Math.min(100, (pts / need) * 100).toFixed(0)}%"></b></span><span class="a2dPetPts">${pts}/${need}</span>` : `<span class="a2dPetPts">MAX</span>`;
+    return `<span class="a2dPetProg"><span class="a2dPetDots">${dots}</span>${bar}</span>`;
+  }
+
   function nearbyRows() {
     if (!known()) return `<li class="a2dEvNote">Le radar attend la liste de tes familiers pour n'afficher que ceux qu'il te manque.</li>`;
     const rows = state.nearby
@@ -73,7 +92,7 @@
       const pinned = n.pets.some((p) => pins.has(p.pet));
       return `<li class="a2dEvRow${pinned ? " isSoon" : ""}">
         ${bell(main.pet)}
-        <span class="a2dEvWho"><b>${esc(n.info.name)}${n.count > 1 ? ` ×${n.count}` : ""}</b><small>${esc(soulOf(main.pet))}${more} · ${esc(main.chance)}</small></span>
+        <span class="a2dEvWho"><b>${esc(n.info.name)}${n.count > 1 ? ` ×${n.count}` : ""}</b><small>${esc(soulOf(main.pet))}${more} · ${esc(main.chance)}</small>${progress(main.pet)}</span>
         <span class="a2dEvWhen"><b>${main.left == null ? `niv. ${n.info.level}` : `−${main.left} âmes`}</b><small>${esc(n.info.zone || n.info.map || "")}</small></span>
       </li>`;
     }).join("");
@@ -108,7 +127,7 @@
   }
 
   // Les familiers qu'il te reste à compléter, les plus proches du niveau 3 d'abord.
-  function missingRows() {
+  function missingRows(max = 12) {
     if (!known()) return "";
     const list = Object.entries(DATA.pets)
       .filter(([id, p]) => !p.chestOnly && !pins.has(id) && (left(id) ?? 0) > 0)
@@ -116,20 +135,93 @@
       .sort((a, b) => a.left - b.left || a.p.name.localeCompare(b.p.name, "fr"));
     if (!list.length) return `<li class="a2dEvHead">Il te manque</li><li class="a2dEvNote">Tous tes familiers sont au niveau 3 !</li>`;
     let html = `<li class="a2dEvHead">Il te manque · ${list.length} familiers</li>`;
-    for (const { id, p, left: l } of list.slice(0, 12)) {
+    for (const { id, p, left: l } of list.slice(0, max)) {
       const best = (p.drops || []).slice().sort((a, b) => (b.spawns || 0) - (a.spawns || 0))[0];
       html += `<li class="a2dEvRow">
         ${bell(id)}
-        <span class="a2dEvWho"><b>${esc(p.name)}</b><small>${best ? `${esc(best.name)} · ${esc(best.zone || best.map)}` : ""}</small></span>
-        <span class="a2dEvWhen"><b>−${l} âmes</b><small>niv. ${petLevel(id)} · ${petPoints(id)} âme${petPoints(id) > 1 ? "s" : ""}</small></span>
+        <span class="a2dEvWho"><b>${esc(p.name)}</b><small>${best ? `${esc(best.name)} · ${esc(best.zone || best.map)}` : ""}</small>${progress(id)}</span>
+        <span class="a2dEvWhen"><b>−${l} âmes</b><small>niv. ${petLevel(id)}</small></span>
       </li>`;
     }
-    if (list.length > 12) html += `<li class="a2dEvNote">… et ${list.length - 12} autres. Allume une cloche pour suivre un familier.</li>`;
+    if (list.length > max) html += `<li class="a2dEvNote">… et ${list.length - max} autres. Allume une cloche pour suivre un familier.</li>`;
     return html;
   }
 
+  function collection() {
+    if (!known()) return `<li class="a2dEvNote">Connecte-toi (ou change de personnage) avec le meter ouvert : il lira ta collection.</li>`;
+    const owned = Object.entries(state.pets.levels || {}).filter(([, l]) => Number(l) >= 1).map(([id]) => id);
+    const inData = owned.filter((id) => DATA.pets[id]);
+    const total = Object.values(DATA.pets).length;
+    const stage = (n) => owned.filter((id) => Math.min(petLevel(id), 3) === n).length;
+    let html = `<li class="a2dPetColl"><b>Collection</b> <strong>${inData.length}/${total}</strong></li>`;
+    for (const [g, name, col] of GENUS) {
+      const all = Object.keys(DATA.pets).filter((id) => DATA.pets[id].genus === g).length;
+      const mine = inData.filter((id) => DATA.pets[id].genus === g).length;
+      html += `<li class="a2dPetGenus" style="--c:${col}"><span class="a2dPetGName">${name}</span><span class="a2dPetBar isWide"><b style="width:${all ? ((mine / all) * 100).toFixed(1) : 0}%"></b></span><span class="a2dPetPts">${mine}/${all}</span></li>`;
+    }
+    const special = owned.length - inData.length;
+    if (special > 0) html += `<li class="a2dPetGenus" style="--c:#f07aa8"><span class="a2dPetGName">Spéciaux</span><span></span><span class="a2dPetPts">${special}</span></li>`;
+    html += `<li class="a2dEvNote">Niveaux : <b>${stage(3)}</b> MAX · <b>${stage(2)}</b> au niv. 2 · <b>${stage(1)}</b> au niv. 1${special > 0 ? " · les spéciaux ne comptent pas dans le total" : ""}</li>`;
+    html += `<li class="a2dEvNote">Cette session : +${session.souls} âme${session.souls > 1 ? "s" : ""} · ${session.ups} niveau${session.ups > 1 ? "x" : ""} · ${session.fresh} nouveau${session.fresh > 1 ? "x" : ""}</li>`;
+    return html;
+  }
+
+  // Carte du radar : il faut ta position, que le meter ne sait pas encore lire.
+  function captureRow() {
+    const c = capture;
+    const left = c?.recording ? Math.max(0, Math.round((c.until - c.now) / 1000)) : 0;
+    const btn = c?.recording
+      ? `<button type="button" class="a2dCubeOpt isOn" data-pet-capture="stop">Arrêter (${left} s)</button>`
+      : `<button type="button" class="a2dCubeOpt" data-pet-capture="start">Enregistrer 2 min</button>`;
+    const done = !c?.recording && c?.path ? ` <button type="button" class="a2dCubeOpt" data-pet-capture="reveal">Voir le fichier</button>` : "";
+    return `<li class="a2dEvHead">Carte du radar (en préparation)</li>
+      <li class="a2dEvNote">Pour afficher les monstres et les cubes sur une carte avec leur distance, le meter doit apprendre à lire les positions. Enregistre 2 min en te déplaçant près de monstres et envoie le fichier.</li>
+      <li class="a2dCubeSound"><span>${c?.recording ? `Enregistrement… ${((c.bytes || 0) / 1048576).toFixed(1)} Mo` : c?.path ? "Capture prête" : "Capture du trafic du jeu"}</span><span class="a2dCubeOpts">${btn}${done}</span></li>`;
+  }
+
+  function nav() {
+    const b = (v, label) => `<button type="button" class="a2dCubeOpt${view === v ? " isOn" : ""}" data-pet-view="${v}">${label}</button>`;
+    return `<li class="a2dPetNav"><span class="a2dCubeOpts">${b("near", "Autour")}${b("missing", "Il te manque")}${b("collection", "Collection")}</span><small>+${session.souls} âmes · ${session.ups} niv. · ${session.fresh} nouv.</small></li>`;
+  }
+
   function render() {
-    return `${summary()}<li class="a2dEvHead isLive">Autour de toi</li>${nearbyRows()}${pinnedRows()}${missingRows()}`;
+    if (view === "collection") return `${nav()}${collection()}`;
+    if (view === "missing") return `${nav()}${summary()}${pinnedRows()}${missingRows(60)}`;
+    return `${nav()}${summary()}<li class="a2dEvHead isLive">Autour de toi</li>${nearbyRows()}${pinnedRows()}${captureRow()}`;
+  }
+
+  function setView(v) {
+    if (!["near", "missing", "collection"].includes(v)) return;
+    view = v;
+    store.set(VIEW_KEY, v);
+  }
+
+  async function captureAction(what) {
+    try {
+      if (what === "start") capture = await invoke("a2d_capture_start", { seconds: 120 });
+      else if (what === "stop") capture = await invoke("a2d_capture_stop");
+      else if (what === "reveal") await invoke("a2d_capture_reveal");
+    } catch {}
+  }
+
+  // Compte les âmes, niveaux et nouveaux familiers depuis l'ouverture du meter.
+  function countSession(pets) {
+    if (!pets || !Object.keys(pets.levels || {}).length) return;
+    if (prevPets) {
+      const ids = new Set([...Object.keys(pets.levels || {}), ...Object.keys(pets.points || {})]);
+      for (const id of ids) {
+        const l0 = Number(prevPets.levels?.[id] ?? 0), l1 = Number(pets.levels?.[id] ?? 0);
+        const p0 = Number(prevPets.points?.[id] ?? 0), p1 = Number(pets.points?.[id] ?? 0);
+        if (l1 > l0) {
+          session.ups += l1 - l0;
+          if (l0 === 0) session.fresh += 1;
+          let gained = p1;
+          for (let l = l0; l < l1; l++) gained += NEEDED[l] - (l === l0 ? p0 : 0);
+          session.souls += Math.max(0, gained);
+        } else if (l1 === l0 && p1 > p0) session.souls += p1 - p0;
+      }
+    }
+    prevPets = JSON.parse(JSON.stringify(pets));
   }
 
   function toggle(pet) {
@@ -162,12 +254,14 @@
       const s = await invoke("a2d_radar_state");
       if (s && typeof s === "object") {
         state = { pets: s.pets || null, nearby: Array.isArray(s.nearby) ? s.nearby : [] };
+        countSession(state.pets);
         checkSpawns();
       }
     } catch {}
+    try { capture = (await invoke("a2d_capture_state")) || capture; } catch {}
   }
   setInterval(poll, 3000);
   poll();
 
-  window.A2dPets = { render, toggle, poll };
+  window.A2dPets = { render, toggle, poll, setView, captureAction };
 })();

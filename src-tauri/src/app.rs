@@ -3184,6 +3184,7 @@ pub fn run() {
             let _ = std::fs::create_dir_all(&app_data_dir);
             // Aion2DpsMeter : familiers gardés de la dernière fois (radar).
             crate::a2d_radar::init(&app_data_dir);
+            crate::a2d_capture::init(&app_data_dir);
 
             // Load resources — try multiple paths (dev vs production)
             let skill_lookup = SkillLookup::new();
@@ -3825,6 +3826,10 @@ pub fn run() {
             crate::a2d_events::a2d_character,
             crate::a2d_radar::a2d_radar_state,
             crate::a2d_cubes::a2d_cubes_state,
+            crate::a2d_capture::a2d_capture_start,
+            crate::a2d_capture::a2d_capture_stop,
+            crate::a2d_capture::a2d_capture_state,
+            crate::a2d_capture::a2d_capture_reveal,
             crate::a2d_events::a2d_boss_timers,
             crate::plugins::plugin_abyss_siege,
             crate::plugins::plugin_storage_set,

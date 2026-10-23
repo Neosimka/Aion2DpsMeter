@@ -373,6 +373,10 @@
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!open); }
     });
     el.querySelector(".a2dEvList").addEventListener("click", (e) => {
+      const pv = e.target.closest("[data-pet-view]");
+      if (pv) { window.A2dPets?.setView?.(pv.dataset.petView); render(); return; }
+      const pc = e.target.closest("[data-pet-capture]");
+      if (pc) { window.A2dPets?.captureAction?.(pc.dataset.petCapture).then(() => window.A2dPets?.poll?.()).then(render); return; }
       const opt = e.target.closest("[data-cube-sound]");
       if (opt) {
         unlockAudio();

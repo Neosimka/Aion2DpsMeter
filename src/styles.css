@@ -9053,3 +9053,21 @@ html.a2-offline .historyUploadBtn {
 .a2dEvents .a2dEvServer { min-width: 0; }
 .a2dEvents .a2dCubeSound { color: rgba(255,255,255,.7); }
 .a2dEvents .a2dCubeOpt { color: rgba(255,255,255,.65); }
+
+/* Aion2DpsMeter : familiers, collection et progression */
+.a2dEvents .a2dPetNav { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 4px; list-style: none; }
+.a2dEvents .a2dPetNav small { font-size: 10.5px; color: rgba(255,255,255,.55); white-space: nowrap; }
+.a2dEvents .a2dPetProg { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.a2dEvents .a2dPetDots { display: inline-flex; gap: 2px; }
+.a2dEvents .a2dPetDots i { width: 6px; height: 6px; border-radius: 50%; border: 1px solid var(--c); opacity: .8; }
+.a2dEvents .a2dPetDots i.isOn { background: var(--c); }
+.a2dEvents .a2dPetBar { position: relative; flex: 0 1 90px; height: 4px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
+.a2dEvents .a2dPetBar.isWide { flex: 1 1 auto; height: 6px; }
+.a2dEvents .a2dPetBar b { position: absolute; inset: 0 auto 0 0; background: var(--c); border-radius: 3px; }
+.a2dEvents .a2dPetPts { font-size: 10.5px; color: rgba(255,255,255,.7); font-variant-numeric: tabular-nums; }
+.a2dEvents .a2dPetColl { display: flex; align-items: baseline; gap: 8px; padding: 4px 2px; list-style: none; font-size: 13px; color: var(--isUser-fill, #3fe0e6); }
+.a2dEvents .a2dPetColl strong { color: var(--title, #fff); font-size: 15px; }
+.a2dEvents .a2dPetGenus { display: grid; grid-template-columns: 70px 1fr 44px; align-items: center; gap: 8px; padding: 3px 2px; list-style: none; font-size: 12px; }
+.a2dEvents .a2dPetGName { color: var(--c); font-weight: 600; }
+.a2dEvents .a2dPetGenus .a2dPetPts { text-align: right; }
+.a2dEvents .a2dPetGenus .a2dPetBar b { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 70%, #fff), var(--c)); }
