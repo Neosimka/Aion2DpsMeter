@@ -33,7 +33,7 @@
   let feedTimer = null;
   let tickTimer = null;
   let open = false;
-  let tab = ["bosses", "pets"].includes(store.get(TAB_KEY)) ? store.get(TAB_KEY) : "events";
+  let tab = ["bosses", "pets", "cubes"].includes(store.get(TAB_KEY)) ? store.get(TAB_KEY) : "events";
 
   // ---------- alertes ----------
   // Une cloche par ligne : son + popup quelques minutes avant le début.
@@ -206,9 +206,10 @@
     const serverClock = new Date(now).toLocaleTimeString("fr-FR", { timeZone: timeZone(), hour: "2-digit", minute: "2-digit" });
     el.querySelector(".a2dEvServer").textContent = `${serverName ? `${serverName} · ` : ""}heure serveur ${serverClock}`;
     el.querySelectorAll(".a2dEvTab").forEach((b) => b.classList.toggle("isActive", b.dataset.tab === tab));
-    el.classList.toggle("isPets", tab === "pets");
+    el.classList.toggle("isPets", tab === "pets" || tab === "cubes");
     el.querySelector(".a2dEvList").innerHTML = tab === "bosses" ? renderBosses(now)
-      : tab === "pets" ? (window.A2dPets?.render?.() ?? "") : renderEvents(now);
+      : tab === "pets" ? (window.A2dPets?.render?.() ?? "")
+      : tab === "cubes" ? (window.A2dCubes?.render?.() ?? "") : renderEvents(now);
     const foot = el.querySelector(".a2dEvFoot");
     if (foot && !foot.dataset.ready) {
       foot.dataset.ready = "1";
@@ -372,6 +373,13 @@
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!open); }
     });
     el.querySelector(".a2dEvList").addEventListener("click", (e) => {
+      const opt = e.target.closest("[data-cube-sound]");
+      if (opt) {
+        unlockAudio();
+        window.A2dCubes?.setSound?.(opt.dataset.cubeSound);
+        render();
+        return;
+      }
       const bell = e.target.closest(".a2dEvBell");
       if (!bell) return;
       if (bell.dataset.pet) {

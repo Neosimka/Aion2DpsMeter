@@ -3824,6 +3824,7 @@ pub fn run() {
             crate::plugins::plugin_boss_timers,
             crate::a2d_events::a2d_character,
             crate::a2d_radar::a2d_radar_state,
+            crate::a2d_cubes::a2d_cubes_state,
             crate::a2d_events::a2d_boss_timers,
             crate::plugins::plugin_abyss_siege,
             crate::plugins::plugin_storage_set,

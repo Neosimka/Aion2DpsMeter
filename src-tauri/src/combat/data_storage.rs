@@ -875,6 +875,8 @@ impl DataStorage {
     pub fn note_zone_change(&self) -> bool {
         #[cfg(feature = "desktop")]
         crate::a2d_radar::note_zone_change();
+        #[cfg(feature = "desktop")]
+        crate::a2d_cubes::note_zone_change();
         let now = now_ms();
         if now.saturating_sub(self.last_damage_ms.load(Ordering::Relaxed)) < ZONE_RESET_LULL_MS {
             return false; // mid-combat teleport — ignore
@@ -1524,6 +1526,8 @@ impl DataStorage {
         // Aion2DpsMeter : les monstres autour de toi, pour le radar à familiers.
         #[cfg(feature = "desktop")]
         crate::a2d_radar::note_spawn(mid, code);
+        #[cfg(feature = "desktop")]
+        crate::a2d_cubes::note_spawn(mid, code);
         let mut inner = self.inner.write();
         let before = inner.mob_storage.insert(mid, code);
         // An Abyss core seen up, once per entity (online builds only, as kills).
@@ -1614,6 +1618,8 @@ impl DataStorage {
     pub fn mark_entity_dead(&self, entity_id: i32) {
         #[cfg(feature = "desktop")]
         crate::a2d_radar::note_gone(entity_id);
+        #[cfg(feature = "desktop")]
+        crate::a2d_cubes::note_gone(entity_id);
         let mut inner = self.inner.write();
         // A field boss killed in the open world: its exact time, to share
         // (online builds only: boss_report.rs sends it).
@@ -1721,6 +1727,8 @@ impl DataStorage {
     pub fn note_despawn(&self, id: i32) {
         #[cfg(feature = "desktop")]
         crate::a2d_radar::note_gone(id);
+        #[cfg(feature = "desktop")]
+        crate::a2d_cubes::note_gone(id);
         let mut inner = self.inner.write();
         if inner.summon_storage.contains_key(&id) {
             inner.despawned_summon_ids.insert(id);
@@ -1921,6 +1929,8 @@ impl DataStorage {
     /// A zone load named the map it loads (`21 36`). The map, once known, is
     /// what says where the player is; see `dungeon_of_map`.
     pub fn note_map_load(&self, map_id: i32) {
+        #[cfg(feature = "desktop")]
+        crate::a2d_cubes::note_map(map_id);
         let mut inner = self.inner.write();
         // A load hands out new entity ids: counts of the old ones would name
         // an entity that is gone.
