@@ -51,7 +51,8 @@
   // Les familiers qu'un monstre peut faire avancer (pas déjà au niveau 3).
   const petsOf = (code) => (DATA.byNpc[code] || [])
     .map(([pet, chance]) => ({ pet: String(pet), chance, left: left(String(pet)) }))
-    .filter((p) => p.left == null || p.left > 0);
+    // Seulement les familiers qu'il te reste à compléter (niveau 3 non atteint).
+    .filter((p) => p.left != null && p.left > 0);
 
   function bell(pet) {
     const on = pins.has(pet);
@@ -59,12 +60,13 @@
   }
 
   function nearbyRows() {
+    if (!known()) return `<li class="a2dEvNote">Le radar attend la liste de tes familiers pour n'afficher que ceux qu'il te manque.</li>`;
     const rows = state.nearby
       .map((n) => ({ ...n, info: npcInfo[n.code], pets: petsOf(n.code) }))
       .filter((n) => n.info && n.pets.length)
       .sort((a, b) => Number(b.pets.some((p) => pins.has(p.pet))) - Number(a.pets.some((p) => pins.has(p.pet)))
         || b.count - a.count || a.info.name.localeCompare(b.info.name, "fr"));
-    if (!rows.length) return `<li class="a2dEvNote">Aucun monstre à âme autour de toi pour le moment. Ils apparaissent ici dès que le jeu les envoie au meter.</li>`;
+    if (!rows.length) return `<li class="a2dEvNote">Aucun monstre autour de toi ne donne l'âme d'un familier qu'il te manque.</li>`;
     return rows.slice(0, 20).map((n) => {
       const main = n.pets.slice().sort((a, b) => Number(pins.has(b.pet)) - Number(pins.has(a.pet)))[0];
       const more = n.pets.length > 1 ? ` +${n.pets.length - 1}` : "";
@@ -105,8 +107,29 @@
     return `<li class="a2dEvNote"><b>${souls.toLocaleString("fr-FR")}</b> âmes à trouver pour <b>${open.length}</b> familiers${last}</li>`;
   }
 
+  // Les familiers qu'il te reste à compléter, les plus proches du niveau 3 d'abord.
+  function missingRows() {
+    if (!known()) return "";
+    const list = Object.entries(DATA.pets)
+      .filter(([id, p]) => !p.chestOnly && !pins.has(id) && (left(id) ?? 0) > 0)
+      .map(([id, p]) => ({ id, p, left: left(id) }))
+      .sort((a, b) => a.left - b.left || a.p.name.localeCompare(b.p.name, "fr"));
+    if (!list.length) return `<li class="a2dEvHead">Il te manque</li><li class="a2dEvNote">Tous tes familiers sont au niveau 3 !</li>`;
+    let html = `<li class="a2dEvHead">Il te manque · ${list.length} familiers</li>`;
+    for (const { id, p, left: l } of list.slice(0, 12)) {
+      const best = (p.drops || []).slice().sort((a, b) => (b.spawns || 0) - (a.spawns || 0))[0];
+      html += `<li class="a2dEvRow">
+        ${bell(id)}
+        <span class="a2dEvWho"><b>${esc(p.name)}</b><small>${best ? `${esc(best.name)} · ${esc(best.zone || best.map)}` : ""}</small></span>
+        <span class="a2dEvWhen"><b>−${l} âmes</b><small>niv. ${petLevel(id)} · ${petPoints(id)} âme${petPoints(id) > 1 ? "s" : ""}</small></span>
+      </li>`;
+    }
+    if (list.length > 12) html += `<li class="a2dEvNote">… et ${list.length - 12} autres. Allume une cloche pour suivre un familier.</li>`;
+    return html;
+  }
+
   function render() {
-    return `${summary()}<li class="a2dEvHead isLive">Autour de toi</li>${nearbyRows()}${pinnedRows()}`;
+    return `${summary()}<li class="a2dEvHead isLive">Autour de toi</li>${nearbyRows()}${pinnedRows()}${missingRows()}`;
   }
 
   function toggle(pet) {
