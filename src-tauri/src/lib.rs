@@ -34,6 +34,9 @@ pub mod logging;
 pub mod platform;
 #[cfg(feature = "desktop")]
 pub mod plugins;
+// Aion2DpsMeter : panneau Événements.
+#[cfg(feature = "desktop")]
+mod a2d_events;
 // Aion2DpsMeter : envoi des combats au site de La Chevrerie.
 #[cfg(feature = "online")]
 mod chevrerie;

@@ -8947,3 +8947,46 @@ html.a2-offline .historyUploadBtn {
 :root[data-a2d-skin="banniere"] .list .item.isUser .name { color: #ffd27a; }
 :root[data-a2d-skin="verre"] .list .item .dps { background: none; box-shadow: none; }
 :root[data-a2d-skin="verre"] .list .item .dps > p { text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.6); }
+
+/* ===== Aion2DpsMeter : panneau Événements ===== */
+.meter .a2dEvents { display: none; }
+.meter.a2dEventsOpen .a2dEvents { display: block; padding: 6px 8px 8px; }
+.meter.a2dEventsOpen .list,
+.meter.a2dEventsOpen .bossHpBar { display: none !important; }
+.header .a2dEventsBtn.isActive { color: var(--isUser-fill, #3fe0e6); }
+.a2dEvents .a2dEvTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.a2dEvents .a2dEvTabs { display: inline-flex; border: 1px solid rgba(255,255,255,.12); border-radius: 6px; overflow: hidden; }
+.a2dEvents .a2dEvTab {
+  background: rgba(0,0,0,.25); color: rgba(255,255,255,.65); border: 0; padding: 4px 9px;
+  font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1.2; cursor: pointer; white-space: nowrap;
+}
+.a2dEvents .a2dEvTab + .a2dEvTab { border-left: 1px solid rgba(255,255,255,.12); }
+.a2dEvents .a2dEvTab.isActive { background: rgba(255,255,255,.12); color: var(--title, #fff); }
+.a2dEvents .a2dEvServer { font-size: 10.5px; color: rgba(255,255,255,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a2dEvents .a2dEvList { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; max-height: 300px; overflow-y: auto; }
+.a2dEvents .a2dEvRow {
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 5px 8px; border-radius: 4px; background: rgba(255,255,255,.05); overflow: hidden;
+}
+.a2dEvents .a2dEvRow::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: var(--hp, 0%);
+  background: linear-gradient(90deg, rgba(232,80,80,.18), rgba(232,80,80,.38)); pointer-events: none;
+}
+.a2dEvents .a2dEvRow > * { position: relative; }
+.a2dEvents .a2dEvRow.isLive { box-shadow: inset 3px 0 0 #6fdc8c; }
+.a2dEvents .a2dEvRow.isSoon { box-shadow: inset 3px 0 0 #f2c66d; }
+.a2dEvents .a2dEvWho, .a2dEvents .a2dEvWhen { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.a2dEvents .a2dEvWhen { align-items: flex-end; flex: 0 0 auto; }
+.a2dEvents .a2dEvWho b { font-size: 12.5px; font-weight: 600; color: var(--text-color, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: var(--text-shadow); }
+.a2dEvents .a2dEvWho small, .a2dEvents .a2dEvWhen small { font-size: 10px; color: rgba(255,255,255,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a2dEvents .a2dEvWhen b { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--dps, #fff); white-space: nowrap; }
+.a2dEvents .a2dEvRow.isLive .a2dEvWhen b { color: #6fdc8c; }
+.a2dEvents .a2dEvRow.isSoon .a2dEvWhen b { color: #f2c66d; }
+.a2dEvents .a2dEvHead { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.55); padding: 6px 2px 1px; }
+.a2dEvents .a2dEvHead.up { color: #6fdc8c; }
+.a2dEvents .a2dEvHead.window { color: #f2c66d; }
+.a2dEvents .a2dEvNote { font-size: 11px; color: rgba(255,255,255,.6); padding: 6px 2px; list-style: none; }
+:root[data-a2d-skin="blason"] .a2dEvents .a2dEvTab.isActive { color: #f1d58a; }
+:root[data-a2d-skin="blason"] .a2dEvents .a2dEvWho b { font-family: "A2D Marcellus", serif; font-weight: 400; }
+:root[data-a2d-skin="banniere"] .a2dEvents .a2dEvWhen b { font-family: "A2D Barlow Condensed", sans-serif; font-weight: 700; font-size: 14px; }
+:root[data-a2d-skin="verre"] .a2dEvents .a2dEvRow { background: rgba(0,0,0,.38); border-radius: 999px; padding: 5px 12px; }

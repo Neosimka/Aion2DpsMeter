@@ -384,7 +384,7 @@ fn boss_map_event(map: &crate::capture::boss_map::BossMap) -> Value {
 }
 
 /// Who is playing, as plugins with `events:character` see it.
-fn character(app: &tauri::AppHandle) -> Option<Value> {
+pub(crate) fn character(app: &tauri::AppHandle) -> Option<Value> {
     app.try_state::<AppState>().map(|s| {
         let p = s.data_storage.local_profile();
         serde_json::json!({
@@ -1625,12 +1625,12 @@ pub async fn plugin_abyss_siege(app: tauri::AppHandle, window: tauri::WebviewWin
 }
 
 #[cfg(feature = "online")]
-async fn boss_timers(app: &tauri::AppHandle, server: u32) -> Result<Option<Value>, String> {
+pub(crate) async fn boss_timers(app: &tauri::AppHandle, server: u32) -> Result<Option<Value>, String> {
     feed_file(app, "boss-timers", server).await
 }
 
 #[cfg(not(feature = "online"))]
-async fn boss_timers(_app: &tauri::AppHandle, _server: u32) -> Result<Option<Value>, String> {
+pub(crate) async fn boss_timers(_app: &tauri::AppHandle, _server: u32) -> Result<Option<Value>, String> {
     Err("this meter is built without network features".into())
 }
 

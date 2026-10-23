@@ -57,6 +57,7 @@
           <div class="headerBtns">
             <div class="headerBtn lockBtn" style="display:none" role="button" tabindex="0" aria-label="Lock overlay (click-through)" data-i18n-aria-label="settings.showLockBtn"><i data-lucide="lock-open"></i></div>
             <div class="headerBtn suspendBtn" style="display:none"><i data-lucide="power"></i></div>
+            <div class="headerBtn a2dEventsBtn" role="button" tabindex="0" aria-label="Événements" title="Événements et boss"><i data-lucide="calendar-clock"></i></div>
             <div class="headerBtn historyBtn" role="button" tabindex="0" aria-label="Fight history" data-i18n-aria-label="history.title"><i data-lucide="scroll-text"></i></div>
             <div class="headerBtn resetBtn"><i data-lucide="rotate-ccw"></i></div>
             <div class="headerBtn settingsBtn"><i data-lucide="settings"></i></div>
@@ -1389,6 +1390,17 @@
           </div>
         </div>
         <div class="list"></div>
+        <!-- Aion2DpsMeter : panneau Événements (a2dEvents.js) -->
+        <div class="a2dEvents">
+          <div class="a2dEvTop">
+            <div class="a2dEvTabs" role="tablist">
+              <button type="button" class="a2dEvTab" data-tab="events">Événements</button>
+              <button type="button" class="a2dEvTab" data-tab="bosses">Boss de terrain</button>
+            </div>
+            <span class="a2dEvServer"></span>
+          </div>
+          <ul class="a2dEvList"></ul>
+        </div>
         <div class="meterFooter">
           <div class="battleTime">
             <div class="status"></div>
@@ -1664,6 +1676,8 @@
 
     <script src="/src/js/i18n.js"></script>
     <script src="/src/js/core.js?v=2018a"></script>
+    <script src="/src/js/a2dEventsData.js"></script>
+    <script src="/src/js/a2dEvents.js"></script>
     <script src="/src/js/pluginSettings.js"></script>
   </body>
 </html>
