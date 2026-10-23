@@ -33,7 +33,7 @@
   let feedTimer = null;
   let tickTimer = null;
   let open = false;
-  let tab = store.get(TAB_KEY) === "bosses" ? "bosses" : "events";
+  let tab = ["bosses", "pets"].includes(store.get(TAB_KEY)) ? store.get(TAB_KEY) : "events";
 
   // ---------- alertes ----------
   // Une cloche par ligne : son + popup quelques minutes avant le début.
@@ -206,7 +206,9 @@
     const serverClock = new Date(now).toLocaleTimeString("fr-FR", { timeZone: timeZone(), hour: "2-digit", minute: "2-digit" });
     el.querySelector(".a2dEvServer").textContent = `${serverName ? `${serverName} · ` : ""}heure serveur ${serverClock}`;
     el.querySelectorAll(".a2dEvTab").forEach((b) => b.classList.toggle("isActive", b.dataset.tab === tab));
-    el.querySelector(".a2dEvList").innerHTML = tab === "bosses" ? renderBosses(now) : renderEvents(now);
+    el.classList.toggle("isPets", tab === "pets");
+    el.querySelector(".a2dEvList").innerHTML = tab === "bosses" ? renderBosses(now)
+      : tab === "pets" ? (window.A2dPets?.render?.() ?? "") : renderEvents(now);
     const foot = el.querySelector(".a2dEvFoot");
     if (foot && !foot.dataset.ready) {
       foot.dataset.ready = "1";
@@ -372,6 +374,12 @@
     el.querySelector(".a2dEvList").addEventListener("click", (e) => {
       const bell = e.target.closest(".a2dEvBell");
       if (!bell) return;
+      if (bell.dataset.pet) {
+        unlockAudio();
+        window.A2dPets?.toggle?.(bell.dataset.pet);
+        render();
+        return;
+      }
       unlockAudio();
       const key = bell.dataset.alert;
       if (alerts.has(key)) alerts.delete(key); else alerts.add(key);

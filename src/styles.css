@@ -9030,3 +9030,6 @@ html.a2-offline .historyUploadBtn {
 .a2dToast .a2dToastClose { border: 0; background: none; color: rgba(255,255,255,.7); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 2px; }
 @keyframes a2dToastIn { from { opacity: 0; transform: translateY(-6px); } }
 @keyframes a2dToastPulse { 50% { box-shadow: 0 0 0 3px rgba(242,198,109,.35), 0 4px 16px rgba(0,0,0,.45); } }
+/* Aion2DpsMeter : radar à familiers (le délai d'alerte ne le concerne pas) */
+.a2dEvents.isPets .a2dEvFoot { display: none; }
+.a2dEvents .a2dEvNote b { color: #f2c66d; }

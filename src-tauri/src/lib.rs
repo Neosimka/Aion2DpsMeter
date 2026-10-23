@@ -34,6 +34,9 @@ pub mod logging;
 pub mod platform;
 #[cfg(feature = "desktop")]
 pub mod plugins;
+// Aion2DpsMeter : radar à familiers.
+#[cfg(feature = "desktop")]
+mod a2d_radar;
 // Aion2DpsMeter : panneau Événements.
 #[cfg(feature = "desktop")]
 mod a2d_events;

@@ -1,0 +1,150 @@
+// Aion2DpsMeter : radar à familiers (onglet « Familiers » du panneau Événements).
+//
+// - Autour de toi : les monstres présents qui donnent l'âme d'un familier que
+//   tu n'as pas encore monté au niveau 3 ;
+// - Familiers suivis : ceux dont tu as allumé la cloche, avec les âmes qu'il
+//   leur manque et où les trouver ;
+// - une alerte (popup + son) quand un monstre d'un familier suivi apparaît.
+//
+// Familiers et monstres : lus sur le réseau par le meter (src-tauri/src/a2d_radar.rs).
+// Quel monstre donne quelle âme : a2dPetsData.js (Pet Soul Tracker d'A2Tools, GPL-3.0).
+(() => {
+  const DATA = window.A2D_PETS_DATA;
+  if (!DATA) return;
+  const NEEDED = DATA.needed || [5, 25, 75];
+  const TO_MAX = NEEDED.map((_, l) => NEEDED.slice(l).reduce((n, x) => n + x, 0)); // [105, 100, 75]
+  const PINS_KEY = "a2d.petPins";
+  const ALERT_EVERY_MS = 60_000; // une alerte par espèce au plus chaque minute
+
+  const invoke = (cmd, args) => window.__TAURI__?.core?.invoke?.(cmd, args);
+  const store = {
+    get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, v); } catch {} },
+  };
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const BELL = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+
+  // Nom de chaque monstre à âme, depuis les sources des familiers.
+  const npcInfo = {};
+  for (const [id, p] of Object.entries(DATA.pets)) {
+    for (const d of p.drops || []) if (!npcInfo[d.npc]) npcInfo[d.npc] = { name: d.name, level: d.level, zone: d.zone, map: d.map };
+  }
+
+  let pins = new Set((() => { try { return JSON.parse(store.get(PINS_KEY) || "[]").map(String); } catch { return []; } })());
+  let state = { pets: null, nearby: [] };
+  const lastSeenByCode = new Map();
+  const lastAlertByCode = new Map();
+  let firstPoll = true;
+
+  const petLevel = (id) => Number(state.pets?.levels?.[id] ?? 0);
+  const petPoints = (id) => Number(state.pets?.points?.[id] ?? 0);
+  const known = () => !!state.pets && Object.keys(state.pets.levels || {}).length + Object.keys(state.pets.points || {}).length > 0;
+  // Âmes qu'il manque pour le niveau 3 (null si les familiers ne sont pas encore lus).
+  const left = (id) => {
+    if (!known()) return null;
+    const l = petLevel(id);
+    return l >= NEEDED.length ? 0 : Math.max(0, TO_MAX[l] - petPoints(id));
+  };
+  const petName = (id) => DATA.pets[id]?.name || `Familier ${id}`;
+  // « âme de Brax », « âme d'Ouvrier Krall ».
+  const soulOf = (id) => { const n = petName(id); return /^[aeiouyhàâéèêëîïôöûü]/i.test(n) ? `âme d'${n}` : `âme de ${n}`; };
+  // Les familiers qu'un monstre peut faire avancer (pas déjà au niveau 3).
+  const petsOf = (code) => (DATA.byNpc[code] || [])
+    .map(([pet, chance]) => ({ pet: String(pet), chance, left: left(String(pet)) }))
+    .filter((p) => p.left == null || p.left > 0);
+
+  function bell(pet) {
+    const on = pins.has(pet);
+    return `<button type="button" class="a2dEvBell a2dPetBell${on ? " isOn" : ""}" data-pet="${esc(pet)}" title="${on ? "Suivi : clique pour arrêter" : "Suivre ce familier : alerte quand un de ses monstres apparaît"}">${BELL}</button>`;
+  }
+
+  function nearbyRows() {
+    const rows = state.nearby
+      .map((n) => ({ ...n, info: npcInfo[n.code], pets: petsOf(n.code) }))
+      .filter((n) => n.info && n.pets.length)
+      .sort((a, b) => Number(b.pets.some((p) => pins.has(p.pet))) - Number(a.pets.some((p) => pins.has(p.pet)))
+        || b.count - a.count || a.info.name.localeCompare(b.info.name, "fr"));
+    if (!rows.length) return `<li class="a2dEvNote">Aucun monstre à âme autour de toi pour le moment. Ils apparaissent ici dès que le jeu les envoie au meter.</li>`;
+    return rows.slice(0, 20).map((n) => {
+      const main = n.pets.slice().sort((a, b) => Number(pins.has(b.pet)) - Number(pins.has(a.pet)))[0];
+      const more = n.pets.length > 1 ? ` +${n.pets.length - 1}` : "";
+      const pinned = n.pets.some((p) => pins.has(p.pet));
+      return `<li class="a2dEvRow${pinned ? " isSoon" : ""}">
+        ${bell(main.pet)}
+        <span class="a2dEvWho"><b>${esc(n.info.name)}${n.count > 1 ? ` ×${n.count}` : ""}</b><small>${esc(soulOf(main.pet))}${more} · ${esc(main.chance)}</small></span>
+        <span class="a2dEvWhen"><b>${main.left == null ? `niv. ${n.info.level}` : `−${main.left} âmes`}</b><small>${esc(n.info.zone || n.info.map || "")}</small></span>
+      </li>`;
+    }).join("");
+  }
+
+  function pinnedRows() {
+    if (!pins.size) return "";
+    let html = `<li class="a2dEvHead">Familiers suivis</li>`;
+    for (const pet of pins) {
+      const p = DATA.pets[pet];
+      if (!p) continue;
+      const l = left(pet);
+      const best = (p.drops || []).slice().sort((a, b) => (b.spawns || 0) - (a.spawns || 0))[0];
+      const done = l === 0;
+      html += `<li class="a2dEvRow${done ? " isLive" : ""}">
+        ${bell(pet)}
+        <span class="a2dEvWho"><b>${esc(p.name)}</b><small>${best ? `${esc(best.name)} · ${esc(best.zone || best.map)}${best.tp ? ` · TP ${esc(best.tp)}` : ""}` : "seulement dans les coffres d'âmes"}</small></span>
+        <span class="a2dEvWhen"><b>${l == null ? "–" : done ? "niveau 3" : `−${l} âmes`}</b><small>${l == null ? "" : `niv. ${petLevel(pet)} · ${petPoints(pet)} âme${petPoints(pet) > 1 ? "s" : ""}`}</small></span>
+      </li>`;
+    }
+    return html;
+  }
+
+  function summary() {
+    if (!known()) return `<li class="a2dEvNote">Connecte-toi (ou change de personnage) avec le meter ouvert : il lira tes familiers et les âmes qu'il te manque.</li>`;
+    const ids = Object.keys(DATA.pets).filter((id) => !DATA.pets[id].chestOnly);
+    const open = ids.filter((id) => (left(id) ?? 1) > 0);
+    const souls = open.reduce((n, id) => n + (left(id) || 0), 0);
+    const g = state.pets.lastGain;
+    const last = g && Date.now() - g[1] < 30 * 60_000 ? ` · dernière âme : ${esc(petName(String(g[0])))}` : "";
+    return `<li class="a2dEvNote"><b>${souls.toLocaleString("fr-FR")}</b> âmes à trouver pour <b>${open.length}</b> familiers${last}</li>`;
+  }
+
+  function render() {
+    return `${summary()}<li class="a2dEvHead isLive">Autour de toi</li>${nearbyRows()}${pinnedRows()}`;
+  }
+
+  function toggle(pet) {
+    if (pins.has(pet)) pins.delete(pet); else pins.add(pet);
+    store.set(PINS_KEY, JSON.stringify([...pins]));
+  }
+
+  // Un monstre d'un familier suivi vient d'apparaître : popup + son.
+  function checkSpawns() {
+    for (const n of state.nearby) {
+      const before = lastSeenByCode.get(n.code) || 0;
+      lastSeenByCode.set(n.code, n.lastSeen);
+      if (firstPoll || n.lastSeen <= before) continue;
+      const followed = petsOf(n.code).filter((p) => pins.has(p.pet));
+      if (!followed.length) continue;
+      if (Date.now() - (lastAlertByCode.get(n.code) || 0) < ALERT_EVERY_MS) continue;
+      lastAlertByCode.set(n.code, Date.now());
+      const info = npcInfo[n.code] || { name: "Monstre à âme" };
+      const p = followed[0];
+      window.A2dEvents?.notify?.({
+        title: `${info.name} est apparu`,
+        detail: `${soulOf(p.pet)}${p.left != null ? ` · il manque ${p.left} âmes` : ""}${info.zone ? ` · ${info.zone}` : ""}`,
+      });
+    }
+    firstPoll = false;
+  }
+
+  async function poll() {
+    try {
+      const s = await invoke("a2d_radar_state");
+      if (s && typeof s === "object") {
+        state = { pets: s.pets || null, nearby: Array.isArray(s.nearby) ? s.nearby : [] };
+        checkSpawns();
+      }
+    } catch {}
+  }
+  setInterval(poll, 3000);
+  poll();
+
+  window.A2dPets = { render, toggle, poll };
+})();
