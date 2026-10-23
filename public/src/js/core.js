@@ -3443,6 +3443,34 @@ class DpsApp {
       else say(t("settings.update.failed", "Couldn't check. Try again later."));
     });
 
+    // Aion2DpsMeter : bouton « Vérifier les mises à jour » (Paramètres → Connexion).
+    const a2dUpdateBtn = document.querySelector(".a2dUpdateBtn");
+    const a2dUpdateStatus = document.querySelector(".a2dUpdateStatus");
+    const a2dUpdateVersion = document.querySelector(".a2dUpdateVersion");
+    const showA2dVersion = () => {
+      const v = String(window.dpsData?.getVersion?.() || "").trim().replace(/^v/i, "");
+      if (a2dUpdateVersion && v) a2dUpdateVersion.textContent = v;
+      return !!v;
+    };
+    showA2dVersion();
+    a2dUpdateBtn?.addEventListener("click", async () => {
+      if (!window.ReleaseChecker?.checkNow || a2dUpdateBtn.disabled) return;
+      const say = (text, cls = "") => {
+        if (!a2dUpdateStatus) return;
+        a2dUpdateStatus.textContent = text;
+        a2dUpdateStatus.className = `a2dUpdateStatus ${cls}`;
+      };
+      a2dUpdateBtn.disabled = true;
+      say("· vérification…");
+      const found = await window.ReleaseChecker.checkNow().catch(() => ({ state: "failed" }));
+      a2dUpdateBtn.disabled = false;
+      const latest = String(found?.latest || "").replace(/^v/i, "");
+      if (found?.state === "current") say("· tu as la dernière version", "isOk");
+      else if (found?.state === "installing") say(`· installation de la ${latest}…`, "isOk");
+      else if (found?.state === "update") say(`· la ${latest} est disponible`, "isWarn");
+      else say("· vérification impossible, réessaie plus tard", "isWarn");
+    });
+
     // Aion2DpsMeter : envoi automatique des combats au site (activé par défaut).
     const chevrerieUpload = document.querySelector(".chevrerieUploadCheckbox");
     if (chevrerieUpload) {
@@ -6160,6 +6188,9 @@ class DpsApp {
     const rawVersion = String(window.dpsData?.getVersion?.() || "").trim();
     const normalized = rawVersion.replace(/^v/i, "");
     this.settingsVersionValue.textContent = normalized ? `v${normalized}` : "-";
+    // Aion2DpsMeter : la même version sur la ligne « Mises à jour » de Connexion.
+    const a2dVersion = document.querySelector(".a2dUpdateVersion");
+    if (a2dVersion && normalized) a2dVersion.textContent = normalized;
     // The backend version fetch is async; retry briefly if it wasn't ready yet.
     if (!normalized && !this._versionRetryScheduled) {
       this._versionRetryScheduled = true;

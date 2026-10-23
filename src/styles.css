@@ -9033,3 +9033,8 @@ html.a2-offline .historyUploadBtn {
 /* Aion2DpsMeter : radar à familiers (le délai d'alerte ne le concerne pas) */
 .a2dEvents.isPets .a2dEvFoot { display: none; }
 .a2dEvents .a2dEvNote b { color: #f2c66d; }
+/* Aion2DpsMeter : bouton Mises à jour (Paramètres → Connexion) */
+.settingsPanel .a2dUpdateRow .a2dUpdateInfo { font-size: 12px; opacity: .8; margin-top: 3px; }
+.settingsPanel .a2dUpdateRow .a2dUpdateStatus.isOk { color: #6fdc8c; }
+.settingsPanel .a2dUpdateRow .a2dUpdateStatus.isWarn { color: #f2c66d; }
+.settingsPanel .a2dUpdateRow .a2dUpdateBtn[disabled] { opacity: .6; cursor: progress; }
