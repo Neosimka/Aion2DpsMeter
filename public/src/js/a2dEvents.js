@@ -156,7 +156,9 @@
     return rows.join("");
   }
 
-  let shift = (() => { const v = Number(store.get(SHIFT_KEY)); return Number.isFinite(v) && Math.abs(v) <= 120 ? v : 0; })();
+  // Le flux annonce les boss 30 s trop tard (constaté en jeu le 2026-10-24) : −30 s par défaut.
+  const DEFAULT_SHIFT = -30;
+  let shift = (() => { const raw = store.get(SHIFT_KEY); const v = Number(raw); return raw != null && raw !== "" && Number.isFinite(v) && Math.abs(v) <= 120 ? v : DEFAULT_SHIFT; })();
   function setShift(v) {
     shift = Math.max(-120, Math.min(120, Math.round(v)));
     store.set(SHIFT_KEY, String(shift));
