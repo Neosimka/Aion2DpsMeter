@@ -11,7 +11,11 @@
       "hps": "HPS",
       "totalHeal": "HEAL",
       "ariaHps": "Showing raw healing per second (excludes passive regen)",
-      "ariaHeal": "Showing total raw healing (excludes passive regen)"
+      "ariaHeal": "Showing total raw healing (excludes passive regen)",
+      "taken": "TAKEN",
+      "ariaTaken": "Showing damage taken",
+      "deaths": "DEATHS",
+      "ariaDeaths": "Showing deaths"
     }
   },
   "details": {

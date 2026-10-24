@@ -3831,6 +3831,7 @@ pub fn run() {
             crate::a2d_capture::a2d_capture_reveal,
             crate::a2d_events::a2d_boss_timers,
             crate::a2d_events::a2d_server_clock,
+            crate::chevrerie::a2d_legion_power,
             crate::plugins::plugin_abyss_siege,
             crate::plugins::plugin_storage_set,
             get_dps_snapshot,

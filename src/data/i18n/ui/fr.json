@@ -9,9 +9,13 @@
       "both": "LES 2",
       "ariaBoth": "Affiche les DPS et les dégâts totaux",
       "hps": "HPS",
-      "totalHeal": "HEAL",
+      "totalHeal": "SOINS",
       "ariaHps": "Affiche les soins par seconde",
-      "ariaHeal": "Affiche les soins totaux"
+      "ariaHeal": "Affiche les soins totaux",
+      "taken": "SUBIS",
+      "ariaTaken": "Affiche les dégâts subis",
+      "deaths": "MORTS",
+      "ariaDeaths": "Affiche les morts"
     }
   },
   "details": {

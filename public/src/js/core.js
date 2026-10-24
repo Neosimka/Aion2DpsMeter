@@ -1493,7 +1493,8 @@ class DpsApp {
     this.updateBossHpBar(targetMaxHp, targetTotalDamage, targetCurrentHp);
     this.updateTtk(targetIsBoss, targetId, battleTimeMs, targetMaxHp, targetTotalDamage, targetCurrentHp);
     // Aion2DpsMeter : minuteur d'enrage à côté du nom du boss.
-    window.A2dEnrage?.update?.(Number(targetMobCode) > 0 ? targetMobCode : 0, battleTimeMs, targetCurrentHp);
+    window.A2dEnrage?.update?.(Number(targetMobCode) > 0 ? targetMobCode : 0, battleTimeMs, targetCurrentHp,
+      targetIsBoss ? this._a2dTtkTotal : null);
     if (
       nextTargetLabel !== this._lastRenderedTargetLabel ||
       previousTargetName !== targetName ||
@@ -1615,6 +1616,10 @@ class DpsApp {
       const totalDamage = Math.trunc(Number(isObj ? value.amount : 0)) || 0;
       const hps = Math.trunc(Number(isObj ? value.hps : 0)) || 0;
       const healAmount = Math.trunc(Number(isObj ? value.healAmount : 0)) || 0;
+      // Aion2DpsMeter : dégâts subis et morts.
+      const damageReceived = Math.trunc(Number(isObj ? value.damageReceived : 0)) || 0;
+      const deaths = Math.trunc(Number(isObj ? value.deaths : 0)) || 0;
+      const deathsInDungeon = !!(isObj && value.deathsInDungeon);
       // Aion2DpsMeter : taux de critique global du joueur (en %).
       const critRaw = isObj ? Number(value.critRate) : NaN;
       const critRate = Number.isFinite(critRaw) ? critRaw : NaN;
@@ -1631,7 +1636,9 @@ class DpsApp {
 
       // Combat power comes from the party roster packet, so it only exists for
       // players actually in your party; 0 means "unknown", not "zero CP".
-      const combatPower = Math.trunc(Number(isObj ? value.combatPower : 0)) || 0;
+      let combatPower = Math.trunc(Number(isObj ? value.combatPower : 0)) || 0;
+      // Aion2DpsMeter : hors de ton groupe, celle des membres de la légion (site).
+      if (combatPower <= 0 && hasNickname) combatPower = window.A2dLegionPower?.of?.(name) || 0;
       const gearScore = Math.trunc(Number(isObj ? value.gearScore : 0)) || 0;
 
       rows.push({
@@ -1646,6 +1653,9 @@ class DpsApp {
         critRate,
         combatPower,
         gearScore,
+        damageReceived,
+        deaths,
+        deathsInDungeon,
         isUser: !isOthers && ((!!name && name === this.USER_NAME) || (hasLocalId && numericId === localId)),
         isOthers,
         isIdentifying,
@@ -2476,8 +2486,8 @@ class DpsApp {
       // DPS -> total damage -> both (-> HPS -> total heal, unless turned
       // off in Settings) -> DPS.
       const order = this.showHealModes === false
-        ? ["dps", "totalDamage", "both"]
-        : ["dps", "totalDamage", "both", "hps", "totalHeal"];
+        ? ["dps", "totalDamage", "both", "taken", "deaths"]
+        : ["dps", "totalDamage", "both", "hps", "totalHeal", "taken", "deaths"];
       const nextMode = order[(order.indexOf(this.displayMode) + 1) % order.length];
       this.setDisplayMode(nextMode, { persist: true });
       this.renderCurrentRows();
@@ -5426,8 +5436,12 @@ class DpsApp {
   }
 
   setDisplayMode(mode, { persist = false } = {}) {
-    const valid = this.showHealModes === false ? ["totalDamage", "both"] : ["totalDamage", "both", "hps", "totalHeal"];
+    const valid = this.showHealModes === false
+      ? ["totalDamage", "both", "taken", "deaths"]
+      : ["totalDamage", "both", "hps", "totalHeal", "taken", "deaths"];
     this.displayMode = valid.includes(mode) ? mode : "dps";
+    // Aion2DpsMeter : en vues Subis et Morts, ni critique ni part de dégâts.
+    document.documentElement.dataset.a2dMetric = this.displayMode;
     if (persist) {
       this.safeSetStorage(this.storageKeys.displayMode, this.displayMode);
     }
@@ -5442,6 +5456,8 @@ class DpsApp {
       hps: ["header.display.hps", "HPS", "header.display.ariaHps", "Showing healing per second"],
       totalHeal: ["header.display.totalHeal", "HEAL", "header.display.ariaHeal", "Showing total healing"],
       dps: ["header.display.dps", "DPS", "header.display.ariaDps", "Showing DPS"],
+      taken: ["header.display.taken", "SUBIS", "header.display.ariaTaken", "Dégâts subis"],
+      deaths: ["header.display.deaths", "MORTS", "header.display.ariaDeaths", "Morts"],
     }[this.displayMode];
     const label = this.i18n?.t(labelKey, labelFallback) ?? labelFallback;
     const ariaLabel = this.i18n?.t(ariaKey, ariaFallback) ?? ariaFallback;
@@ -5455,6 +5471,7 @@ class DpsApp {
     if (!this.battleTime?.setTtk) return;
     const max = Number(maxHp) || 0;
     if (!this.showTtk || !isBoss || !this.ttk || max <= 0 || !Number.isFinite(battleTimeMs)) {
+      this._a2dTtkTotal = null;
       this.battleTime.setTtk(null);
       return;
     }
@@ -5463,7 +5480,9 @@ class DpsApp {
       Number.isFinite(live) && live >= 0
         ? Math.min(max, Math.max(0, live))
         : Math.max(0, max - Math.max(0, Number(totalDamage) || 0));
-    this.battleTime.setTtk(this.ttk.update(targetId, battleTimeMs, remaining, max));
+    const total = this.ttk.update(targetId, battleTimeMs, remaining, max);
+    this._a2dTtkTotal = total;
+    this.battleTime.setTtk(total);
   }
 
   // Boss remaining-HP bar. There is no live boss current-HP packet, so remaining
@@ -5862,6 +5881,15 @@ class DpsApp {
     if (this.displayMode === "totalHeal") {
       const healAmount = Number(row?.healAmount) || 0;
       return { value: healAmount, text: this.formatAbbreviatedNumber(healAmount) };
+    }
+    // Aion2DpsMeter : dégâts subis, et morts.
+    if (this.displayMode === "taken") {
+      const taken = Number(row?.damageReceived) || 0;
+      return { value: taken, text: this.formatAbbreviatedNumber(taken) };
+    }
+    if (this.displayMode === "deaths") {
+      const deaths = Number(row?.deaths) || 0;
+      return { value: deaths, text: deaths ? `${deaths} mort${deaths > 1 ? "s" : ""}` : "0" };
     }
     const dps = Number(row?.dps) || 0;
     const dpsText = `${this.formatDpsThousands(dps)}${this.meterDpsSuffix()}`;

@@ -552,14 +552,57 @@ impl DpsCalculator {
             entry.hps = heal as f64 / bt as f64 * 1000.0;
         }
 
+        // Aion2DpsMeter : dégâts reçus des cibles du combat, par joueur.
+        for &tid in &target_ids {
+            let Some(td) = combat_data.get(&tid) else { continue };
+            for (&actor_id, ad) in &td.actors {
+                if ad.damage_received <= 0 { continue; }
+                let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
+                if raw_uid <= 0 { continue; }
+                let nickname = resolve_nickname(raw_uid, &nickname_data, &summon_data);
+                let uid = *canonical.get(&nickname).unwrap_or(&raw_uid);
+                if let Some(entry) = dps_data.map.get_mut(&uid) {
+                    entry.damage_received += ad.damage_received as f64;
+                }
+            }
+        }
+        // Aion2DpsMeter : morts. En donjon, depuis l'entrée dans l'instance ;
+        // ailleurs, pendant le combat.
+        {
+            let in_dungeon = self.data_storage.current_dungeon_id() > 0;
+            let since = self.data_storage.instance_started_ms();
+            let (from, to) = if in_dungeon && since > 0 {
+                (since, i64::MAX)
+            } else {
+                (fight_start, if fight_end > 0 { fight_end + 30_000 } else { i64::MAX })
+            };
+            if from > 0 {
+                for (entity, _, _) in self.data_storage.deaths_between(from, to) {
+                    let nickname = resolve_nickname(entity, &nickname_data, &summon_data);
+                    let uid = *canonical.get(&nickname).unwrap_or(&entity);
+                    if let Some(entry) = dps_data.map.get_mut(&uid) {
+                        entry.deaths += 1;
+                    }
+                }
+            }
+            for entry in dps_data.map.values_mut() {
+                entry.deaths_in_dungeon = in_dungeon;
+            }
+        }
+
         // Filter and compute DPS
         let party_members = self.data_storage.get_party_members();
+        let local_cp = self.data_storage.local_profile().combat_power.unwrap_or(0);
         let mut to_remove = Vec::new();
         for (&uid, data) in &mut dps_data.map {
             // Combat power joins on the character name: the roster carries an
             // account-level dbid, not the session entity id keyed here.
             let member = party_members.get(&data.nickname);
             data.combat_power = member.map(|m| m.combat_power).unwrap_or(0);
+            // Aion2DpsMeter : seul, ta propre puissance de combat (ta fiche).
+            if data.combat_power <= 0 && local_ids.as_ref().is_some_and(|ids| ids.contains(&uid)) {
+                data.combat_power = local_cp;
+            }
             data.gear_score = member.map(|m| m.gear_score).unwrap_or(0);
             if data.job.is_empty() {
                 if local_ids.as_ref().is_some_and(|ids| ids.contains(&uid))

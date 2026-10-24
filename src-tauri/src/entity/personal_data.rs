@@ -45,6 +45,16 @@ pub struct PersonalData {
     /// Aion2DpsMeter : taux de coups critiques (en %, coups directs hors DoT).
     #[serde(default)]
     pub crit_rate: f64,
+    /// Aion2DpsMeter : dégâts reçus des cibles du combat.
+    #[serde(default)]
+    pub damage_received: f64,
+    /// Aion2DpsMeter : morts, depuis l'entrée dans le donjon (ou pendant le
+    /// combat hors donjon).
+    #[serde(default)]
+    pub deaths: i32,
+    /// Aion2DpsMeter : `deaths` compte le donjon entier (affiché à côté du nom).
+    #[serde(default)]
+    pub deaths_in_dungeon: bool,
     #[serde(skip)]
     pub crit_hits: i64,
     #[serde(skip)]
@@ -68,6 +78,9 @@ impl PersonalData {
             hps: 0.0,
             heal_amount: 0.0,
             crit_rate: 0.0,
+            damage_received: 0.0,
+            deaths: 0,
+            deaths_in_dungeon: false,
             crit_hits: 0,
             direct_hits: 0,
         }
@@ -89,6 +102,9 @@ impl PersonalData {
             hps: 0.0,
             heal_amount: 0.0,
             crit_rate: 0.0,
+            damage_received: 0.0,
+            deaths: 0,
+            deaths_in_dungeon: false,
             crit_hits: 0,
             direct_hits: 0,
         }
@@ -106,6 +122,8 @@ impl PersonalData {
     pub fn merge_from(&mut self, other: &PersonalData) {
         self.amount += other.amount;
         self.heal_amount += other.heal_amount;
+        self.damage_received += other.damage_received;
+        self.deaths += other.deaths;
         self.crit_hits += other.crit_hits;
         self.direct_hits += other.direct_hits;
         for (skill_code, other_skill) in &other.analyzed_data {

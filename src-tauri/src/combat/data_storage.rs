@@ -592,6 +592,8 @@ struct Inner {
     /// (`42 36` flag 3) and party members' (`note_hp`). Details marks the
     /// players' on its DPS chart. The last `MAX_DEATHS` only.
     death_log: VecDeque<(i32, i64, Option<i64>)>,
+    /// Aion2DpsMeter : quand tu es entré dans l'instance actuelle (ms).
+    instance_started_ms: i64,
     /// The maps the player last opened, one per map (`capture::boss_map`),
     /// and a count that moves with each, for `boss_maps_since`.
     boss_maps: Vec<crate::capture::boss_map::BossMap>,
@@ -767,6 +769,7 @@ impl DataStorage {
                 hostile_target_ids: HashSet::new(),
                 dead_entity_ids: HashSet::new(),
                 death_log: VecDeque::new(),
+                instance_started_ms: 0,
                 boss_maps: Vec::new(),
                 boss_map_seq: 0,
                 abyss_artifacts: crate::capture::abyss_artifacts::ArtifactState { wars: Vec::new(), artifacts: Vec::new() },
@@ -1712,6 +1715,11 @@ impl DataStorage {
             .then(|| (inner.abyss_artifacts_seq, inner.abyss_artifacts.clone(), inner.abyss_artifacts_seen_ms))
     }
 
+    /// Aion2DpsMeter : quand tu es entré dans l'instance actuelle (0 = inconnu).
+    pub fn instance_started_ms(&self) -> i64 {
+        self.inner.read().instance_started_ms
+    }
+
     pub fn deaths_between(&self, from: i64, to: i64) -> Vec<(i32, i64, Option<i64>)> {
         self.inner.read().death_log.iter().filter(|d| d.1 >= from && d.1 <= to).copied().collect()
     }
@@ -1929,6 +1937,7 @@ impl DataStorage {
         inner.zone_generation += 1;
         if !(from.is_some_and(is_open_world_map) && is_open_world_map(map_id)) {
             inner.instance_generation += 1;
+            inner.instance_started_ms = now_ms();
         }
         let dungeon = dungeon_of_map(inner.roster_dungeon_id, Some(map_id));
         if dungeon != inner.current_dungeon_id {

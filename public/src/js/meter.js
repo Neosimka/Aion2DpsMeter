@@ -146,6 +146,11 @@ const createMeterUI = ({
     combatPowerEl.className = "combatPower";
     combatPowerEl.style.display = "none";
 
+    // Aion2DpsMeter : morts dans le donjon, à côté du pseudo.
+    const deathsEl = document.createElement("span");
+    deathsEl.className = "a2dDeaths";
+    deathsEl.hidden = true;
+
     const dpsContainer = document.createElement("div");
     const dpsNumber = document.createElement("p");
     dpsContainer.className = "dps";
@@ -166,6 +171,7 @@ const createMeterUI = ({
     contentEl.appendChild(nameEl);
     contentEl.appendChild(supporterBadgeEl);
     contentEl.appendChild(a2toolsBadgeEl);
+    contentEl.appendChild(deathsEl);
     contentEl.appendChild(combatPowerEl);
     contentEl.appendChild(dpsContainer);
     rowEl.appendChild(fillTrackEl);
@@ -179,6 +185,8 @@ const createMeterUI = ({
       supporterBadgeEl,
       a2toolsBadgeEl,
       combatPowerEl,
+      deathsEl,
+      lastDeathsText: "",
       rankEl,
       dpsContainer,
       classIconEl,
@@ -404,6 +412,13 @@ const createMeterUI = ({
 
       // Beside the name: combat power or gear score, as Settings → Meter
       // Settings says (partyStatText, above).
+      const deathsText = row.deathsInDungeon && Number(row.deaths) > 0 ? `💀${Number(row.deaths)}` : "";
+      if (view.lastDeathsText !== deathsText) {
+        view.deathsEl.textContent = deathsText;
+        view.deathsEl.hidden = !deathsText;
+        view.deathsEl.title = deathsText ? `${row.deaths} mort${row.deaths > 1 ? "s" : ""} dans ce donjon` : "";
+        view.lastDeathsText = deathsText;
+      }
       const combatPowerText = partyStatText(row, getPartyStat?.());
       if (view.lastCombatPowerText !== combatPowerText) {
         view.combatPowerEl.textContent = combatPowerText;

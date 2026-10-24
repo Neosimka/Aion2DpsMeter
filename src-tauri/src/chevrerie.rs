@@ -478,6 +478,16 @@ pub fn retry_due(app: &tauri::AppHandle, state: &AppState) {
 }
 
 static MEMBERS: Mutex<Option<(i64, Vec<String>)>> = Mutex::new(None);
+/// Puissance de combat des membres de la légion (nom normalisé → PC), d'après le site.
+static POWER: Mutex<Option<HashMap<String, i64>>> = Mutex::new(None);
+
+/// Aion2DpsMeter : la puissance de combat des membres de la légion, pour
+/// l'afficher à côté de leur nom quand ils ne sont pas dans ton groupe.
+#[tauri::command]
+pub async fn a2d_legion_power(state: tauri::State<'_, crate::app::AppState>) -> Result<HashMap<String, i64>, String> {
+    members(&state.http).await?;
+    Ok(POWER.lock().ok().and_then(|p| p.clone()).unwrap_or_default())
+}
 
 async fn members(http: &reqwest::Client) -> Result<Vec<String>, String> {
     let now = crate::clock::now_ms();
@@ -491,6 +501,9 @@ async fn members(http: &reqwest::Client) -> Result<Vec<String>, String> {
     #[derive(Deserialize)]
     struct Members {
         members: Vec<String>,
+        /// Puissance de combat de chaque membre (site v4.3.1 ou plus récent).
+        #[serde(default)]
+        power: HashMap<String, i64>,
     }
     let list: Members = http
         .get(format!("{SITE_API}/members"))
@@ -505,6 +518,9 @@ async fn members(http: &reqwest::Client) -> Result<Vec<String>, String> {
         .await
         .map_err(|e| e.to_string())
         .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))?;
+    if let Ok(mut p) = POWER.lock() {
+        *p = Some(list.power.iter().map(|(n, &cp)| (normalize_name(n), cp)).collect());
+    }
     let list: Vec<String> = list.members.iter().map(|m| m.trim().to_string()).filter(|m| !m.is_empty()).collect();
     if let Ok(mut cache) = MEMBERS.lock() {
         *cache = Some((now, list.clone()));

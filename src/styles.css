@@ -9104,3 +9104,14 @@ html.a2-offline .historyUploadBtn {
 .a2dEvents .a2dBossShift > span:first-child { display: grid; }
 .a2dEvents .a2dBossShift .a2dCubeOpts { flex: none; white-space: nowrap; }
 .a2dEvents .a2dBossShift .a2dCubeOpt { padding: 3px 7px; }
+
+/* Aion2DpsMeter : estimation de mort du boss, morts en donjon */
+.a2dEnrage { display: inline-flex; align-items: center; gap: 6px; }
+.a2dEnrage .a2dKill { font-style: normal; font-weight: 700; opacity: .9; }
+.a2dEnrage .a2dKill.isOk { color: #6fdc9a; }
+.a2dEnrage .a2dKill.isLate { color: #ff7a66; }
+.list .item .a2dDeaths { flex: none; font-size: 11px; font-weight: 700; color: #ff8a7a; margin-left: 4px; white-space: nowrap; }
+:root[data-a2d-metric="taken"] .list .item .critRate,
+:root[data-a2d-metric="taken"] .list .item .dpsContribution,
+:root[data-a2d-metric="deaths"] .list .item .critRate,
+:root[data-a2d-metric="deaths"] .list .item .dpsContribution { display: none !important; }
