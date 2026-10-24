@@ -9096,3 +9096,11 @@ html.a2-offline .historyUploadBtn {
 .a2dEnrage.isSoon { background: rgba(240,160,60,.22); color: #f5b45a; }
 .a2dEnrage.isOn { background: rgba(224,82,63,.28); color: #ff7a66; animation: a2dEnragePulse 1s ease-in-out infinite; }
 @keyframes a2dEnragePulse { 50% { opacity: .55; } }
+
+/* Aion2DpsMeter : correction des timers de boss */
+.a2dEvents .a2dBossShift { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 6px; font-size: 11px; color: rgba(255,255,255,.7); list-style: none; }
+.a2dEvents .a2dBossShift small { opacity: .7; }
+.a2dEvents .a2dBossShift .a2dCubeOpts b { padding: 0 8px; font-variant-numeric: tabular-nums; color: var(--title, #fff); align-self: center; }
+.a2dEvents .a2dBossShift > span:first-child { display: grid; }
+.a2dEvents .a2dBossShift .a2dCubeOpts { flex: none; white-space: nowrap; }
+.a2dEvents .a2dBossShift .a2dCubeOpt { padding: 3px 7px; }

@@ -23,3 +23,38 @@ pub async fn a2d_boss_timers(app: tauri::AppHandle, server: u32) -> Result<Optio
     }
     crate::plugins::boss_timers(&app, server).await
 }
+
+/// L'heure exacte (ms), d'après le serveur qui publie les timers (en-tête
+/// `Date` de sa réponse) : l'horloge du PC peut dériver de plusieurs dizaines
+/// de secondes, et les timers des boss sont des heures absolues.
+#[cfg(feature = "online")]
+#[tauri::command]
+pub async fn a2d_server_clock(app: tauri::AppHandle) -> Result<i64, String> {
+    use tauri::Manager;
+    let state = app.try_state::<crate::app::AppState>().ok_or("no app state")?;
+    let sent = chrono::Utc::now().timestamp_millis();
+    let res = state
+        .http
+        .head("https://cdn.a2tools.app/feeds/boss-timers/1103.json")
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    let back = chrono::Utc::now().timestamp_millis();
+    let date = res
+        .headers()
+        .get(reqwest::header::DATE)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| chrono::DateTime::parse_from_rfc2822(v).ok())
+        .ok_or("no Date header")?;
+    // L'en-tête est à la seconde près : +500 ms pour viser le milieu, et
+    // l'aller-retour partagé en deux.
+    let server = date.timestamp_millis() + 500;
+    Ok(server + (back - sent) / 2 - back + chrono::Utc::now().timestamp_millis())
+}
+
+#[cfg(not(feature = "online"))]
+#[tauri::command]
+pub async fn a2d_server_clock() -> Result<i64, String> {
+    Err("this meter is built without network features".into())
+}

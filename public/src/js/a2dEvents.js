@@ -19,6 +19,10 @@
   const SOON_MS = 15 * 60_000;
   const LAST_SERVER_KEY = "a2d.lastServer";
   const TAB_KEY = "a2d.eventsTab";
+  const SHIFT_KEY = "a2d.bossShift"; // correction des timers de boss, en secondes
+  // L'horloge du PC peut dériver : écart avec l'heure du serveur des timers.
+  let skew = 0;
+  const nowMs = () => Date.now() + skew;
 
   const invoke = (cmd, args) => window.__TAURI__?.core?.invoke?.(cmd, args);
   const store = {
@@ -152,6 +156,17 @@
     return rows.join("");
   }
 
+  let shift = (() => { const v = Number(store.get(SHIFT_KEY)); return Number.isFinite(v) && Math.abs(v) <= 120 ? v : 0; })();
+  function setShift(v) {
+    shift = Math.max(-120, Math.min(120, Math.round(v)));
+    store.set(SHIFT_KEY, String(shift));
+  }
+  function shiftRow() {
+    const sign = shift > 0 ? `+${shift}` : `${shift}`;
+    return `<li class="a2dBossShift"><span>Correction des timers${Math.abs(skew) >= 2000 ? `<small>horloge du PC corrigée de ${Math.round(skew / 1000)} s</small>` : ""}</span>
+      <span class="a2dCubeOpts"><button type="button" class="a2dCubeOpt" data-boss-shift="-30">−30</button><button type="button" class="a2dCubeOpt" data-boss-shift="-5">−5</button><b>${shift ? `${sign} s` : "0 s"}</b><button type="button" class="a2dCubeOpt" data-boss-shift="5">+5</button><button type="button" class="a2dCubeOpt" data-boss-shift="30">+30</button></span></li>`;
+  }
+
   function renderBosses(now) {
     if (!serverId) return `<p class="a2dEvNote">Connecte-toi en jeu une fois : le meter saura ton serveur et affichera ses boss.</p>`;
     const s = side();
@@ -159,7 +174,7 @@
       .filter(([, b]) => !b.side || !s || b.side === s)
       .map(([id, b]) => {
         const t = feed && feed.server === serverId ? feed.bosses?.[id] || null : null;
-        const next = t?.state === "dead" && t.nextSpawn ? t.nextSpawn * 1000 : null;
+        const next = t?.state === "dead" && t.nextSpawn ? t.nextSpawn * 1000 + shift * 1000 : null;
         const group = t?.state === "up" ? "up" : !next ? "unknown" : next <= now ? (now - next <= WINDOW_MS ? "window" : "unknown") : "upcoming";
         return { id, b, t, next, group };
       });
@@ -195,13 +210,13 @@
     else if (!feed) note = "Lecture des timers…";
     else if (!html) note = "Aucun timer connu pour ce serveur en ce moment.";
     if (unknown) note += `${note ? " " : ""}${unknown} boss sans information récente.`;
-    return `${html}${note ? `<li class="a2dEvNote">${esc(note)}</li>` : ""}`;
+    return `${shiftRow()}${html}${note ? `<li class="a2dEvNote">${esc(note)}</li>` : ""}`;
   }
 
   function render() {
     const el = panel();
     if (!el || !open) return;
-    const now = Date.now();
+    const now = nowMs();
     const serverName = serverId ? DATA.servers[String(serverId)] || `serveur ${serverId}` : "";
     const serverClock = new Date(now).toLocaleTimeString("fr-FR", { timeZone: timeZone(), hour: "2-digit", minute: "2-digit" });
     el.querySelector(".a2dEvServer").textContent = `${serverName ? `${serverName} · ` : ""}heure serveur ${serverClock}`;
@@ -280,7 +295,7 @@
   // ---------- vérification des alertes (toutes les 5 s, panneau ouvert ou non) ----------
   function checkAlerts() {
     if (!alerts.size) return;
-    const now = Date.now();
+    const now = nowMs();
     const leadMs = lead * 60_000;
     const due = [];
     const tz = timeZone();
@@ -297,7 +312,7 @@
         const key = `boss:${id}`;
         const t = feed.bosses?.[id];
         if (!alerts.has(key) || t?.state !== "dead" || !t.nextSpawn) continue;
-        due.push({ key, start: t.nextSpawn * 1000, verb: "apparaît", title: text(b.name) || "Boss de terrain", where: text(b.where) });
+        due.push({ key, start: t.nextSpawn * 1000 + shift * 1000, verb: "apparaît", title: text(b.name) || "Boss de terrain", where: text(b.where) });
       }
     }
     for (const d of due) {
@@ -372,6 +387,8 @@
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!open); }
     });
     el.querySelector(".a2dEvList").addEventListener("click", (e) => {
+      const bs = e.target.closest("[data-boss-shift]");
+      if (bs) { setShift(shift + Number(bs.dataset.bossShift)); render(); return; }
       const pv = e.target.closest("[data-pet-view]");
       if (pv) { window.A2dPets?.setView?.(pv.dataset.petView); render(); return; }
       const pc = e.target.closest("[data-pet-capture]");
@@ -392,6 +409,16 @@
       render();
     });
     setInterval(checkAlerts, 5000);
+    const syncClock = async () => {
+      try {
+        const t = await invoke("a2d_server_clock");
+        const d = Number(t) - Date.now();
+        // Une heure plausible seulement (moins d'une heure d'écart).
+        if (Number(t) > 1.6e12 && Math.abs(d) < 3_600_000) skew = d;
+      } catch {}
+    };
+    syncClock();
+    setInterval(syncClock, 10 * 60_000);
     // Windows ne laisse jouer un son qu'après une action dans la fenêtre : le
     // premier clic (ou touche) dans le meter débloque le son des alertes.
     const unlockOnce = () => unlockAudio();
