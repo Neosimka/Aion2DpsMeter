@@ -29,7 +29,6 @@ struct Rec {
     until: i64,
     bytes: u64,
     lines: u64,
-    last_me: i64,
     last_path: Option<PathBuf>,
 }
 
@@ -74,14 +73,6 @@ pub fn record(cap: &CapturedPayload, port: u16) {
     if now > r.until || r.bytes > MAX_BYTES {
         stop_locked(&mut r);
         return;
-    }
-    // Toutes les 2 s : ton numéro d'entité et ta position selon le meter.
-    if now - r.last_me >= 2000 {
-        r.last_me = now;
-        let line = format!("#ME|{now}|{}\n", crate::a2d_pos::debug_line());
-        if let Some(f) = r.file.as_mut() {
-            let _ = f.write_all(line.as_bytes());
-        }
     }
     let from_server = cap.src_port == port;
     let client = if from_server { cap.dst_port } else { cap.src_port };

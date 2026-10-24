@@ -266,10 +266,6 @@ impl StreamProcessor {
         // Aion2DpsMeter : familiers (liste, âmes, niveaux) pour le radar.
         #[cfg(feature = "desktop")]
         crate::a2d_radar::frame(packet);
-        #[cfg(feature = "desktop")]
-        crate::a2d_cubes::frame(packet);
-        #[cfg(feature = "desktop")]
-        crate::a2d_pos::frame(packet, self.data_storage.local_player_id());
 
         // Buffs, debuffs and stats, recorded alongside (see `capture::abnormal`).
         self.data_storage.note_abnormal_packet(packet);

@@ -9088,3 +9088,11 @@ html.a2-offline .historyUploadBtn {
 .a2dEvents .a2dMapDz { font-size: 10px; opacity: .75; margin-left: 2px; }
 .a2dEvents .a2dMap { width: 170px; height: 170px; }
 .a2dEvents .a2dEvList { max-height: 360px; }
+
+/* Aion2DpsMeter : minuteur d'enrage */
+.bossNames { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.bossNames .bossName { min-width: 0; }
+.a2dEnrage { flex: none; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); white-space: nowrap; }
+.a2dEnrage.isSoon { background: rgba(240,160,60,.22); color: #f5b45a; }
+.a2dEnrage.isOn { background: rgba(224,82,63,.28); color: #ff7a66; animation: a2dEnragePulse 1s ease-in-out infinite; }
+@keyframes a2dEnragePulse { 50% { opacity: .55; } }

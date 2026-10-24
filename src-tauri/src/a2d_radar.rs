@@ -198,7 +198,6 @@ pub fn note_spawn(entity: i32, code: i32) {
 
 /// Mort ou disparu.
 pub fn note_gone(entity: i32) {
-    crate::a2d_pos::forget(entity);
     if let Ok(mut r) = radar().lock() {
         r.nearby.remove(&entity);
     }
@@ -206,7 +205,6 @@ pub fn note_gone(entity: i32) {
 
 /// Téléportation ou changement de zone : le jeu renverra ce qui est autour.
 pub fn note_zone_change() {
-    crate::a2d_pos::note_zone_change();
     if let Ok(mut r) = radar().lock() {
         r.nearby.clear();
     }
@@ -230,21 +228,9 @@ pub fn a2d_radar_state() -> Value {
         e.count += 1;
         e.last_seen = e.last_seen.max(s.at);
     }
-    // Chaque monstre avec sa position, pour la carte du radar.
-    let points: Vec<Value> = r
-        .nearby
-        .iter()
-        .filter_map(|(&e, s)| {
-            let p = crate::a2d_pos::of(e)?;
-            Some(serde_json::json!({ "code": s.code, "x": p.x, "y": p.y, "z": p.z }))
-        })
-        .take(600)
-        .collect();
     serde_json::json!({
         "pets": r.pets,
         "nearby": by_code.into_values().collect::<Vec<_>>(),
-        "points": points,
-        "me": crate::a2d_pos::me(),
         "now": now_ms(),
     })
 }

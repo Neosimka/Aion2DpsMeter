@@ -1,5 +1,5 @@
-Aion2DpsMeter : les codes et emplacements des cubes cachés (src-tauri/src/a2d_cube_spots.tsv,
-src-tauri/src/a2d_cubes.rs) viennent de RiftConsole, sous la licence suivante :
+Aion2DpsMeter : les temps avant l'enrage des boss (public/src/js/a2dBerserkData.js)
+viennent de RiftConsole (data/npc_berserk.tsv), sous la licence suivante :
 
 MIT License
 

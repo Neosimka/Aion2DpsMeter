@@ -1492,6 +1492,8 @@ class DpsApp {
     }
     this.updateBossHpBar(targetMaxHp, targetTotalDamage, targetCurrentHp);
     this.updateTtk(targetIsBoss, targetId, battleTimeMs, targetMaxHp, targetTotalDamage, targetCurrentHp);
+    // Aion2DpsMeter : minuteur d'enrage à côté du nom du boss.
+    window.A2dEnrage?.update?.(Number(targetMobCode) > 0 ? targetMobCode : 0, battleTimeMs, targetCurrentHp);
     if (
       nextTargetLabel !== this._lastRenderedTargetLabel ||
       previousTargetName !== targetName ||

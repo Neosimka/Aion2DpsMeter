@@ -38,11 +38,7 @@ pub mod plugins;
 #[cfg(feature = "desktop")]
 mod a2d_radar;
 #[cfg(feature = "desktop")]
-mod a2d_cubes;
-#[cfg(feature = "desktop")]
 mod a2d_capture;
-#[cfg(feature = "desktop")]
-mod a2d_pos;
 // Aion2DpsMeter : panneau Événements.
 #[cfg(feature = "desktop")]
 mod a2d_events;
