@@ -62,6 +62,9 @@
     // Seulement les familiers qu'il te reste à compléter (niveau 3 non atteint).
     .filter((p) => p.left != null && p.left > 0);
 
+  // La miniature du familier (portrait du jeu, 64 px).
+  const ico = (pet) => `<img class="a2dPetIco" src="/src/assets/pets/${esc(pet)}.webp" alt="" loading="lazy" decoding="async">`;
+
   function bell(pet) {
     const on = pins.has(pet);
     return `<button type="button" class="a2dEvBell a2dPetBell${on ? " isOn" : ""}" data-pet="${esc(pet)}" title="${on ? "Suivi : clique pour arrêter" : "Suivre ce familier : alerte quand un de ses monstres apparaît"}">${BELL}</button>`;
@@ -91,7 +94,7 @@
       const more = n.pets.length > 1 ? ` +${n.pets.length - 1}` : "";
       const pinned = n.pets.some((p) => pins.has(p.pet));
       return `<li class="a2dEvRow${pinned ? " isSoon" : ""}">
-        ${bell(main.pet)}
+        ${bell(main.pet)}${ico(main.pet)}
         <span class="a2dEvWho"><b>${esc(n.info.name)}${n.count > 1 ? ` ×${n.count}` : ""}</b><small>${esc(soulOf(main.pet))}${more} · ${esc(main.chance)}</small>${progress(main.pet)}</span>
         <span class="a2dEvWhen"><b>${main.left == null ? `niv. ${n.info.level}` : `−${main.left} âmes`}</b><small>${esc(n.info.zone || n.info.map || "")}</small></span>
       </li>`;
@@ -108,7 +111,7 @@
       const best = (p.drops || []).slice().sort((a, b) => (b.spawns || 0) - (a.spawns || 0))[0];
       const done = l === 0;
       html += `<li class="a2dEvRow${done ? " isLive" : ""}">
-        ${bell(pet)}
+        ${bell(pet)}${ico(pet)}
         <span class="a2dEvWho"><b>${esc(p.name)}</b><small>${best ? `${esc(best.name)} · ${esc(best.zone || best.map)}${best.tp ? ` · TP ${esc(best.tp)}` : ""}` : "seulement dans les coffres d'âmes"}</small></span>
         <span class="a2dEvWhen"><b>${l == null ? "–" : done ? "niveau 3" : `−${l} âmes`}</b><small>${l == null ? "" : `niv. ${petLevel(pet)} · ${petPoints(pet)} âme${petPoints(pet) > 1 ? "s" : ""}`}</small></span>
       </li>`;
@@ -138,7 +141,7 @@
     for (const { id, p, left: l } of list.slice(0, max)) {
       const best = (p.drops || []).slice().sort((a, b) => (b.spawns || 0) - (a.spawns || 0))[0];
       html += `<li class="a2dEvRow">
-        ${bell(id)}
+        ${bell(id)}${ico(id)}
         <span class="a2dEvWho"><b>${esc(p.name)}</b><small>${best ? `${esc(best.name)} · ${esc(best.zone || best.map)}` : ""}</small>${progress(id)}</span>
         <span class="a2dEvWhen"><b>−${l} âmes</b><small>niv. ${petLevel(id)}</small></span>
       </li>`;
@@ -182,7 +185,7 @@
 
   function nav() {
     const b = (v, label) => `<button type="button" class="a2dCubeOpt${view === v ? " isOn" : ""}" data-pet-view="${v}">${label}</button>`;
-    return `<li class="a2dPetNav"><span class="a2dCubeOpts">${b("near", "Autour")}${b("missing", "Il te manque")}${b("collection", "Collection")}</span><small>+${session.souls} âmes · ${session.ups} niv. · ${session.fresh} nouv.</small></li>`;
+    return `<li class="a2dPetNav"><span class="a2dCubeOpts">${b("near", "Autour")}${b("missing", "Il te manque")}${b("collection", "Collection")}</span><small>+${session.souls} âmes · ${session.ups} niv. · ${session.fresh} nouv.</small>${window.A2D_PETS_WINDOW ? "" : `<button type="button" class="a2dCubeOpt a2dPetDetach" data-pet-detach="1" title="Ouvrir le radar dans sa propre fenêtre">⧉ Détacher</button>`}</li>`;
   }
 
   function render() {
@@ -263,6 +266,14 @@
   }
   setInterval(poll, 3000);
   poll();
+
+  // Les cloches et la vue, partagées avec la fenêtre détachée.
+  window.addEventListener("storage", (e) => {
+    if (e.key === PINS_KEY) { try { pins = new Set(JSON.parse(e.newValue || "[]").map(String)); } catch {} }
+    if (e.key === VIEW_KEY && ["near", "missing", "collection"].includes(e.newValue)) view = e.newValue;
+  });
+  // Une miniature absente : on la cache (pas d'attribut onerror, interdit par la CSP).
+  document.addEventListener("error", (e) => { if (e.target?.classList?.contains("a2dPetIco")) e.target.style.visibility = "hidden"; }, true);
 
   window.A2dPets = { render, toggle, poll, setView, captureAction };
 })();

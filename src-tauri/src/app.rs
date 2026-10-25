@@ -2045,7 +2045,38 @@ const DETAILS_USER_PLACED_KEY: &str = "window.details.userPlaced";
 /// left. Per-fight windows (details-*) are deliberately absent: they are
 /// opened to be read and closed, and keying geometry by fight id would grow
 /// settings without bound.
-const TOOL_WINDOWS: [&str; 3] = ["details", "settings", "history"];
+const TOOL_WINDOWS: [&str; 4] = ["details", "settings", "history", A2D_PETS_WINDOW];
+
+/// Aion2DpsMeter : la fenêtre détachée du radar à familiers.
+const A2D_PETS_WINDOW: &str = "a2d-pets";
+
+/// Ouvre la fenêtre du radar à familiers, ou la ferme si elle est ouverte.
+#[tauri::command]
+fn a2d_toggle_pets_window(app: tauri::AppHandle) -> Result<bool, String> {
+    if let Some(w) = app.get_webview_window(A2D_PETS_WINDOW) {
+        let _ = w.close();
+        return Ok(false);
+    }
+    let (x, y, w, h) = birth_place(&app, Some(A2D_PETS_WINDOW), (360.0, 560.0), true);
+    let window = tauri::WebviewWindowBuilder::new(&app, A2D_PETS_WINDOW, tauri::WebviewUrl::App("a2d-pets.html".into()))
+        .initialization_script("window.A2D_PETS_WINDOW = true;")
+        .title("Aion2DpsMeter — Familiers")
+        .decorations(false)
+        .transparent(true)
+        .shadow(false)
+        .always_on_top(true)
+        .resizable(true)
+        .skip_taskbar(true)
+        .position(x, y)
+        .inner_size(w, h)
+        .min_inner_size(260.0, 220.0)
+        .focused(false)
+        .build()
+        .map_err(|e| e.to_string())?;
+    platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: w, height: h }));
+    restore_window_geometry(&app, &window, A2D_PETS_WINDOW);
+    Ok(true)
+}
 
 /// Settings, History and Details are on top of the overlay (always on top
 /// itself), or they could not be reached over it while the game is in front.
@@ -3832,6 +3863,7 @@ pub fn run() {
             crate::a2d_events::a2d_boss_timers,
             crate::a2d_events::a2d_server_clock,
             crate::chevrerie::a2d_legion_power,
+            a2d_toggle_pets_window,
             crate::plugins::plugin_abyss_siege,
             crate::plugins::plugin_storage_set,
             get_dps_snapshot,

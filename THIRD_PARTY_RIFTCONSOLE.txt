@@ -1,4 +1,5 @@
 Aion2DpsMeter : les temps avant l'enrage des boss (public/src/js/a2dBerserkData.js)
+et les miniatures des familiers (public/src/assets/pets, réduites depuis data/icons/pet)
 viennent de RiftConsole (data/npc_berserk.tsv), sous la licence suivante :
 
 MIT License
