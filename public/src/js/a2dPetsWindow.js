@@ -23,9 +23,12 @@
   document.querySelector(".a2dPetWinClose")?.addEventListener("click", () => {
     invoke("close_tool_window").catch(() => window.close());
   });
-  // Déplacement : WebView2 suit la zone « drag » ; ailleurs, on la demande.
+  // Déplacement par le titre, demandé au meter (start_tool_drag), comme ses
+  // autres fenêtres. Surtout pas -webkit-app-region : WebView2 recalcule alors
+  // une fenêtre d'aide à chaque changement de la page, et ce calcul attend les
+  // autres fenêtres, jeu compris (le meter se figeait).
   document.querySelector(".a2dPetWinHead")?.addEventListener("mousedown", (e) => {
-    if (e.button !== 0 || e.target.closest("button") || !/Linux/i.test(navigator.userAgent)) return;
+    if (e.button !== 0 || e.target.closest("button")) return;
     invoke("start_tool_drag").catch(() => {});
   });
   setInterval(render, 1000);
