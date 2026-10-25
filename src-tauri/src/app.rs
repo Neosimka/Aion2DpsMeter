@@ -2051,13 +2051,18 @@ const TOOL_WINDOWS: [&str; 4] = ["details", "settings", "history", A2D_PETS_WIND
 const A2D_PETS_WINDOW: &str = "a2d-pets";
 
 /// Ouvre la fenêtre du radar à familiers, ou la ferme si elle est ouverte.
+/// `async` obligatoire : une commande synchrone qui crée une fenêtre bloque
+/// WebView2 sous Windows (voir `open_settings_window`).
 #[tauri::command]
-fn a2d_toggle_pets_window(app: tauri::AppHandle) -> Result<bool, String> {
+async fn a2d_toggle_pets_window(app: tauri::AppHandle) -> Result<bool, String> {
     if let Some(w) = app.get_webview_window(A2D_PETS_WINDOW) {
         let _ = w.close();
         return Ok(false);
     }
     let (x, y, w, h) = birth_place(&app, Some(A2D_PETS_WINDOW), (360.0, 560.0), true);
+    // Jamais devant le jeu : la fenêtre ne prend pas le focus (comme les
+    // icônes des plugins), les clics et le déplacement l'atteignent quand même.
+    let front = platform::window::front_window();
     let window = tauri::WebviewWindowBuilder::new(&app, A2D_PETS_WINDOW, tauri::WebviewUrl::App("a2d-pets.html".into()))
         .initialization_script("window.A2D_PETS_WINDOW = true;")
         .title("Aion2DpsMeter — Familiers")
@@ -2071,8 +2076,10 @@ fn a2d_toggle_pets_window(app: tauri::AppHandle) -> Result<bool, String> {
         .inner_size(w, h)
         .min_inner_size(260.0, 220.0)
         .focused(false)
+        .focusable(false)
         .build()
         .map_err(|e| e.to_string())?;
+    platform::window::never_activate(&window, front);
     platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: w, height: h }));
     restore_window_geometry(&app, &window, A2D_PETS_WINDOW);
     Ok(true)
