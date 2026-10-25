@@ -185,7 +185,7 @@
 
   function nav() {
     const b = (v, label) => `<button type="button" class="a2dCubeOpt${view === v ? " isOn" : ""}" data-pet-view="${v}">${label}</button>`;
-    return `<li class="a2dPetNav"><span class="a2dCubeOpts">${b("near", "Autour")}${b("missing", "Il te manque")}${b("collection", "Collection")}</span><small>+${session.souls} âmes · ${session.ups} niv. · ${session.fresh} nouv.</small>${window.A2D_PETS_WINDOW ? "" : `<button type="button" class="a2dCubeOpt a2dPetDetach" data-pet-detach="1" title="Ouvrir le radar dans sa propre fenêtre">⧉ Détacher</button>`}</li>`;
+    return `<li class="a2dPetNav"><span class="a2dCubeOpts">${b("near", "Autour")}${b("missing", "Il te manque")}${b("collection", "Collection")}</span><small>+${session.souls} âmes · ${session.ups} niv. · ${session.fresh} nouv.</small></li>`;
   }
 
   function render() {

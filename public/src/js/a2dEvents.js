@@ -391,7 +391,6 @@
     el.querySelector(".a2dEvList").addEventListener("click", (e) => {
       const bs = e.target.closest("[data-boss-shift]");
       if (bs) { setShift(shift + Number(bs.dataset.bossShift)); render(); return; }
-      if (e.target.closest("[data-pet-detach]")) { invoke("a2d_toggle_pets_window").catch(() => {}); return; }
       const pv = e.target.closest("[data-pet-view]");
       if (pv) { window.A2dPets?.setView?.(pv.dataset.petView); render(); return; }
       const pc = e.target.closest("[data-pet-capture]");
