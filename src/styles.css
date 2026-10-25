@@ -8951,8 +8951,8 @@ html.a2-offline .historyUploadBtn {
 /* ===== Aion2DpsMeter : panneau Événements ===== */
 .meter .a2dEvents { display: none; }
 .meter.a2dEventsOpen .a2dEvents { display: block; padding: 6px 8px 8px; }
-.meter.a2dEventsOpen .list,
-.meter.a2dEventsOpen .bossHpBar { display: none !important; }
+/* Les DPS restent affichés : le panneau s'ouvre en dessous. */
+.meter.a2dEventsOpen .a2dEvents { border-top: 1px solid rgba(255,255,255,.1); margin-top: 4px; }
 .header .a2dEventsBtn.isActive { color: var(--isUser-fill, #3fe0e6); }
 .a2dEvents .a2dEvTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 .a2dEvents .a2dEvTabs { display: inline-flex; border: 1px solid rgba(255,255,255,.12); border-radius: 6px; overflow: hidden; }
@@ -9120,3 +9120,5 @@ html.a2-offline .historyUploadBtn {
 .a2dEvents .a2dPetIco { width: 30px; height: 30px; flex: none; border-radius: 6px; object-fit: cover; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.12); margin-right: 2px; }
 .a2dEvents .a2dPetNav { flex-wrap: wrap; }
 .a2dEvents .a2dPetDetach { border: 1px solid rgba(255,255,255,.14) !important; border-radius: 6px; }
+
+.meter.a2dEventsOpen .a2dEvents .a2dEvList { max-height: 260px; }
