@@ -9132,3 +9132,5 @@ html.a2-offline .historyUploadBtn {
 /* Aion2DpsMeter : transparent hors combat (a2dFade.js) */
 .meter { transition: opacity 0.6s ease; }
 .meter.a2dFaded { opacity: var(--a2d-fade-opacity, 0.25); transition: opacity 1.2s ease; }
+/* Téléporteur le plus proche du boss */
+.a2dEvents .a2dEvWho small.a2dEvTp { white-space: normal; color: rgba(140, 220, 255, .85); line-height: 1.25; }

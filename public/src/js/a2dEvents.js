@@ -120,10 +120,34 @@
   const meter = () => document.querySelector(".meter");
   const resize = () => requestAnimationFrame(() => window.javaBridge?.updateOverlaySize?.());
 
-  const row = ({ name, where, countdown, at, cls = "", hp = null, alert = "" }) =>
+  // Téléporteur le plus proche d'un boss (a2dTeleportsData.js), pour la faction du serveur ;
+  // les deux factions si elle n'est pas connue. Un boss programmé peut avoir plusieurs points.
+  const TP = window.A2D_TELEPORTS || { bosses: {}, names: {} };
+  const tpName = (n) => TP.names[n]?.fr || TP.names[n]?.en || "";
+  function teleportText(key, s) {
+    const list = TP.bosses[String(key)];
+    if (!list?.length) return "";
+    // Regroupés par boss : un boss programmé peut apparaître à plusieurs endroits.
+    const groups = new Map();
+    for (const e of list) {
+      const who = list.length > 1 && e.boss ? text(e.boss) || TP.bossNames?.[e.boss]?.fr || TP.bossNames?.[e.boss]?.en || "" : "";
+      if (!groups.has(who)) groups.set(who, []);
+      const g = groups.get(who);
+      for (const [c, label] of [["e", "Élyséens"], ["a", "Asmodiens"]]) {
+        if (!e[c] || (s && (s === "elyos") !== (c === "e"))) continue;
+        const [num, n, dist] = e[c];
+        const t = `${num ? `n° ${num} ` : ""}${tpName(n)} (${dist} m)${s ? "" : ` · ${label}`}`;
+        if (!g.includes(t)) g.push(t);
+      }
+    }
+    const parts = [...groups].filter(([, g]) => g.length).map(([who, g]) => `${who ? `${who} : ` : ""}${g.join(" ou ")}`);
+    return parts.length ? `Téléporteur : ${parts.join(" ; ")}` : "";
+  }
+
+  const row = ({ name, where, countdown, at, cls = "", hp = null, alert = "", tp = "" }) =>
     `<li class="a2dEvRow ${cls}"${hp != null ? ` style="--hp:${Math.max(0, Math.min(100, hp))}%"` : ""}>
       ${alert ? `<button type="button" class="a2dEvBell${alerts.has(alert) ? " isOn" : ""}" data-alert="${esc(alert)}" title="${alerts.has(alert) ? "Alerte activée : clique pour l'enlever" : `M'alerter ${lead} min avant`}">${BELL}</button>` : ""}
-      <span class="a2dEvWho"><b>${esc(name)}</b>${where ? `<small>${esc(where)}</small>` : ""}</span>
+      <span class="a2dEvWho"><b>${esc(name)}</b>${where ? `<small>${esc(where)}</small>` : ""}${tp ? `<small class="a2dEvTp">${esc(tp)}</small>` : ""}</span>
       <span class="a2dEvWhen"><b>${esc(countdown)}</b><small>${esc(at)}</small></span>
     </li>`;
 
@@ -151,6 +175,7 @@
         at: running ? "maintenant" : clock(next.start, now),
         cls: running ? "isLive" : next.start - now <= SOON_MS ? "isSoon" : "",
         alert: `ev:${key}`,
+        tp: teleportText(ev.id, s),
       }));
     }
     return rows.join("");
@@ -193,18 +218,19 @@
       if (group !== last) { last = group; html += `<li class="a2dEvHead ${group}">${heads[group]}</li>`; }
       const name = `${text(b.name) || "Boss"}${b.level ? ` · niv. ${b.level}` : ""}`;
       const where = text(b.where);
+      const tp = teleportText(id, s || b.side);
       if (group === "up") {
         const hp = t.hp != null && t.hpAt ? t.hp : null;
         html += row({
           name, where,
           countdown: hp != null ? `${Math.round(hp)} % PV` : "en vie",
           at: t.upSince ? `depuis ${ago(now - t.upSince * 1000)}` : t.reportedAt ? `vu il y a ${ago(now - t.reportedAt * 1000)}` : "",
-          cls: "isLive", hp, alert: `boss:${id}`,
+          cls: "isLive", hp, alert: `boss:${id}`, tp,
         });
       } else if (group === "window") {
-        html += row({ name, where, countdown: `prévu il y a ${ago(now - next)}`, at: clock(next, now), cls: "isSoon", alert: `boss:${id}` });
+        html += row({ name, where, countdown: `prévu il y a ${ago(now - next)}`, at: clock(next, now), cls: "isSoon", alert: `boss:${id}`, tp });
       } else {
-        html += row({ name, where, countdown: `dans ${span(next - now)}`, at: clock(next, now), cls: next - now <= SOON_MS ? "isSoon" : "", alert: `boss:${id}` });
+        html += row({ name, where, countdown: `dans ${span(next - now)}`, at: clock(next, now), cls: next - now <= SOON_MS ? "isSoon" : "", alert: `boss:${id}`, tp });
       }
     }
     let note = "";
