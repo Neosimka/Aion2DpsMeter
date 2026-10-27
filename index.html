@@ -1007,6 +1007,33 @@
                       <div class="settingsValue meterOpacityValue">80%</div>
                     </div>
                   </div>
+                  <div class="settingsRow">
+                    <label class="settingsToggle" title="Le meter s'efface quelques secondes après ton dernier coup, et revient dès que tu frappes ou que tu passes la souris dessus.">
+                      <span class="settingsToggleLabel">Transparent hors combat</span>
+                      <span class="settingsToggleControl">
+                        <input type="checkbox" class="a2dFadeCheckbox" />
+                        <span class="settingsToggleTrack" aria-hidden="true"></span>
+                      </span>
+                    </label>
+                  </div>
+                  <div class="settingsRow settingsRowInput a2dFadeSub">
+                    <div class="settingsInfo">
+                      <div class="settingsLabel" title="0 % : complètement invisible hors combat.">Opacité hors combat</div>
+                    </div>
+                    <div class="settingsRangeInline">
+                      <input class="settingsRange a2dFadeOpacityInput" type="range" min="0" max="50" step="5" value="25" aria-label="Opacité hors combat" />
+                      <div class="settingsValue a2dFadeOpacityValue">25%</div>
+                    </div>
+                  </div>
+                  <div class="settingsRow settingsRowInput a2dFadeSub">
+                    <div class="settingsInfo">
+                      <div class="settingsLabel" title="Temps sans coup avant que le meter s'efface.">Délai avant effacement</div>
+                    </div>
+                    <div class="settingsRangeInline">
+                      <input class="settingsRange a2dFadeDelayInput" type="range" min="2" max="30" step="1" value="5" aria-label="Délai avant effacement" />
+                      <div class="settingsValue a2dFadeDelayValue">5 s</div>
+                    </div>
+                  </div>
                 </div>
               </section>
               <section class="settingsSection" id="settingsSection-streaming" role="tabpanel" aria-labelledby="settingsTab-streaming" data-section="streaming" hidden>
@@ -1695,6 +1722,7 @@
     <script src="/src/js/a2dEvents.js"></script>
     <script src="/src/js/a2dPetsData.js"></script>
     <script src="/src/js/a2dPets.js"></script>
+    <script src="/src/js/a2dFade.js"></script>
     <script src="/src/js/pluginSettings.js"></script>
   </body>
 </html>

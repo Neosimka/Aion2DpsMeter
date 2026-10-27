@@ -143,6 +143,9 @@ const createBattleTimeUI = ({
   const getCombatTimeText = () => formatMMSS(lastBattleTimeMs ?? 0);
 
   const getState = () => currentState;
+  // Depuis combien de temps le chrono n'a plus bougé (Infinity avant le premier combat).
+  // `now` : la même horloge que update() (performance.now() dans core.js).
+  const getFrozenMs = (now) => (lastBattleTimeMs === null ? Infinity : Math.max(0, now - lastChangedAt));
   const isEnded = () => currentState === "state-ended";
 
   const setAnalysisTextProvider = (provider) => {
@@ -167,6 +170,7 @@ const createBattleTimeUI = ({
     getCombatTimeText,
     setTtk,
     getState,
+    getFrozenMs,
     isEnded,
     setAnalysisTextProvider,
   };
