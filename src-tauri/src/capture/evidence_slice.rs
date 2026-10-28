@@ -849,15 +849,76 @@ pub fn unblinded_names(records: &[(i32, Vec<u8>)], blind_map: &HashMap<String, u
 /// How many of `names` appear anywhere in the slice, bundles decompressed:
 /// the client's own verifier, run again on the server with the names the
 /// upload says it showed.
+///
+/// One walk over the slice and one pass over each record for every name at
+/// once: looking for each name in turn over every record took 8-31 seconds
+/// for 200 names on a 10-18 MB fight, past the service's CPU limit
+/// (2026-10-28). Each record is expanded as `expand` does it (its packets,
+/// bundles opened, end to end), the name fields read from the same packets
+/// as `name_field_contents` reads them, so the count is the one looking for
+/// each name in turn gave (the tests keep that as the reference).
 pub fn leaked_names(records: &[(i32, Vec<u8>)], names: &[String]) -> usize {
-    let plaintext: Vec<Vec<u8>> = records.iter().map(|(_, p)| expand(p)).collect();
-    let fields = name_field_contents(records);
-    names
-        .iter()
-        .map(|n| n.as_bytes())
-        .filter(|n| !n.is_empty())
-        .filter(|n| fields.contains(*n) || plaintext.iter().any(|buf| name_in(buf, n)))
-        .count()
+    let names: Vec<&[u8]> = names.iter().map(|n| n.as_bytes()).filter(|n| !n.is_empty()).collect();
+    if names.is_empty() {
+        return 0;
+    }
+    let needles: Vec<(usize, Vec<u8>)> = names.iter().enumerate()
+        .filter_map(|(i, n)| name_needle(n).map(|needle| (i, needle)))
+        .collect();
+    let finder = match needles.is_empty() {
+        true => None,
+        false => AhoCorasick::new(needles.iter().map(|(_, needle)| needle)).ok(),
+    };
+    let mut found = vec![false; names.len()];
+    let mut fields: HashSet<Vec<u8>> = HashSet::new();
+    let mut plain = Vec::new();
+    for (_, record) in records {
+        plain.clear();
+        for_each_packet(record, &mut |packet| {
+            if !is_event(packet) {
+                for field in super::stream_processor::name_fields(packet) {
+                    fields.insert(packet[field.range].to_vec());
+                }
+            }
+            plain.extend_from_slice(packet);
+        });
+        match &finder {
+            Some(finder) => {
+                for m in finder.find_overlapping_iter(&plain) {
+                    found[needles[m.pattern().as_usize()].0] = true;
+                }
+            }
+            // Never pass unchecked: one name at a time, as before.
+            None => {
+                for (i, name) in names.iter().enumerate() {
+                    found[i] = found[i] || name_in(&plain, name);
+                }
+            }
+        }
+    }
+    names.iter().zip(&found).filter(|(n, found)| **found || fields.contains(**n)).count()
+}
+
+/// Each packet of a record, bundles opened, in order: what `packets_in`
+/// lists and `expand` joins, without a copy of each.
+fn for_each_packet(record: &[u8], visit: &mut dyn FnMut(&[u8])) {
+    fn walk_into(buffer: &[u8], visit: &mut dyn FnMut(&[u8]), depth: usize, top: bool) {
+        if depth > MAX_BUNDLE_DEPTH {
+            return;
+        }
+        let frames = if top { framing::walk(buffer).frames } else { framing::walk_inner(buffer).frames };
+        for frame in frames {
+            match frame.kind {
+                FrameKind::Packet => visit(frame.bytes(buffer)),
+                FrameKind::Bundle => {
+                    if let Some(inner) = framing::decompress_bundle(frame.payload(buffer)) {
+                        walk_into(&inner, visit, depth + 1, false);
+                    }
+                }
+            }
+        }
+    }
+    walk_into(record, visit, 0, true);
 }
 
 /// Names this short are only looked for as the game sends a name, after its
@@ -1842,6 +1903,75 @@ mod tests {
         let raw = vec![(0, spawn_named("Grandine"))];
         assert_eq!(unblinded_names(&raw, &HashMap::new()), 1);
         assert_eq!(leaked_names(&raw, &["Grandine".to_string(), "Misti".to_string()]), 1);
+    }
+
+    /// `leaked_names` as it was: each name looked for in turn.
+    fn leaked_names_one_at_a_time(records: &[(i32, Vec<u8>)], names: &[String]) -> usize {
+        let plaintext: Vec<Vec<u8>> = records.iter().map(|(_, p)| expand(p)).collect();
+        let fields = name_field_contents(records);
+        names
+            .iter()
+            .map(|n| n.as_bytes())
+            .filter(|n| !n.is_empty())
+            .filter(|n| fields.contains(*n) || plaintext.iter().any(|buf| name_in(buf, n)))
+            .count()
+    }
+
+    #[test]
+    fn one_pass_over_the_names_counts_leaks_as_one_name_at_a_time_did() {
+        let named: Vec<Vec<u8>> = records_with_names().into_iter().map(|(r, _)| r).collect();
+        let mut records: Vec<(i32, Vec<u8>)> = named.iter().cloned().map(|r| (0, r)).collect();
+        records.push((5, spawn_named("Grandine")));
+        records.push((6, spawn_after_8f_01()));
+        records.push((7, vec![0x05, 0x10, b'J', b'o', 0x22, 0x01]));
+        // The named records again inside a bundle, a name across two packets too.
+        let inner: Vec<u8> = named.concat().into_iter().chain(spawn_named("Misti")).collect();
+        records.push((8, rewrap_bundle(&inner).unwrap()));
+        let lists: Vec<Vec<&str>> = vec![
+            vec![],
+            vec![""],
+            vec!["Nobody", "Q", "ab"],
+            vec!["Xy", "A", "B", "Cd", "Ef", "Grandine", "Misti", "Jo", "", "Grandine", "Q", "Zz", "Nobody"],
+            vec!["Misti", "Misti", "Mist", "isti", "A"],
+        ];
+        for list in lists {
+            let names: Vec<String> = list.iter().map(|s| s.to_string()).collect();
+            for upto in [1, 6, records.len()] {
+                let records = &records[..upto];
+                assert_eq!(leaked_names(records, &names), leaked_names_one_at_a_time(records, &names), "{list:?} {upto}");
+            }
+        }
+        let all = ["Xy", "A", "B", "Cd", "Ef", "Grandine", "Misti"].map(String::from);
+        assert!(leaked_names(&records, &all) > 0);
+    }
+
+    /// The same, over real slices: `A2ES_SLICES=<dir> cargo test -- --ignored`.
+    /// Names are each slice's own tokens, which are in it, and some that are not.
+    #[test]
+    #[ignore]
+    fn one_pass_over_the_names_counts_leaks_as_one_name_at_a_time_did_on_real_slices() {
+        use std::io::Read;
+        let Ok(dir) = std::env::var("A2ES_SLICES") else { return };
+        let mut paths: Vec<_> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().path()).collect();
+        paths.sort();
+        let limit = std::env::var("A2ES_LIMIT").ok().and_then(|s| s.parse().ok()).unwrap_or(25);
+        let (mut checked, mut found) = (0, 0);
+        for path in paths.into_iter().take(limit) {
+            let body = std::fs::read(&path).unwrap();
+            let mut raw = Vec::new();
+            let read = if body.starts_with(&[0x28, 0xB5, 0x2F, 0xFD]) {
+                zstd::stream::read::Decoder::new(&body[..]).and_then(|mut d| d.read_to_end(&mut raw))
+            } else {
+                flate2::read::GzDecoder::new(&body[..]).read_to_end(&mut raw)
+            };
+            let Some((records, blind_map)) = read.ok().and_then(|_| decode(&raw)) else { continue };
+            let mut names: Vec<String> = blind_map.keys().take(40).cloned().collect();
+            names.extend(["Nobody", "ab", "Q", "Plyr0042"].map(String::from));
+            let count = leaked_names(&records, &names);
+            assert_eq!(count, leaked_names_one_at_a_time(&records, &names), "{path:?}");
+            (checked, found) = (checked + 1, found + count);
+        }
+        eprintln!("{checked} slices, {found} names found in them");
     }
 
     #[test]
