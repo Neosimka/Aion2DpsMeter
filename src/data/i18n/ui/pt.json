@@ -229,7 +229,12 @@
     },
     "hpsChart": "Cura por segundo",
     "sectionChart": "Gráfico",
-    "showSections": "Seções visíveis"
+    "showSections": "Seções visíveis",
+    "hoverTooltip": {
+      "loading": "Carregando...",
+      "empty": "Sem dados de habilidades desta luta",
+      "error": "Não foi possível carregar as habilidades"
+    }
   },
   "history": {
     "title": "Histórico de combates",
@@ -260,7 +265,12 @@
     "previewUploadTip": "Escreve o que o compartilhamento deste combate enviaria. Nada é enviado.",
     "previewWorking": "Criando a pré-visualização…",
     "previewDone": "{slice} KB gravados ({sent} KB compactados — o que um envio transmitiria). {kept} de {seen} pacotes mantidos, {blinded} nomes ocultados. Nada foi enviado. Salvo em {dir}",
-    "openWorld": "Mundo aberto"
+    "openWorld": "Mundo aberto",
+    "uploadTip": "Envie esta luta para a2tools.app e receba um link para compartilhar",
+    "uploadOpen": "Abrir o registro desta luta em a2tools.app",
+    "uploadWorking": "Enviando…",
+    "uploadDonePublic": "Enviado. Link copiado: {url}",
+    "uploadDonePrivate": "Enviado como privado. Link copiado: {url}"
   },
   "settings": {
     "title": "Configurações",
@@ -545,7 +555,9 @@
       "guestClaimHint": "As lutas enviadas deste PC ficam guardadas para você. Entre aqui para torná-las suas ou pegue um código para reivindicá-las de outro dispositivo.",
       "guestClaimButton": "Obter um código",
       "guestClaimCode": "Digite {code} em {url} com a sessão iniciada. O código expira em 15 minutos.",
-      "claimed": "{count} lutas enviadas deste PC agora são suas."
+      "claimed": "{count} lutas enviadas deste PC agora são suas.",
+      "autoUpload": "Enviar lutas contra chefes automaticamente",
+      "autoUploadHint": "Quando uma luta contra chefe termina, ela é enviada para sua conta com a visibilidade escolhida em a2tools.app. Os outros jogadores ficam mascarados. Bonecos de treino nunca são enviados."
     },
     "sendLogs": {
       "hint": "Envia seu log de depuração e seus logs de pacotes mais recentes (3 arquivos no total) ao desenvolvedor, para um relatório de bug.",
@@ -601,7 +613,8 @@
       "hideOutOfCombat": "O medidor se oculta após esse tempo fora de combate e volta no próximo golpe. Ele continua visível enquanto Configurações, Histórico ou Detalhes estiverem abertos, ou com o mouse sobre ele.",
       "runAsAdmin": "Necessário para mostrar o FPS do jogo. O Windows pergunta toda vez que o medidor inicia.",
       "shareData": "Compartilha os timers de chefes de campo e os Pedidos de suprimentos do seu servidor com o a2tools.app, para manter o A2Tools atualizado para todos: os chefes no seu mapa, os que você vê serem derrotados e o HP deles, e os quadros de pedidos após cada reinício. Nada sobre o seu personagem é enviado.",
-      "pluginAutoUpdate": "Ao iniciar o medidor, as atualizações de plugins se instalam sozinhas, em segundo plano. Uma atualização que pede algo novo continua esperando sua confirmação."
+      "pluginAutoUpdate": "Ao iniciar o medidor, as atualizações de plugins se instalam sozinhas, em segundo plano. Uma atualização que pede algo novo continua esperando sua confirmação.",
+      "meterAnchor": "A borda do medidor que fica parada quando linhas entram ou saem."
     },
     "globalHotkeys": "Usar atalhos de teclado",
     "hotkeyConsent": {
@@ -685,7 +698,15 @@
     "runAsAdmin": "Executar como administrador",
     "runAsAdminTitle": "A2Tools - Executar como administrador",
     "runAsAdminAsk": "Para mostrar o FPS do jogo, o medidor precisa ser executado como administrador.\n\nReiniciar o medidor como administrador agora? O Windows vai perguntar toda vez que o medidor iniciar. Você pode desativar isso nas Configurações.",
-    "shareData": "Sincronizar dados úteis com o A2Tools"
+    "shareData": "Sincronizar dados úteis com o A2Tools",
+    "meterAnchor": {
+      "label": "O medidor fica fixo em",
+      "options": {
+        "top": "Topo",
+        "middle": "Centro",
+        "bottom": "Base"
+      }
+    }
   },
   "support": {
     "button": "Me apoie",

@@ -229,7 +229,12 @@
     },
     "hpsChart": "Heilung pro Sekunde",
     "sectionChart": "Diagramm",
-    "showSections": "Angezeigte Bereiche"
+    "showSections": "Angezeigte Bereiche",
+    "hoverTooltip": {
+      "loading": "Wird geladen...",
+      "empty": "Keine Fertigkeitsdaten für diesen Kampf",
+      "error": "Fertigkeiten konnten nicht geladen werden"
+    }
   },
   "history": {
     "title": "Kampfverlauf",
@@ -260,7 +265,12 @@
     "previewUploadTip": "Schreibt, was das Teilen dieses Kampfes hochladen würde. Es wird nichts gesendet.",
     "previewWorking": "Vorschau wird erstellt…",
     "previewDone": "{slice} KB geschrieben ({sent} KB komprimiert — so viel würde ein Upload senden). {kept} von {seen} Paketen behalten, {blinded} Namen unkenntlich gemacht. Es wurde nichts hochgeladen. Gespeichert unter {dir}",
-    "openWorld": "Offene Welt"
+    "openWorld": "Offene Welt",
+    "uploadTip": "Diesen Kampf auf a2tools.app hochladen und einen Link zum Teilen erhalten",
+    "uploadOpen": "Das Log dieses Kampfes auf a2tools.app öffnen",
+    "uploadWorking": "Wird hochgeladen…",
+    "uploadDonePublic": "Hochgeladen. Link kopiert: {url}",
+    "uploadDonePrivate": "Privat hochgeladen. Link kopiert: {url}"
   },
   "settings": {
     "title": "Einstellungen",
@@ -545,7 +555,9 @@
       "guestClaimHint": "Von diesem PC hochgeladene Kämpfe werden für dich aufbewahrt. Melde dich hier an, um sie zu übernehmen, oder hol dir einen Code, um sie von einem anderen Gerät aus zu beanspruchen.",
       "guestClaimButton": "Code anfordern",
       "guestClaimCode": "Gib {code} auf {url} ein, während du angemeldet bist. Der Code läuft in 15 Minuten ab.",
-      "claimed": "{count} von diesem PC hochgeladene Kämpfe gehören jetzt dir."
+      "claimed": "{count} von diesem PC hochgeladene Kämpfe gehören jetzt dir.",
+      "autoUpload": "Bosskämpfe automatisch hochladen",
+      "autoUploadHint": "Wenn ein Bosskampf endet, wird er mit der auf a2tools.app gewählten Sichtbarkeit in dein Konto hochgeladen. Andere Spieler bleiben maskiert. Trainingspuppen werden nie hochgeladen."
     },
     "sendLogs": {
       "hint": "Sendet dein Debug-Log und deine neuesten Paket-Logs (insgesamt 3 Dateien) für einen Fehlerbericht an den Entwickler.",
@@ -601,7 +613,8 @@
       "hideOutOfCombat": "Das Meter wird ausgeblendet, wenn du so lange nicht im Kampf warst, und erscheint mit dem nächsten Treffer wieder. Solange Einstellungen, Verlauf oder Details offen sind oder die Maus darüber ist, bleibt es sichtbar.",
       "runAsAdmin": "Nötig, um die Bildrate des Spiels anzuzeigen. Windows fragt bei jedem Start des Meters nach.",
       "shareData": "Teilt die Feldboss-Timer und Versorgungsaufträge deines Servers mit a2tools.app, damit A2Tools für alle aktuell bleibt: die Bosse auf deiner Karte, die du besiegt siehst, und ihre HP, sowie die Auftragstafeln nach jedem Reset. Nichts über deinen Charakter wird gesendet.",
-      "pluginAutoUpdate": "Beim Start des Meters installieren sich Plugin-Updates im Hintergrund von selbst. Ein Update, das etwas Neues verlangt, wartet weiter auf dein Ja."
+      "pluginAutoUpdate": "Beim Start des Meters installieren sich Plugin-Updates im Hintergrund von selbst. Ein Update, das etwas Neues verlangt, wartet weiter auf dein Ja.",
+      "meterAnchor": "Der Rand des Meters, der stehen bleibt, wenn Zeilen dazukommen oder wegfallen."
     },
     "globalHotkeys": "Tastenkürzel verwenden",
     "hotkeyConsent": {
@@ -685,7 +698,15 @@
     "runAsAdmin": "Als Administrator ausführen",
     "runAsAdminTitle": "A2Tools - Als Administrator ausführen",
     "runAsAdminAsk": "Um die Bildrate des Spiels anzuzeigen, muss das Meter als Administrator laufen.\n\nDas Meter jetzt als Administrator neu starten? Windows fragt bei jedem Start des Meters nach. Du kannst das in den Einstellungen wieder ausschalten.",
-    "shareData": "Nützliche Daten mit A2Tools synchronisieren"
+    "shareData": "Nützliche Daten mit A2Tools synchronisieren",
+    "meterAnchor": {
+      "label": "Meter bleibt fest an",
+      "options": {
+        "top": "Oben",
+        "middle": "Mitte",
+        "bottom": "Unten"
+      }
+    }
   },
   "support": {
     "button": "Unterstütze mich",

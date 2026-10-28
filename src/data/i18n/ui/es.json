@@ -229,7 +229,12 @@
     },
     "hpsChart": "Curación por segundo",
     "sectionChart": "Gráfico",
-    "showSections": "Secciones visibles"
+    "showSections": "Secciones visibles",
+    "hoverTooltip": {
+      "loading": "Cargando...",
+      "empty": "No hay datos de habilidades de este combate",
+      "error": "No se pudieron cargar las habilidades"
+    }
   },
   "history": {
     "title": "Historial de combates",
@@ -260,7 +265,12 @@
     "previewUploadTip": "Escribe lo que se enviaría al compartir este combate. No se envía nada.",
     "previewWorking": "Creando la vista previa…",
     "previewDone": "{slice} KB escritos ({sent} KB comprimidos — lo que enviaría una subida). Se conservaron {kept} de {seen} paquetes y se ocultaron {blinded} nombres. No se subió nada. Guardado en {dir}",
-    "openWorld": "Mundo abierto"
+    "openWorld": "Mundo abierto",
+    "uploadTip": "Sube este combate a a2tools.app y obtén un enlace para compartir",
+    "uploadOpen": "Abrir el registro de este combate en a2tools.app",
+    "uploadWorking": "Subiendo…",
+    "uploadDonePublic": "Subido. Enlace copiado: {url}",
+    "uploadDonePrivate": "Subido como privado. Enlace copiado: {url}"
   },
   "settings": {
     "title": "Ajustes",
@@ -545,7 +555,9 @@
       "guestClaimHint": "Los combates subidos desde este PC se guardan para ti. Inicia sesión aquí para que sean tuyos, o consigue un código para reclamarlos desde otro dispositivo.",
       "guestClaimButton": "Obtener un código",
       "guestClaimCode": "Introduce {code} en {url} con la sesión iniciada. El código caduca en 15 minutos.",
-      "claimed": "{count} combates subidos desde este PC ahora son tuyos."
+      "claimed": "{count} combates subidos desde este PC ahora son tuyos.",
+      "autoUpload": "Subir combates de jefe automáticamente",
+      "autoUploadHint": "Cuando termina un combate de jefe, se sube a tu cuenta con la visibilidad que elegiste en a2tools.app. Los demás jugadores quedan ocultos. Los muñecos de entrenamiento nunca se suben."
     },
     "sendLogs": {
       "hint": "Envía tu registro de depuración y tus registros de paquetes más recientes (3 archivos en total) al desarrollador, para un informe de errores.",
@@ -601,7 +613,8 @@
       "hideOutOfCombat": "El medidor se oculta tras este tiempo fuera de combate y vuelve con el siguiente golpe. Sigue visible mientras Ajustes, Historial o Detalles están abiertos, o el ratón está encima.",
       "runAsAdmin": "Necesario para mostrar los FPS del juego. Windows lo pedirá cada vez que se inicie el medidor.",
       "shareData": "Comparte los temporizadores de jefes de campo y las Solicitudes de suministros de tu servidor con a2tools.app, para mantener A2Tools al día para todos: los jefes de tu mapa, los que ves morir y su vida, y los tablones de solicitudes tras cada reinicio. No se envía nada sobre tu personaje.",
-      "pluginAutoUpdate": "Al iniciar el medidor, las actualizaciones de plugins se instalan solas, en segundo plano. Una actualización que pide algo nuevo sigue esperando tu confirmación."
+      "pluginAutoUpdate": "Al iniciar el medidor, las actualizaciones de plugins se instalan solas, en segundo plano. Una actualización que pide algo nuevo sigue esperando tu confirmación.",
+      "meterAnchor": "El borde del medidor que no se mueve cuando aparecen o desaparecen filas."
     },
     "globalHotkeys": "Usar atajos de teclado",
     "hotkeyConsent": {
@@ -685,7 +698,15 @@
     "runAsAdmin": "Ejecutar como administrador",
     "runAsAdminTitle": "A2Tools - Ejecutar como administrador",
     "runAsAdminAsk": "Para mostrar los FPS del juego, el medidor debe ejecutarse como administrador.\n\n¿Reiniciar el medidor como administrador ahora? Windows lo pedirá cada vez que se inicie el medidor. Puedes desactivarlo en Ajustes.",
-    "shareData": "Sincronizar datos útiles con A2Tools"
+    "shareData": "Sincronizar datos útiles con A2Tools",
+    "meterAnchor": {
+      "label": "El medidor queda fijo en",
+      "options": {
+        "top": "Arriba",
+        "middle": "Centro",
+        "bottom": "Abajo"
+      }
+    }
   },
   "support": {
     "button": "Apóyame",

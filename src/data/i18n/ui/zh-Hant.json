@@ -229,7 +229,12 @@
     },
     "hpsChart": "每秒治療",
     "sectionChart": "圖表",
-    "showSections": "顯示的部分"
+    "showSections": "顯示的部分",
+    "hoverTooltip": {
+      "loading": "載入中...",
+      "empty": "此戰鬥沒有技能資料",
+      "error": "無法載入技能"
+    }
   },
   "history": {
     "title": "戰鬥歷史",
@@ -608,7 +613,8 @@
       "hideOutOfCombat": "脫離戰鬥達到該時長後隱藏計量器，下一次命中時再次顯示。設定、歷史紀錄或詳情視窗開啟時，或滑鼠停在計量器上時不會隱藏。",
       "runAsAdmin": "顯示遊戲幀率需要此項。每次啟動計量器時 Windows 都會詢問。",
       "shareData": "將你所在伺服器的野外首領計時和補給委託分享給 a2tools.app，讓大家的 A2Tools 保持同步：你地圖上的首領、你看到被擊殺的首領及其血量，以及每次重置後的委託板。不會傳送任何關於你角色的資訊。",
-      "pluginAutoUpdate": "計量器啟動時，外掛更新會在背景自動安裝。要求新權限的更新仍會等待你的同意。"
+      "pluginAutoUpdate": "計量器啟動時，外掛更新會在背景自動安裝。要求新權限的更新仍會等待你的同意。",
+      "meterAnchor": "行增減時保持不動的計量器邊緣。"
     },
     "globalHotkeys": "使用快捷鍵",
     "hotkeyConsent": {
@@ -692,7 +698,15 @@
     "runAsAdmin": "以系統管理員身分執行",
     "runAsAdminTitle": "A2Tools - 以系統管理員身分執行",
     "runAsAdminAsk": "顯示遊戲幀率需要計量器以系統管理員身分執行。\n\n現在以系統管理員身分重新啟動計量器嗎？每次啟動計量器時 Windows 都會詢問。你可以在設定中關閉此項。",
-    "shareData": "將有用的資料同步到 A2Tools"
+    "shareData": "將有用的資料同步到 A2Tools",
+    "meterAnchor": {
+      "label": "計量器固定在",
+      "options": {
+        "top": "頂部",
+        "middle": "中間",
+        "bottom": "底部"
+      }
+    }
   },
   "support": {
     "button": "支持我一下",

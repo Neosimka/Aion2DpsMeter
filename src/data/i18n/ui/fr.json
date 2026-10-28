@@ -229,7 +229,12 @@
     },
     "hpsChart": "Soins par seconde",
     "sectionChart": "Graphique",
-    "showSections": "Sections affichées"
+    "showSections": "Sections affichées",
+    "hoverTooltip": {
+      "loading": "Chargement...",
+      "empty": "Aucune donnée de compétence pour ce combat",
+      "error": "Impossible de charger les compétences"
+    }
   },
   "history": {
     "title": "Historique des combats",
@@ -260,7 +265,12 @@
     "previewUploadTip": "Écrit ce que le partage de ce combat enverrait. Rien n'est envoyé.",
     "previewWorking": "Création de l'aperçu…",
     "previewDone": "{slice} Ko écrits ({sent} Ko compressés — ce qu'un envoi transmettrait). {kept} paquets conservés sur {seen}, {blinded} noms masqués. Rien n'a été envoyé. Enregistré dans {dir}",
-    "openWorld": "Monde ouvert"
+    "openWorld": "Monde ouvert",
+    "uploadTip": "Envoyer ce combat sur a2tools.app et obtenir un lien à partager",
+    "uploadOpen": "Ouvrir le journal de ce combat sur a2tools.app",
+    "uploadWorking": "Envoi…",
+    "uploadDonePublic": "Envoyé. Lien copié : {url}",
+    "uploadDonePrivate": "Envoyé en privé. Lien copié : {url}"
   },
   "settings": {
     "title": "Paramètres",
@@ -545,7 +555,9 @@
       "guestClaimHint": "Les combats envoyés depuis ce PC sont gardés pour toi. Connecte-toi ici pour qu'ils deviennent les tiens, ou obtiens un code pour les récupérer depuis un autre appareil.",
       "guestClaimButton": "Obtenir un code",
       "guestClaimCode": "Saisis {code} sur {url} en étant connecté. Le code expire dans 15 minutes.",
-      "claimed": "{count} combats envoyés depuis ce PC sont maintenant à toi."
+      "claimed": "{count} combats envoyés depuis ce PC sont maintenant à toi.",
+      "autoUpload": "Envoyer automatiquement les combats de boss",
+      "autoUploadHint": "À la fin d'un combat de boss, il est envoyé sur votre compte avec la visibilité choisie sur a2tools.app. Les autres joueurs restent masqués. Les mannequins d'entraînement ne sont jamais envoyés."
     },
     "sendLogs": {
       "hint": "Envoie ton journal de débogage et tes derniers journaux de paquets (3 fichiers en tout) au développeur, pour un rapport de bug.",
@@ -601,7 +613,8 @@
       "hideOutOfCombat": "Le compteur se masque après ce délai hors combat et réapparaît au prochain coup. Il reste affiché tant que les Paramètres, l'Historique ou les Détails sont ouverts, ou que la souris est dessus.",
       "runAsAdmin": "Nécessaire pour afficher les FPS du jeu. Windows le demande à chaque démarrage du compteur.",
       "shareData": "Partage les minuteurs des boss de terrain et les Demandes de ravitaillement de ton serveur avec a2tools.app, pour garder A2Tools à jour pour tout le monde : les boss sur ta carte, ceux que tu vois tomber et leurs PV, et les tableaux de demandes après chaque réinitialisation. Rien sur ton personnage n'est envoyé.",
-      "pluginAutoUpdate": "Au démarrage du compteur, les mises à jour des plugins s'installent d'elles-mêmes, en arrière-plan. Une mise à jour qui demande quelque chose de nouveau attend toujours votre accord."
+      "pluginAutoUpdate": "Au démarrage du compteur, les mises à jour des plugins s'installent d'elles-mêmes, en arrière-plan. Une mise à jour qui demande quelque chose de nouveau attend toujours votre accord.",
+      "meterAnchor": "Le bord du compteur qui ne bouge pas quand des lignes apparaissent ou disparaissent."
     },
     "globalHotkeys": "Utiliser les raccourcis",
     "hotkeyConsent": {
@@ -685,7 +698,15 @@
     "runAsAdmin": "Exécuter en tant qu'administrateur",
     "runAsAdminTitle": "A2Tools - Exécuter en tant qu'administrateur",
     "runAsAdminAsk": "Pour afficher les FPS du jeu, le compteur doit s'exécuter en tant qu'administrateur.\n\nRedémarrer le compteur en tant qu'administrateur maintenant ? Windows le demandera à chaque démarrage du compteur. Tu peux le désactiver dans les Paramètres.",
-    "shareData": "Synchroniser les données utiles avec A2Tools"
+    "shareData": "Synchroniser les données utiles avec A2Tools",
+    "meterAnchor": {
+      "label": "Le compteur reste fixé en",
+      "options": {
+        "top": "Haut",
+        "middle": "Centre",
+        "bottom": "Bas"
+      }
+    }
   },
   "support": {
     "button": "Me soutenir",

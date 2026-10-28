@@ -8,9 +8,10 @@
 //! is not the plugin catalog's), refuses anything not newer than the running
 //! version, and only then offers it.
 //!
-//! A manifest without a signature is still accepted in 2.0.80 (logged), so
-//! the release that starts signing can't strand anyone; a wrong signature is
-//! refused. A later release makes the signature required (`REQUIRE_SIGNATURE`).
+//! 2.0.80 still accepted a manifest without a signature (logged), so the
+//! release that started signing couldn't strand anyone. Every manifest has
+//! been signed since, so from 2.0.81 one without is refused, as is a wrong
+//! signature (`REQUIRE_SIGNATURE`).
 
 use ed25519_dalek::{Signature, VerifyingKey};
 use serde::Deserialize;
@@ -23,9 +24,9 @@ pub const SIGNATURE_URL: &str = "https://cdn.a2tools.app/latest-v2.json.sig";
 /// half is kept off the repository, on the publisher's PC.
 const UPDATE_PUBLIC_KEY_HEX: &str = "dab40e70aa5e31e705c0b4b178d17c8a40859bec4aa2dcc9cff088b958b5c020";
 
-/// Whether a manifest without a signature is refused. Off for 2.0.80, which
-/// starts the signing; on once meters that check are out.
-const REQUIRE_SIGNATURE: bool = false;
+/// Whether a manifest without a signature is refused. Off in 2.0.80, which
+/// started the signing; on from 2.0.81 (security audit H1).
+const REQUIRE_SIGNATURE: bool = true;
 
 const TIMEOUT: Duration = Duration::from_secs(15);
 /// The manifest is a few hundred bytes; anything far bigger isn't it.
