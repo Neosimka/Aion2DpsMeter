@@ -18,13 +18,15 @@
         "hps": "Heilung pro Sekunde",
         "totalHeal": "Gesamtheilung",
         "stagger": "Stagger",
-        "bossStagger": "Boss-Stagger %"
+        "bossStagger": "Boss-Stagger %",
+        "statColours": "Farben je Wert"
       },
       "sortBy": "Danach sortieren",
       "menuTip": "Wähle, was die Zeilen zeigen. Mausrad oder Rechtsklick: nächster Wert",
       "bossStaggerTip": "Wie weit die Stagger-Leiste des Bosses abgebaut ist, auf seiner HP-Leiste",
       "sortCol": "Sortieren",
-      "showCol": "Zeigen"
+      "showCol": "Zeigen",
+      "statColoursTip": "Jeder Wert in seiner eigenen Farbe in den Zeilen, im Menü und auf der Taste"
     },
     "updates": {
       "meter": "A2Tools DPS-Meter {version} ist verfügbar",

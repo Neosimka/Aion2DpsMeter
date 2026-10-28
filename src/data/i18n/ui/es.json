@@ -18,13 +18,15 @@
         "hps": "Curación por segundo",
         "totalHeal": "Curación total",
         "stagger": "Aturdimiento",
-        "bossStagger": "Aturdimiento del jefe %"
+        "bossStagger": "Aturdimiento del jefe %",
+        "statColours": "Colores por estadística"
       },
       "sortBy": "Ordenar por esto",
       "menuTip": "Elige qué muestran las filas. Rueda o clic derecho: siguiente métrica",
       "bossStaggerTip": "Cuánto se ha vaciado la barra de aturdimiento del jefe, en su barra de vida",
       "sortCol": "Orden",
-      "showCol": "Mostrar"
+      "showCol": "Mostrar",
+      "statColoursTip": "Cada estadística en su color en las filas, el menú y el botón"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} está disponible",

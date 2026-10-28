@@ -479,9 +479,20 @@ const createMeterUI = ({
         view.dpsNumber.textContent = metricText;
         view.lastMetricText = metricText;
       }
-      const extraText = Array.isArray(metric.extras) ? metric.extras.join(" \u00b7 ") : "";
+      // Each metric in its own colour (data-metric, styles.css).
+      const metricMode = metric.mode || "";
+      if (view.dpsNumber.dataset.metric !== metricMode) view.dpsNumber.dataset.metric = metricMode;
+      const extras = Array.isArray(metric.extras) ? metric.extras : [];
+      const extraText = extras.map((e) => `${e.mode}:${e.text}`).join("|");
       if (view.lastExtraText !== extraText) {
-        view.dpsExtra.textContent = extraText;
+        view.dpsExtra.replaceChildren(
+          ...extras.map((e) => {
+            const span = document.createElement("span");
+            span.dataset.metric = e.mode;
+            span.textContent = e.text;
+            return span;
+          }),
+        );
         view.dpsExtra.style.display = extraText ? "" : "none";
         view.lastExtraText = extraText;
       }

@@ -131,7 +131,7 @@ test("GNOME uses compositor resizing for the overlay and tool edges", async () =
   overlayApp.emit("mousedown", press);
   await tick();
   assert.equal(press.stopped, true);
-  assert.deepEqual(overlayApp.nativeResizes[0], ["SouthEast", 316, 40]);
+  assert.deepEqual(overlayApp.nativeResizes[0], ["East", 316, 40]);
   assert.equal(overlayApp.classes.has("linuxOverlay"), true);
   assert.equal(overlayApp.calls.some((call) => call.command === "resize_window"), false);
 

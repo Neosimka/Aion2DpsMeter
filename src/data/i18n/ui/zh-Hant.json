@@ -18,13 +18,15 @@
         "hps": "每秒治療",
         "totalHeal": "總治療",
         "stagger": "破防",
-        "bossStagger": "首領破防 %"
+        "bossStagger": "首領破防 %",
+        "statColours": "數值配色"
       },
       "sortBy": "依此排序",
       "menuTip": "選擇各列顯示的項目。滾輪或右鍵：下一個項目",
       "bossStaggerTip": "在首領的 HP 條上顯示破防量表已削減多少",
       "sortCol": "排序",
-      "showCol": "顯示"
+      "showCol": "顯示",
+      "statColoursTip": "每項數值在列、選單和按鈕上以各自的顏色顯示"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} 可更新",
