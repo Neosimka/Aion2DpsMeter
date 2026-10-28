@@ -1470,12 +1470,38 @@ async fn install_entry(app: &tauri::AppHandle, host: &Arc<PluginHost>, entry: &c
     let http = app.try_state::<AppState>().ok_or("no app state")?.http.clone();
     let dir = plugins_dir(app)?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let fresh = !dir.join(&entry.id).is_dir();
     catalog::install(&http, entry, &dir).await?;
     tracing::info!("Plugins: installed {} {}", entry.id, entry.version);
+    report_install(app, &entry.id, &entry.version, fresh);
     host.reload(app);
     refresh_windows(app, host);
     restore_windows(app);
     Ok(())
+}
+
+/// Tell a2tools.app a plugin was installed or updated, for the Plugins page's
+/// counts: its id and version and which of the two, nothing about the player
+/// or the PC. Under "Sync useful data to A2Tools" (`boss_report::shares_data`).
+#[cfg(feature = "online")]
+fn report_install(app: &tauri::AppHandle, id: &str, version: &str, fresh: bool) {
+    let Some(state) = app.try_state::<AppState>() else { return };
+    if !crate::boss_report::shares_data(|k| state.settings.get(k)) {
+        return;
+    }
+    let request = state
+        .http
+        .post(format!("{}/api/plugins/installs", crate::account::base_url()))
+        .timeout(std::time::Duration::from_secs(15))
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .body(serde_json::json!({ "id": id, "version": version, "kind": if fresh { "install" } else { "update" } }).to_string());
+    tauri::async_runtime::spawn(async move {
+        match request.send().await {
+            Ok(r) if r.status().is_success() => {}
+            Ok(r) => tracing::debug!("Plugins: install count not taken (HTTP {})", r.status()),
+            Err(e) => tracing::debug!("Plugins: install count not sent: {e}"),
+        }
+    });
 }
 
 /// Install a reviewed plugin from the catalog, or update it to the catalog's
