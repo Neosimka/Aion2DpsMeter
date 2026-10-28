@@ -19,6 +19,10 @@ use std::time::Duration;
 
 pub const MANIFEST_URL: &str = "https://cdn.a2tools.app/latest-v2.json";
 pub const SIGNATURE_URL: &str = "https://cdn.a2tools.app/latest-v2.json.sig";
+/// The last releases' notes for Settings → What's new, made from the GitHub
+/// releases by `tools/changelog.mjs` and signed with the same key.
+pub const CHANGELOG_URL: &str = "https://cdn.a2tools.app/changelog-v2.json";
+pub const CHANGELOG_SIGNATURE_URL: &str = "https://cdn.a2tools.app/changelog-v2.json.sig";
 
 /// The update key's public half (Ed25519), made 2026-10-27. The private
 /// half is kept off the repository, on the publisher's PC.
@@ -31,6 +35,8 @@ const REQUIRE_SIGNATURE: bool = true;
 const TIMEOUT: Duration = Duration::from_secs(15);
 /// The manifest is a few hundred bytes; anything far bigger isn't it.
 const MAX_MANIFEST: usize = 64 * 1024;
+/// Five releases' notes in four languages are some 40 KB.
+const MAX_CHANGELOG: usize = 1024 * 1024;
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -67,6 +73,28 @@ pub async fn fetch(client: &reqwest::Client) -> Result<Manifest, String> {
         None => tracing::warn!("Update: the manifest has no signature (accepted in this version)"),
     }
     serde_json::from_slice(&body).map_err(|e| format!("update manifest: {e}"))
+}
+
+/// The release notes for Settings, as the page shows them. Signed like the
+/// manifest, always: what they say about updating is read as ours.
+pub async fn fetch_changelog(client: &reqwest::Client) -> Result<serde_json::Value, String> {
+    // Debug builds can read a local copy first (A2T_CHANGELOG_URL, e.g. a
+    // test server's), still signed: release builds have only the CDN.
+    #[cfg(debug_assertions)]
+    let url = std::env::var("A2T_CHANGELOG_URL").ok();
+    #[cfg(not(debug_assertions))]
+    let url: Option<String> = None;
+    let (url, sig_url) = match &url {
+        Some(u) => (u.as_str(), format!("{u}.sig")),
+        None => (CHANGELOG_URL, CHANGELOG_SIGNATURE_URL.to_string()),
+    };
+    let body = get(client, url).await?.ok_or("no release notes")?;
+    if body.len() > MAX_CHANGELOG {
+        return Err("the release notes are too big".into());
+    }
+    let sig = get(client, &sig_url).await?.ok_or("the release notes are not signed")?;
+    verify(UPDATE_PUBLIC_KEY_HEX, &body, String::from_utf8_lossy(&sig).trim())?;
+    serde_json::from_slice(&body).map_err(|e| format!("release notes: {e}"))
 }
 
 /// A file's bytes, or None when it isn't there (404).

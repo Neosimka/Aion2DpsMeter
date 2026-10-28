@@ -910,5 +910,15 @@
     "signedIn": "已登入：首領戰會上傳到你的 A2 Tools 帳號（見 A2 Tools 帳號）。",
     "never": "絕不傳送：聊天、電腦名稱、角色的完整名字。「傳送紀錄給開發者」（進階）只在你按下時才傳送。",
     "policy": "完整隱私權政策"
+  },
+  "changelog": {
+    "title": "新功能",
+    "intro": "最近的版本，最新的在前。",
+    "allReleases": "在 GitHub 查看所有版本",
+    "installed": "已安裝",
+    "available": "有可用更新",
+    "loading": "正在載入更新說明…",
+    "none": "尚無更新說明。",
+    "failed": "無法載入更新說明。也可以在下方的 GitHub 查看。"
   }
 }

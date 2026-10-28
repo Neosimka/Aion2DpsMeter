@@ -910,5 +910,15 @@
     "signedIn": "Sesión iniciada: tus combates de jefes se suben a tu cuenta de A2 Tools (ver Cuenta de A2 Tools).",
     "never": "Nunca se envía: el chat, el nombre de tu PC, el nombre completo de tu personaje. Enviar registros al desarrollador (Avanzado) solo envía cuando lo pulsas.",
     "policy": "Política de privacidad completa"
+  },
+  "changelog": {
+    "title": "Novedades",
+    "intro": "Las últimas versiones, de la más reciente a la más antigua.",
+    "allReleases": "Todas las versiones en GitHub",
+    "installed": "Instalada",
+    "available": "Actualización disponible",
+    "loading": "Cargando las notas de la versión…",
+    "none": "Aún no hay notas de versión.",
+    "failed": "No se pudieron cargar las notas de la versión. También están en GitHub, abajo."
   }
 }

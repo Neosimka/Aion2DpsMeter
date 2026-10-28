@@ -910,5 +910,15 @@
     "signedIn": "Connecté : vos combats de boss sont envoyés sur votre compte A2 Tools (voir Compte A2 Tools).",
     "never": "Jamais envoyés : le chat, le nom de votre PC, le nom complet de votre personnage. Envoyer les journaux au dev (Avancé) n'envoie que lorsque vous appuyez.",
     "policy": "Politique de confidentialité complète"
+  },
+  "changelog": {
+    "title": "Nouveautés",
+    "intro": "Les dernières versions, la plus récente en premier.",
+    "allReleases": "Toutes les versions sur GitHub",
+    "installed": "Installée",
+    "available": "Mise à jour disponible",
+    "loading": "Chargement des notes de version…",
+    "none": "Pas encore de notes de version.",
+    "failed": "Impossible de charger les notes de version. Elles sont aussi sur GitHub, ci-dessous."
   }
 }

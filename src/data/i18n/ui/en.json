@@ -910,5 +910,15 @@
     "signedIn": "Signed in: your boss fights upload to your A2 Tools account (see A2 Tools Account).",
     "never": "Never sent: chat, your PC's name, your character's full name. Send Logs to Dev (Advanced) sends logs only when you press it.",
     "policy": "Full privacy policy"
+  },
+  "changelog": {
+    "title": "What's new",
+    "intro": "The latest releases, newest first.",
+    "allReleases": "All releases on GitHub",
+    "installed": "Installed",
+    "available": "Update available",
+    "loading": "Loading the release notes…",
+    "none": "No release notes yet.",
+    "failed": "Couldn't load the release notes. They are also on GitHub, below."
   }
 }

@@ -1843,6 +1843,84 @@ body.mainPlayerDpsBold :is(.meter, .barPreviewPanel) .item .content .dps > p {
   border-top: 1px solid var(--hud-hairline);
 }
 
+/* Settings → What's new: a card per release, the newest (and any not yet
+   installed) open. The notes are the release's own text. */
+.changelogList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+.changelogRelease {
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.changelogRelease > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.changelogRelease > summary::-webkit-details-marker { display: none; }
+.changelogRelease > summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border: solid rgba(255, 255, 255, 0.5);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+}
+.changelogRelease[open] > summary::before { transform: rotate(45deg); }
+.changelogRelease > summary:hover { background: rgba(255, 255, 255, 0.04); }
+.changelogVersion {
+  font-variation-settings: "wght" 700;
+  font-size: 13px;
+  color: var(--title);
+}
+.changelogBadge {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(106, 166, 255, 0.18);
+  color: #a9cbff;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+}
+.changelogRelease.isNewer .changelogBadge { background: rgba(110, 220, 140, 0.18); color: #9ee6b1; }
+.changelogDate {
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px;
+}
+.changelogNotes {
+  padding: 2px 14px 10px 26px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+}
+.changelogNotes p,
+.changelogNotes h4 { margin: 8px 0 2px; }
+.changelogNotes .changelogHeading {
+  font-size: 11px;
+  font-weight: normal;
+  font-variation-settings: "wght" 700;
+  letter-spacing: 0.04em;
+  color: var(--title);
+}
+.changelogNotes ul { margin: 2px 0 4px; padding-left: 16px; }
+.changelogNotes li + li { margin-top: 3px; }
+.changelogNotes code {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+}
+.changelogStatus:empty { display: none; }
+
 /* Narrow window: the sections become a strip of tabs above the settings. */
 @media (max-width: 560px) {
   .settingsPanel .settingsBody {

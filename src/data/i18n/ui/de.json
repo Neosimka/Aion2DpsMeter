@@ -910,5 +910,15 @@
     "signedIn": "Angemeldet: Deine Bosskämpfe werden in dein A2-Tools-Konto hochgeladen (siehe A2 Tools Konto).",
     "never": "Nie gesendet: Chat, der Name deines PCs, der volle Name deines Charakters. Logs an Entwickler senden (Erweitert) sendet nur, wenn du es drückst.",
     "policy": "Vollständige Datenschutzerklärung"
+  },
+  "changelog": {
+    "title": "Neuigkeiten",
+    "intro": "Die letzten Versionen, die neueste zuerst.",
+    "allReleases": "Alle Versionen auf GitHub",
+    "installed": "Installiert",
+    "available": "Update verfügbar",
+    "loading": "Versionshinweise werden geladen…",
+    "none": "Noch keine Versionshinweise.",
+    "failed": "Die Versionshinweise konnten nicht geladen werden. Sie stehen auch auf GitHub, unten."
   }
 }

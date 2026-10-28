@@ -467,6 +467,7 @@
                 <button class="settingsNavItem" type="button" role="tab" id="settingsTab-plugins" aria-controls="settingsSection-plugins" aria-selected="false" tabindex="-1" data-section="plugins"><i data-lucide="puzzle" aria-hidden="true"></i><span data-i18n="settings.plugins.title">Plugins</span></button>
                 <button class="settingsNavItem" type="button" role="tab" id="settingsTab-privacy" aria-controls="settingsSection-privacy" aria-selected="false" tabindex="-1" data-section="privacy"><i data-lucide="shield" aria-hidden="true"></i><span data-i18n="privacy.title">Privacy</span></button>
                 <button class="settingsNavItem" type="button" role="tab" id="settingsTab-advanced" aria-controls="settingsSection-advanced" aria-selected="false" tabindex="-1" data-section="advanced"><i data-lucide="sliders-horizontal" aria-hidden="true"></i><span data-i18n="settings.advanced">Advanced</span></button>
+                <button class="settingsNavItem" type="button" role="tab" id="settingsTab-changelog" aria-controls="settingsSection-changelog" aria-selected="false" tabindex="-1" data-section="changelog"><i data-lucide="sparkles" aria-hidden="true"></i><span data-i18n="changelog.title">What's new</span></button>
               </div>
               <div class="settingsVersionRow">
                 <button class="settingsFooterValue settingsVersionLink" type="button" data-i18n-aria-label="settings.version" aria-label="Version"><span class="settingsVersionValue">-</span></button>
@@ -1210,6 +1211,13 @@
                 <div class="privacyNever" data-i18n="privacy.never">Never sent: chat, your PC's name, your character's full name. Send Logs to Dev (Advanced) sends logs only when you press it.</div>
                 <div class="privacyLinks"><button class="settingsAction privacyPolicyBtn" type="button" data-i18n="privacy.policy">Full privacy policy</button></div>
               </section>
+              <section class="settingsSection" id="settingsSection-changelog" role="tabpanel" aria-labelledby="settingsTab-changelog" data-section="changelog" hidden>
+                <h2 class="settingsSectionTitle" data-i18n="changelog.title">What's new</h2>
+                <p class="settingsHint changelogIntro" data-i18n="changelog.intro">The latest releases, newest first.</p>
+                <div class="changelogStatus settingsHint" role="status"></div>
+                <div class="changelogList"></div>
+                <button class="linkButton changelogAllLink" type="button" data-i18n="changelog.allReleases">All releases on GitHub</button>
+              </section>
               <section class="settingsSection" id="settingsSection-advanced" role="tabpanel" aria-labelledby="settingsTab-advanced" data-section="advanced" hidden>
                 <h2 class="settingsSectionTitle" data-i18n="settings.advanced">Advanced</h2>
                 <div class="settingsGroupBody">
@@ -1729,5 +1737,6 @@
     <script src="/src/js/core.js?v=2076a"></script>
     <script src="/src/js/pluginIcons.js"></script>
     <script src="/src/js/pluginSettings.js"></script>
+    <script src="/src/js/changelog.js"></script>
   </body>
 </html>

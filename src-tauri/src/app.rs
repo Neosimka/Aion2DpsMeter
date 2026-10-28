@@ -1595,6 +1595,14 @@ async fn check_for_update(app: tauri::AppHandle, state: tauri::State<'_, AppStat
 }
 
 #[cfg(feature = "online")]
+/// The last releases' notes, for Settings → What's new (#127): fetched and
+/// signature-checked like the update manifest (`update_check`).
+#[tauri::command]
+async fn release_notes(state: tauri::State<'_, AppState>) -> Result<serde_json::Value, String> {
+    crate::update_check::fetch_changelog(&state.http).await
+}
+
+#[cfg(feature = "online")]
 /// Offer the update `check_for_update` found. Not a command any more: the
 /// page used to call it with a URL and hash of its own (security audit H1).
 #[allow(clippy::too_many_arguments)]
@@ -2006,6 +2014,12 @@ async fn send_logs_to_dev() -> Result<serde_json::Value, String> {
 #[tauri::command]
 async fn check_for_update(ask: Option<bool>) -> Result<serde_json::Value, String> {
     let _ = ask;
+    Err(NOT_IN_THIS_BUILD.into())
+}
+
+#[cfg(not(feature = "online"))]
+#[tauri::command]
+async fn release_notes() -> Result<serde_json::Value, String> {
     Err(NOT_IN_THIS_BUILD.into())
 }
 
@@ -4507,6 +4521,7 @@ pub fn run() {
             replay_file,
             test_auto_hide,
             check_for_update,
+            release_notes,
             build_features,
             dev_logs_preview,
             guest_stop_sharing,

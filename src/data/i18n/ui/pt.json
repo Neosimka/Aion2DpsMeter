@@ -910,5 +910,15 @@
     "signedIn": "Conectado: suas lutas contra chefes vão para a sua conta A2 Tools (veja Conta A2 Tools).",
     "never": "Nunca enviado: o chat, o nome do seu PC, o nome completo do seu personagem. Enviar registros ao dev (Avançado) só envia quando você aperta.",
     "policy": "Política de privacidade completa"
+  },
+  "changelog": {
+    "title": "Novidades",
+    "intro": "As últimas versões, da mais recente para a mais antiga.",
+    "allReleases": "Todas as versões no GitHub",
+    "installed": "Instalada",
+    "available": "Atualização disponível",
+    "loading": "Carregando as notas da versão…",
+    "none": "Ainda não há notas de versão.",
+    "failed": "Não foi possível carregar as notas da versão. Elas também estão no GitHub, abaixo."
   }
 }

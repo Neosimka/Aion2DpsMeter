@@ -149,6 +149,7 @@ class DpsApp {
       autoUpload: "dpsMeter.autoUpload",
       guestUpload: "dpsMeter.guestUpload",
       sharingAsked: "dpsMeter.sharingAsked",
+      lastSeenVersion: "dpsMeter.lastSeenVersion",
       discordActivity: "dpsMeter.discordActivity",
       discordStat: "dpsMeter.discordStat",
       discordPromoShown: "dpsMeter.discordPromoShown",
@@ -1917,6 +1918,8 @@ class DpsApp {
       // Which section is open, for what shows beside it (Appearance's bar preview).
       const body = document.querySelector(".settingsBody");
       if (body) body.dataset.section = key;
+      // For sections that load when first opened (What's new).
+      document.dispatchEvent(new CustomEvent("settingsSectionShown", { detail: key }));
     };
     const steps = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
     for (const item of items) {
@@ -3365,8 +3368,11 @@ class DpsApp {
         // where the Discord one does not open.
         // Sharing first (it decides whether anything uploads); otherwise at
         // most one other offer per launch.
-        this.maybeShowSharing().then((shown) => {
-          if (!shown && !(ok && this.maybeShowDiscordPromo())) this.maybeShowPartyPromo();
+        // Asked before this launch: not a new install (for What's new).
+        const hadAsked = this.safeGetSetting(this.storageKeys.sharingAsked) === "true";
+        this.maybeShowSharing().then(async (shown) => {
+          const news = await this.maybeShowWhatsNew({ existingInstall: hadAsked, quiet: shown });
+          if (!shown && !news && !(ok && this.maybeShowDiscordPromo())) this.maybeShowPartyPromo();
         });
       });
 
@@ -7646,6 +7652,32 @@ class DpsApp {
   // notice (C); anyone who never chose gets the choice (B); those who turned
   // it off themselves are taken as asked. Signed in: asked, nothing shown.
   // Resolves true when it showed something.
+  // What's new (#127): the first launch after an update opens Settings on
+  // it. Not after a new install (nothing changed for them) or a downgrade,
+  // and not on a launch that already asked about sharing (`quiet`): then it
+  // waits for the next one. Resolves true when it opened.
+  async maybeShowWhatsNew({ existingInstall = false, quiet = false } = {}) {
+    const invoke = window.__TAURI__?.core?.invoke;
+    const version = await invoke?.("get_app_version").catch(() => "");
+    if (!version) return false;
+    const seen = this.safeGetSetting(this.storageKeys.lastSeenVersion);
+    if (seen === version) return false;
+    const parts = (v) => String(v).split(/[.-]/).map((n) => parseInt(n, 10) || 0);
+    const newer = (a, b) => {
+      const [x, y] = [parts(a), parts(b)];
+      for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+      return false;
+    };
+    // Nothing seen yet: a new install, or one from before this setting,
+    // which had answered the sharing question.
+    const updated = seen ? newer(version, seen) : existingInstall;
+    if (updated && quiet) return false;
+    this.safeSetSetting(this.storageKeys.lastSeenVersion, version);
+    if (!updated) return false;
+    await invoke("open_settings_at", { section: "changelog" }).catch(() => {});
+    return true;
+  }
+
   async maybeShowSharing() {
     if ((await window.a2BuildReady)?.online === false) return false;
     if (this.safeGetSetting(this.storageKeys.sharingAsked) === "true") return false;
