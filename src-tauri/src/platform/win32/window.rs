@@ -386,7 +386,8 @@ pub fn click_through_by_region() -> bool {
     false
 }
 
-/// Linux only (see the Linux version): WebView2 already runs the meter's pages in shared processes.
+/// Linux only (see the Linux version). WebView2 has no related views: its
+/// browser and GPU processes are shared, and Chromium decides the renderers.
 pub fn share_process<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
     builder: tauri::WebviewWindowBuilder<'a, R, M>,
     _group: crate::platform::ProcessGroup,
