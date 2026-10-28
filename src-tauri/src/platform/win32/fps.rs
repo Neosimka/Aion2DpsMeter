@@ -30,6 +30,11 @@ const DXGI: GUID = GUID::from_u128(0xCA11C036_0102_4A2D_A6AD_F03CFED5D3C9);
 /// Present_Start and PresentMultiplaneOverlay_Start: one per frame handed to
 /// Windows, by the process that presents it.
 const PRESENT_EVENTS: [u16; 2] = [42, 55];
+/// IDXGISwapChain_Present's start, also one per frame. AION2 (DirectX 12)
+/// sends only this one on Windows 11: none of the above came, from it or from
+/// any other program, so the FPS stayed empty (2026-10-29). Counted apart and
+/// used only while the above don't come, so no frame counts twice.
+const SWAPCHAIN_PRESENT: u16 = 178;
 /// Event times are FILETIME, in 100 ns.
 const SECOND: i64 = 10_000_000;
 /// The session hands events over in batches, about every second: the rate is
@@ -42,6 +47,8 @@ const STALE: i64 = 3 * SECOND;
 static TARGET: AtomicU32 = AtomicU32::new(0);
 /// The target's frame times, oldest first, the last few seconds.
 static FRAMES: Mutex<VecDeque<i64>> = Mutex::new(VecDeque::new());
+/// The same from IDXGISwapChain_Present (SWAPCHAIN_PRESENT).
+static SWAPCHAIN_FRAMES: Mutex<VecDeque<i64>> = Mutex::new(VecDeque::new());
 /// Whether a session of ours runs, and its consuming thread with it.
 static RUNNING: Mutex<bool> = Mutex::new(false);
 /// Which start the running session is: a thread that ends late (its session
@@ -88,14 +95,16 @@ fn stop_session() {
 unsafe extern "system" fn on_event(record: *mut EVENT_RECORD) {
     // SAFETY: ETW passes a valid record for the duration of the callback.
     let header = unsafe { &(*record).EventHeader };
-    if header.ProviderId != DXGI || !PRESENT_EVENTS.contains(&header.EventDescriptor.Id) {
+    let id = header.EventDescriptor.Id;
+    if header.ProviderId != DXGI || !(PRESENT_EVENTS.contains(&id) || id == SWAPCHAIN_PRESENT) {
         return;
     }
     let target = TARGET.load(Ordering::Relaxed);
     if target == 0 || header.ProcessId != target {
         return;
     }
-    let mut frames = FRAMES.lock().unwrap_or_else(|p| p.into_inner());
+    let queue = if id == SWAPCHAIN_PRESENT { &SWAPCHAIN_FRAMES } else { &FRAMES };
+    let mut frames = queue.lock().unwrap_or_else(|p| p.into_inner());
     frames.push_back(header.TimeStamp);
     while frames.front().is_some_and(|&t| header.TimeStamp - t > STALE) {
         frames.pop_front();
@@ -167,6 +176,7 @@ pub fn stop() {
     }
     TARGET.store(0, Ordering::Relaxed);
     FRAMES.lock().unwrap_or_else(|p| p.into_inner()).clear();
+    SWAPCHAIN_FRAMES.lock().unwrap_or_else(|p| p.into_inner()).clear();
 }
 
 fn now_filetime() -> i64 {
@@ -188,6 +198,7 @@ pub fn game_fps() -> FpsReading {
     }
     if TARGET.swap(pid, Ordering::Relaxed) != pid {
         FRAMES.lock().unwrap_or_else(|p| p.into_inner()).clear();
+        SWAPCHAIN_FRAMES.lock().unwrap_or_else(|p| p.into_inner()).clear();
     }
     {
         let mut running = RUNNING.lock().unwrap_or_else(|p| p.into_inner());
@@ -199,8 +210,11 @@ pub fn game_fps() -> FpsReading {
             }
         }
     }
-    let frames = FRAMES.lock().unwrap_or_else(|p| p.into_inner());
-    rate(&frames, now_filetime())
+    let now = now_filetime();
+    match rate(&FRAMES.lock().unwrap_or_else(|p| p.into_inner()), now) {
+        FpsReading::Fps(0) => rate(&SWAPCHAIN_FRAMES.lock().unwrap_or_else(|p| p.into_inner()), now),
+        reading => reading,
+    }
 }
 
 /// Frames per second over the frames of the last WINDOW before the newest;
