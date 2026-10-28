@@ -214,6 +214,10 @@ const MAX_STORED: usize = 1024 * 1024;
 const SETTLE: Duration = Duration::from_millis(500);
 /// Events kept per plugin for the run, replayed to its window when it opens.
 const MAX_LOGGED: usize = 20_000;
+/// And at most this much of them. Kept as full JSON trees, 20,000 events of
+/// a plugin reading every hit or spawn held tens of MB each, all run long,
+/// part of what made a Linux meter climb past 1 GB (2026-10-29).
+const MAX_LOGGED_BYTES: usize = 2 * 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -396,7 +400,9 @@ pub struct PluginHost {
     pending: Mutex<Vec<Pending>>,
     /// Wakes the flusher when an event is queued.
     queued: Condvar,
-    log: Mutex<HashMap<String, VecDeque<Value>>>,
+    /// Each plugin's numbered events, as their JSON text (a `Value` tree took
+    /// several times the memory), and the bytes held.
+    log: Mutex<HashMap<String, (VecDeque<String>, usize)>>,
     seq: Mutex<u64>,
     run: String,
     flusher: AtomicBool,
@@ -800,11 +806,14 @@ impl PluginHost {
                 "character": if allowed { who.clone() } else { None },
             });
             {
+                let text = event.to_string();
                 let mut log = self.log.lock().unwrap_or_else(|p| p.into_inner());
-                let list = log.entry(item.plugin.clone()).or_default();
-                list.push_back(event.clone());
-                while list.len() > MAX_LOGGED {
-                    list.pop_front();
+                let (list, bytes) = log.entry(item.plugin.clone()).or_default();
+                *bytes += text.len();
+                list.push_back(text);
+                while list.len() > MAX_LOGGED || *bytes > MAX_LOGGED_BYTES {
+                    let Some(gone) = list.pop_front() else { break };
+                    *bytes -= gone.len();
                 }
             }
             emit_plugin(app, &item.plugin, event);
@@ -1986,8 +1995,13 @@ pub fn plugin_hello(app: tauri::AppHandle, window: tauri::WebviewWindow, plugin:
     }
     let host = host(&app)?;
     let manifest = host.with(&id, |l| l.manifest.clone()).ok_or("plugin not loaded")?;
-    let replay: Vec<Value> =
-        host.log.lock().unwrap_or_else(|p| p.into_inner()).get(&id).map(|l| l.iter().cloned().collect()).unwrap_or_default();
+    let replay: Vec<Value> = host
+        .log
+        .lock()
+        .unwrap_or_else(|p| p.into_inner())
+        .get(&id)
+        .map(|(l, _)| l.iter().filter_map(|t| serde_json::from_str(t).ok()).collect())
+        .unwrap_or_default();
     let character =
         if manifest.permissions.iter().any(|p| p == "events:character") { character(&app) } else { None };
     let reviewed = host.with(&id, |l| l.reviewed).unwrap_or(false);
