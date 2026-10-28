@@ -54,11 +54,11 @@ jobs:
           pacman -Syu --noconfirm --needed git \
             webkit2gtk-4.1 gtk3 libpcap libcap hicolor-icon-theme \
             gst-plugins-base gst-plugins-good
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: linux-binaries
           path: src-tauri/target/release
@@ -75,7 +75,7 @@ jobs:
           chown -R builder "$GITHUB_WORKSPACE"
           su builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && A2T_PREBUILT=1 makepkg --noconfirm --nodeps"
           ls -la "$GITHUB_WORKSPACE"/packaging/arch/*.pkg.tar.zst
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: arch-package
           path: packaging/arch/*.pkg.tar.zst
@@ -85,22 +85,24 @@ jobs:
     name: .deb and .rpm
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ inputs.ref }}
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           workspaces: src-tauri
           key: deb-rpm
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 20
           cache: npm
       # Cached between runs (it took a minute to download and install every
       # time); the list is the cache key, so changing it fetches afresh.
       - name: Build dependencies
-        uses: awalsh128/cache-apt-pkgs-action@v1
+        uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1
         with:
           packages: libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev rpm cpio mold
           version: 1
@@ -127,7 +129,7 @@ jobs:
           cargo build --release --manifest-path src-tauri/Cargo.toml --bin a2tools-hotkeys
           npx tauri build --bundles deb,rpm
       # The same two binaries for the Arch package (the makepkg job).
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: linux-binaries
           path: |
@@ -179,7 +181,7 @@ jobs:
           rpm -qlp out/*.rpm | grep -E '^/usr/(bin|share/applications)/'
           dpkg-deb --contents out/*.deb | grep -q usr/bin/a2tools-hotkeys
           rpm -qlp out/*.rpm | grep -qx /usr/bin/a2tools-hotkeys
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: deb-rpm-packages
           path: out/*
@@ -201,7 +203,7 @@ jobs:
           - image: fedora:41
             install: dnf install -y ./a2tools-dps-meter-*.x86_64.rpm
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: deb-rpm-packages
       # Dependencies resolve, the install script grants capture permission,
@@ -229,7 +231,7 @@ jobs:
     runs-on: ubuntu-24.04
     container: fedora:41
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: deb-rpm-packages
       - name: Metadata
@@ -248,7 +250,7 @@ jobs:
           dnf install -y a2-tools-dps-meter
           getcap /usr/bin/a2tools-dps-meter | grep cap_net_raw
           test -x /usr/bin/a2tools-hotkeys && test -z "$(getcap /usr/bin/a2tools-hotkeys)"
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: rpm-repo
           path: repo
@@ -280,7 +282,7 @@ jobs:
             wait
             df -h /
           fi
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: rpm-repo
           path: repo
@@ -318,7 +320,7 @@ jobs:
     # in 2.0.56). A real Steam Deck is still unconfirmed (docs/linux.md).
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: arch-package
           path: pkg

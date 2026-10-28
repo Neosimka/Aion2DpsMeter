@@ -2466,9 +2466,12 @@ fn percent_decode(s: &str) -> String {
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;
     while i < bytes.len() {
+        // Read as bytes: a `%` before a non-ASCII character would split it
+        // as a str, and the panic ends the protocol handler (audit L7).
+        let hex = |b: u8| (b as char).to_digit(16);
         if bytes[i] == b'%' && i + 2 < bytes.len() {
-            if let Ok(v) = u8::from_str_radix(&s[i + 1..i + 3], 16) {
-                out.push(v);
+            if let (Some(hi), Some(lo)) = (hex(bytes[i + 1]), hex(bytes[i + 2])) {
+                out.push((hi * 16 + lo) as u8);
                 i += 3;
                 continue;
             }
@@ -2481,6 +2484,13 @@ fn percent_decode(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn percent_decode_takes_any_text() {
+        assert_eq!(super::percent_decode("a%20b%2Fc"), "a b/c");
+        assert_eq!(super::percent_decode("%é%"), "%é%");
+        assert_eq!(super::percent_decode("x%4"), "x%4");
+    }
+
     #[test]
     fn plugin_windows_reach_only_their_own_commands() {
         for label in ["plugin-ping", "plugins-dock", "pw_ping_ping"] {

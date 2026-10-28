@@ -1794,7 +1794,7 @@ async fn download_and_install_update(app: &tauri::AppHandle, url: &str, expected
 
     // Launch the installer (msiexec on Windows; see platform::updater).
     flush_settings_before_exit(app);
-    platform::updater::run_installer(&msi_path, &install_dir)?;
+    platform::updater::run_installer(&msi_path, expected_sha256.trim(), &install_dir)?;
 
     // Give installer time to start, then exit
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
