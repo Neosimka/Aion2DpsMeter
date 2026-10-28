@@ -139,3 +139,14 @@ pub fn click_through_by_region() -> bool {
 pub fn widget_click_through(_window: &tauri::WebviewWindow, _ignore: bool, _keep: Option<(&[(f64, f64, f64, f64)], f64)>) -> bool {
     false
 }
+
+/// Linux only (see the Linux version): here pages already share processes.
+pub fn share_process<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
+    builder: tauri::WebviewWindowBuilder<'a, R, M>,
+    _group: crate::platform::ProcessGroup,
+) -> tauri::WebviewWindowBuilder<'a, R, M> {
+    builder
+}
+
+/// Linux only (see the Linux version).
+pub fn joined(_window: &tauri::WebviewWindow, _group: crate::platform::ProcessGroup) {}

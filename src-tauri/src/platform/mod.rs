@@ -45,6 +45,17 @@ pub use os::{
 
 pub use os::atomic_file;
 
+/// Which web process a window's page shares, where the OS gives each window
+/// its own unless told otherwise (Linux: `window::share_process`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProcessGroup {
+    /// The meter and its own windows: Settings, History, Details.
+    Meter,
+    /// The plugin dock, plugin windows and their widgets, apart from the
+    /// meter's, so a busy plugin never stalls the meter.
+    Plugins,
+}
+
 /// The game's frame rate, as `fps::game_fps` reads it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FpsReading {

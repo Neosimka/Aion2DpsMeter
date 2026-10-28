@@ -385,3 +385,14 @@ pub fn tray_supported() -> bool {
 pub fn click_through_by_region() -> bool {
     false
 }
+
+/// Linux only (see the Linux version): WebView2 already runs the meter's pages in shared processes.
+pub fn share_process<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
+    builder: tauri::WebviewWindowBuilder<'a, R, M>,
+    _group: crate::platform::ProcessGroup,
+) -> tauri::WebviewWindowBuilder<'a, R, M> {
+    builder
+}
+
+/// Linux only (see the Linux version).
+pub fn joined(_window: &tauri::WebviewWindow, _group: crate::platform::ProcessGroup) {}

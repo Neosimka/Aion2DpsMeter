@@ -236,7 +236,10 @@ pub async fn plugin_widget_open(
     let title = format!("{plugin_name} · {name}");
     crate::app::note_window_title(&title, &label(&id, &name));
     let front = crate::platform::window::front_window();
-    let widget = tauri::WebviewWindowBuilder::new(&app, label(&id, &name), tauri::WebviewUrl::App("plugin-widget.html".into()))
+    let widget = crate::platform::window::share_process(
+        tauri::WebviewWindowBuilder::new(&app, label(&id, &name), tauri::WebviewUrl::App("plugin-widget.html".into())),
+        crate::platform::ProcessGroup::Plugins,
+    )
         .initialization_script(script)
         // Its own title, so KWin can keep it where it was left (#76).
         .title(title)
@@ -263,6 +266,7 @@ pub async fn plugin_widget_open(
         .focusable(false)
         .build()
         .map_err(|e| e.to_string())?;
+    crate::platform::window::joined(&widget, crate::platform::ProcessGroup::Plugins);
     // Never in front of the game: an alert icon appearing must not tab the
     // player out of it.
     crate::platform::window::never_activate(&widget, front);

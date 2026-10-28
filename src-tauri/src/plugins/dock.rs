@@ -199,7 +199,7 @@ fn build(app: &tauri::AppHandle, visible: bool) -> Result<(), String> {
     }
     let (w, h) = super::saved_size(app, PLACE_ID).unwrap_or((380.0, 520.0));
     crate::app::note_window_title(TITLE, LABEL);
-    let window = tauri::WebviewWindowBuilder::new(app, LABEL, tauri::WebviewUrl::App("plugin-dock.html".into()))
+    let window = crate::platform::window::share_process(tauri::WebviewWindowBuilder::new(app, LABEL, tauri::WebviewUrl::App("plugin-dock.html".into())), crate::platform::ProcessGroup::Plugins)
         .title(TITLE)
         .inner_size(w, h)
         .min_inner_size(240.0, 120.0)
@@ -213,6 +213,7 @@ fn build(app: &tauri::AppHandle, visible: bool) -> Result<(), String> {
         .shadow(false)
         .build()
         .map_err(|e| e.to_string())?;
+    crate::platform::window::joined(&window, crate::platform::ProcessGroup::Plugins);
     if !visible && crate::platform::window::HIDE_AFTER_BUILD {
         crate::platform::window::hide_without_focus(&window);
     }

@@ -2276,11 +2276,11 @@ fn open_details_on_monitor_inner(
     // hidden window and calling maximize() put it on whichever monitor Windows
     // still considered current, which is how Details kept opening on the same
     // screen as the overlay.
-    let window = tauri::WebviewWindowBuilder::new(
+    let window = platform::window::share_process(tauri::WebviewWindowBuilder::new(
         app,
         "details",
         tauri::WebviewUrl::App("index.html".into()),
-    )
+    ), platform::ProcessGroup::Meter)
     .initialization_script("window.__A2_VIEW__ = 'details';")
     .title("A2Tools DPS Meter — Details")
     .decorations(false)
@@ -2299,6 +2299,7 @@ fn open_details_on_monitor_inner(
     .background_color(tauri::window::Color(10, 14, 22, 255))
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::joined(&window, platform::ProcessGroup::Meter);
     platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: lw, height: lh }));
 
     // An explicit monitor pick always wins; otherwise fall back to wherever the
@@ -2670,11 +2671,11 @@ window.__A2_VIEW__ = 'settings';
 fn build_settings_window(app: &tauri::AppHandle) -> Result<(), String> {
     platform::window_startup::begin_settings_load();
     let (x, y, _, _) = birth_place(app, Some("settings"), (760.0, 820.0), false);
-    let window = tauri::WebviewWindowBuilder::new(
+    let window = platform::window::share_process(tauri::WebviewWindowBuilder::new(
         app,
         "settings",
         tauri::WebviewUrl::App("index.html".into()),
-    )
+    ), platform::ProcessGroup::Meter)
     // Injected before any page script. WebviewUrl::App is a path, so a ?query
     // gets percent-encoded — this is the one channel that is reliable.
     .initialization_script(SETTINGS_WINDOW_SCRIPT)
@@ -2698,6 +2699,7 @@ fn build_settings_window(app: &tauri::AppHandle) -> Result<(), String> {
     .visible(!platform::window_startup::loads_hidden())
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::joined(&window, platform::ProcessGroup::Meter);
     platform::window_startup::prepare_settings(&window);
     platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: 760.0, height: 820.0 }));
 
@@ -2931,11 +2933,11 @@ fn open_fight_window(app: &tauri::AppHandle, label: &str) -> Result<(), String> 
     let offset = (step % 6.0) * 34.0;
     let (x, y, w, h) = birth_place(app, Some(FIGHT_WINDOW_KEY), (1180.0, 760.0), true);
 
-    let window = tauri::WebviewWindowBuilder::new(
+    let window = platform::window::share_process(tauri::WebviewWindowBuilder::new(
         app,
         label,
         tauri::WebviewUrl::App("index.html".into()),
-    )
+    ), platform::ProcessGroup::Meter)
     .initialization_script("window.__A2_VIEW__ = 'details';")
     .title("A2Tools DPS Meter — Fight")
     .decorations(false)
@@ -2949,6 +2951,7 @@ fn open_fight_window(app: &tauri::AppHandle, label: &str) -> Result<(), String> 
     .background_color(tauri::window::Color(10, 14, 22, 255))
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::joined(&window, platform::ProcessGroup::Meter);
     platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: w, height: h }));
     Ok(())
 }
@@ -2957,11 +2960,11 @@ fn open_fight_window(app: &tauri::AppHandle, label: &str) -> Result<(), String> 
 /// from, and it stays put while those fights open in windows of their own.
 fn open_history_window_inner(app: &tauri::AppHandle) -> Result<(), String> {
     let (x, y, w, h) = birth_place(app, Some("history"), (1100.0, 720.0), true);
-    let window = tauri::WebviewWindowBuilder::new(
+    let window = platform::window::share_process(tauri::WebviewWindowBuilder::new(
         app,
         "history",
         tauri::WebviewUrl::App("index.html".into()),
-    )
+    ), platform::ProcessGroup::Meter)
     .initialization_script("window.__A2_VIEW__ = 'history';")
     .title("A2Tools DPS Meter — Battle History")
     .decorations(false)
@@ -2975,6 +2978,7 @@ fn open_history_window_inner(app: &tauri::AppHandle) -> Result<(), String> {
     .background_color(tauri::window::Color(10, 14, 22, 255))
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::joined(&window, platform::ProcessGroup::Meter);
     platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: w, height: h }));
 
     if !restore_window_geometry(app, &window, "history") {
@@ -2997,11 +3001,11 @@ fn close_tool_window(window: tauri::Window) {
 fn open_details_windowed(app: &tauri::AppHandle) -> Result<(), String> {
     let placed = details_geometry_is_user_placed(app).then_some("details");
     let (x, y, w, h) = birth_place(app, placed, (1180.0, 760.0), true);
-    let window = tauri::WebviewWindowBuilder::new(
+    let window = platform::window::share_process(tauri::WebviewWindowBuilder::new(
         app,
         "details",
         tauri::WebviewUrl::App("index.html".into()),
-    )
+    ), platform::ProcessGroup::Meter)
     .initialization_script("window.__A2_VIEW__ = 'details';")
     .title("A2Tools DPS Meter — Details")
     .decorations(false)
@@ -3017,6 +3021,7 @@ fn open_details_windowed(app: &tauri::AppHandle) -> Result<(), String> {
     .background_color(tauri::window::Color(10, 14, 22, 255))
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::joined(&window, platform::ProcessGroup::Meter);
     platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: w, height: h }));
 
     // A remembered position still wins, but only one the user actually chose.
@@ -3652,6 +3657,9 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            if let Some(main) = app.get_webview_window("main") {
+                platform::window::joined(&main, platform::ProcessGroup::Meter);
+            }
             // Resolve data directory
             let app_data_dir = app.path().app_data_dir()
                 .unwrap_or_else(|_| std::path::PathBuf::from("."));

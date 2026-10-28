@@ -570,3 +570,56 @@ pub fn tray_supported() -> bool {
         // tray's own loading would.
         .any(|name| unsafe { libloading::Library::new(name) }.is_ok())
 }
+
+/// The open windows of each process group (`ProcessGroup`) and their WebKit
+/// views: a new window of the group is related to one of them.
+struct GroupView(String, webkit2gtk::WebView);
+// SAFETY: as Tauri's own `WebviewAttributes` holding a related view: the
+// view only travels in a builder to the GTK thread, which uses it there;
+// elsewhere it is only cloned and dropped (GObject reference counting is
+// thread-safe), and the list's reference goes on the GTK thread (`joined`).
+unsafe impl Send for GroupView {}
+
+static GROUP_VIEWS: std::sync::Mutex<[Vec<GroupView>; 2]> = std::sync::Mutex::new([Vec::new(), Vec::new()]);
+
+fn group_slot(group: crate::platform::ProcessGroup) -> usize {
+    match group {
+        crate::platform::ProcessGroup::Meter => 0,
+        crate::platform::ProcessGroup::Plugins => 1,
+    }
+}
+
+/// A new window's page in its group's web process. WebKitGTK gives every
+/// view its own process, each holding some 70-110 MB of its own on top of
+/// the libraries every process maps, so each plugin widget cost a process:
+/// a player with five plugins saw 1.1 GiB (2.0.81). Related views share one.
+pub fn share_process<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
+    builder: tauri::WebviewWindowBuilder<'a, R, M>,
+    group: crate::platform::ProcessGroup,
+) -> tauri::WebviewWindowBuilder<'a, R, M> {
+    let view = GROUP_VIEWS.lock().unwrap_or_else(|p| p.into_inner())[group_slot(group)].first().map(|v| v.1.clone());
+    match view {
+        Some(view) => builder.with_related_view(view),
+        None => builder,
+    }
+}
+
+/// A window of the group built: later windows of the group may share its
+/// process, until it closes.
+pub fn joined(window: &tauri::WebviewWindow, group: crate::platform::ProcessGroup) {
+    let slot = group_slot(group);
+    let label = window.label().to_string();
+    let _ = window.with_webview(move |webview| {
+        let view = webview.inner();
+        let mut views = GROUP_VIEWS.lock().unwrap_or_else(|p| p.into_inner());
+        if !views[slot].iter().any(|v| v.0 == label) {
+            views[slot].push(GroupView(label, view));
+        }
+    });
+    let label = window.label().to_string();
+    window.on_window_event(move |event| {
+        if matches!(event, tauri::WindowEvent::Destroyed) {
+            GROUP_VIEWS.lock().unwrap_or_else(|p| p.into_inner())[slot].retain(|v| v.0 != label);
+        }
+    });
+}
