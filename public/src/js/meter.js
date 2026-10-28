@@ -369,10 +369,11 @@ const createMeterUI = ({
       }
 
       const rowId = row.id ?? row.name ?? "";
-      const nameText = row.isIdentifying
+      let nameText = row.isIdentifying
         ? window.i18n?.format?.("meter.identifyingPlayer", { id: rowId }, `#${rowId}`) ??
           `#${rowId}`
         : row.name ?? "";
+      if (row.deaths > 0) nameText += ` \u2620${row.deaths}`;
       if (view.lastNameText !== nameText) {
         view.nameEl.textContent = nameText;
         view.lastNameText = nameText;

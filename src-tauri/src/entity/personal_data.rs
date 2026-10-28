@@ -51,6 +51,9 @@ pub struct PersonalData {
     /// out when there is none.
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub stagger_skills: HashMap<i32, i64>,
+    /// Times this player died in the fight, shown behind the name when above 0.
+    #[serde(default)]
+    pub deaths: i32,
 }
 
 impl PersonalData {
@@ -71,6 +74,7 @@ impl PersonalData {
             heal_amount: 0.0,
             stagger: 0,
             stagger_skills: HashMap::new(),
+            deaths: 0,
         }
     }
 
@@ -91,6 +95,7 @@ impl PersonalData {
             heal_amount: 0.0,
             stagger: 0,
             stagger_skills: HashMap::new(),
+            deaths: 0,
         }
     }
 

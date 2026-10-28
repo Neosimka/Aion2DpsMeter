@@ -565,8 +565,12 @@ impl DpsCalculator {
 
         // Filter and compute DPS
         let party_members = self.data_storage.get_party_members();
+        let fight_deaths = if fight_start <= fight_end { self.data_storage.deaths_between(fight_start, fight_end) } else { Vec::new() };
         let mut to_remove = Vec::new();
         for (&uid, data) in &mut dps_data.map {
+            if let Some(ids) = row_players.get(&uid) {
+                data.deaths = fight_deaths.iter().filter(|(entity, _, _)| ids.contains(entity)).count() as i32;
+            }
             // Combat power joins on the character name: the roster carries an
             // account-level dbid, not the session entity id keyed here.
             let member = party_members.get(&data.nickname);
