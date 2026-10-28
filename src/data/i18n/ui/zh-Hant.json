@@ -6,18 +6,35 @@
       "total": "DMG",
       "ariaDps": "顯示 DPS",
       "ariaDamage": "顯示總傷害",
-      "both": "兩者",
-      "ariaBoth": "顯示 DPS 和總傷害",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "破防",
       "ariaHps": "顯示每秒治療量",
       "ariaHeal": "顯示總治療量",
-      "ariaStagger": "顯示對首領破防條造成的削減"
+      "ariaStagger": "顯示對首領破防條造成的削減",
+      "names": {
+        "dps": "每秒傷害",
+        "totalDamage": "總傷害",
+        "hps": "每秒治療",
+        "totalHeal": "總治療",
+        "stagger": "破防",
+        "bossStagger": "首領破防 %"
+      },
+      "sortBy": "依此排序",
+      "menuTip": "選擇各列顯示的項目。滾輪或右鍵：下一個項目",
+      "bossStaggerTip": "在首領的 HP 條上顯示破防量表已削減多少",
+      "sortCol": "排序",
+      "showCol": "顯示"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} 可更新",
       "plugins": "外掛更新：{list}"
+    },
+    "targetMode": {
+      "lastHitByMe": "最後攻擊的敵人",
+      "bossTargets": "僅首領",
+      "trainTargets": "訓練木樁",
+      "allTargets": "所有敵人合計"
     }
   },
   "details": {
@@ -320,7 +337,6 @@
     "odyleEnergy": "奧德能量",
     "showTtk": "顯示預估擊殺時間",
     "showHealModes": "在 DPS/DMG 按鈕中顯示治療",
-    "showStaggerMode": "在 DPS/DMG 按鈕中顯示破防",
     "showTotalDps": "顯示隊伍總計",
     "roundDps": "DPS 以千為單位顯示 (13k)",
     "showDpsSuffix": "DPS 後顯示 /s",
@@ -585,7 +601,6 @@
       "detailsMonitor": "在所選螢幕上開啟詳細資料視窗並保持在那裡。",
       "showTtk": "在戰鬥計時器旁顯示整場首領戰的預估時長。",
       "showHealModes": "計量器上的 DPS/DMG 按鈕也會切換到每秒治療量與總治療量。",
-      "showStaggerMode": "計量器上的 DPS/DMG 按鈕也會顯示每位玩家削減首領破防條的數值。",
       "showTotalDps": "在各列下方顯示隊伍總 DPS 和總傷害的條。",
       "roundDps": "13,412 顯示為 13k。",
       "showSuspendBtn": "在計量器上顯示一個按鈕，按下後停止讀取遊戲流量，再按一次恢復。",

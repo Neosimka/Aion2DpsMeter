@@ -962,6 +962,12 @@ impl DataStorage {
         self.stagger.lock().note_spawn(entity, max, rest);
     }
 
+    /// How far `entity`'s stagger gauge is worn down, 0-100, if it has one.
+    pub fn stagger_pct(&self, entity: i32) -> Option<f64> {
+        let (max, rest) = self.stagger.lock().gauge(entity)?;
+        (max > 0).then(|| f64::from(max.saturating_sub(rest)) * 100.0 / f64::from(max))
+    }
+
     /// A gauge update (`05 E0 .. 03 01`), at the current time.
     pub fn note_stagger_gauge(&self, entity: i32, max: u32, rest: u32, status: u8) {
         tracing::debug!("Stagger gauge: entity {} at {}/{} status {}", entity, rest, max, status);

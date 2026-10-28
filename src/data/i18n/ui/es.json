@@ -6,18 +6,35 @@
       "total": "DÑO",
       "ariaDps": "Mostrando DPS",
       "ariaDamage": "Mostrando daño total",
-      "both": "AMBOS",
-      "ariaBoth": "Mostrando DPS y daño total",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "ATUR",
       "ariaHps": "Mostrando curación por segundo",
       "ariaHeal": "Mostrando curación total",
-      "ariaStagger": "Mostrando el aturdimiento infligido a la barra del jefe"
+      "ariaStagger": "Mostrando el aturdimiento infligido a la barra del jefe",
+      "names": {
+        "dps": "Daño por segundo",
+        "totalDamage": "Daño total",
+        "hps": "Curación por segundo",
+        "totalHeal": "Curación total",
+        "stagger": "Aturdimiento",
+        "bossStagger": "Aturdimiento del jefe %"
+      },
+      "sortBy": "Ordenar por esto",
+      "menuTip": "Elige qué muestran las filas. Rueda o clic derecho: siguiente métrica",
+      "bossStaggerTip": "Cuánto se ha vaciado la barra de aturdimiento del jefe, en su barra de vida",
+      "sortCol": "Orden",
+      "showCol": "Mostrar"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} está disponible",
       "plugins": "Actualizaciones de plugins: {list}"
+    },
+    "targetMode": {
+      "lastHitByMe": "El último enemigo golpeado",
+      "bossTargets": "Solo jefes",
+      "trainTargets": "Muñecos de entrenamiento",
+      "allTargets": "Todos los enemigos, sumados"
     }
   },
   "details": {
@@ -320,7 +337,6 @@
     "odyleEnergy": "Energía de Odyle",
     "showTtk": "Mostrar tiempo estimado para matar",
     "showHealModes": "Mostrar curación en el botón DPS/DMG",
-    "showStaggerMode": "Mostrar aturdimiento en el botón DPS/DMG",
     "showTotalDps": "Mostrar total del grupo",
     "roundDps": "Abreviar DPS en miles (13k)",
     "showDpsSuffix": "Añadir /s al DPS",
@@ -585,7 +601,6 @@
       "detailsMonitor": "Abre la ventana de detalles en la pantalla elegida y la mantiene allí.",
       "showTtk": "Junto al temporizador, una estimación de cuánto durará todo el combate contra el jefe.",
       "showHealModes": "El botón DPS/DMG del medidor también muestra la curación por segundo y la curación total.",
-      "showStaggerMode": "El botón DPS/DMG del medidor también muestra cuánto redujo cada jugador la barra de aturdimiento del jefe.",
       "showTotalDps": "Una barra bajo las filas con el DPS y el daño de todo el grupo.",
       "roundDps": "13.412 se muestra como 13k.",
       "showSuspendBtn": "Un botón en el medidor que deja de leer el tráfico del juego hasta que lo pulses de nuevo.",

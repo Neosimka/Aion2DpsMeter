@@ -6,18 +6,35 @@
       "total": "SCH",
       "ariaDps": "Zeigt DPS",
       "ariaDamage": "Zeigt Gesamtschaden",
-      "both": "BEIDE",
-      "ariaBoth": "Zeigt DPS und Gesamtschaden",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "STAG",
       "ariaHps": "Zeigt Heilung pro Sekunde",
       "ariaHeal": "Zeigt Gesamtheilung",
-      "ariaStagger": "Zeigt den Stagger-Schaden an der Leiste des Bosses"
+      "ariaStagger": "Zeigt den Stagger-Schaden an der Leiste des Bosses",
+      "names": {
+        "dps": "Schaden pro Sekunde",
+        "totalDamage": "Gesamtschaden",
+        "hps": "Heilung pro Sekunde",
+        "totalHeal": "Gesamtheilung",
+        "stagger": "Stagger",
+        "bossStagger": "Boss-Stagger %"
+      },
+      "sortBy": "Danach sortieren",
+      "menuTip": "Wähle, was die Zeilen zeigen. Mausrad oder Rechtsklick: nächster Wert",
+      "bossStaggerTip": "Wie weit die Stagger-Leiste des Bosses abgebaut ist, auf seiner HP-Leiste",
+      "sortCol": "Sortieren",
+      "showCol": "Zeigen"
     },
     "updates": {
       "meter": "A2Tools DPS-Meter {version} ist verfügbar",
       "plugins": "Plugin-Updates: {list}"
+    },
+    "targetMode": {
+      "lastHitByMe": "Der zuletzt getroffene Gegner",
+      "bossTargets": "Nur Bosse",
+      "trainTargets": "Trainingspuppen",
+      "allTargets": "Alle Gegner zusammen"
     }
   },
   "details": {
@@ -320,7 +337,6 @@
     "odyleEnergy": "Odyle-Energie",
     "showTtk": "Geschätzte Kill-Zeit anzeigen",
     "showHealModes": "Heilung im DPS/DMG-Knopf anzeigen",
-    "showStaggerMode": "Stagger im DPS/DMG-Knopf anzeigen",
     "showTotalDps": "Gruppensumme anzeigen",
     "roundDps": "DPS in Tausend kürzen (13k)",
     "showDpsSuffix": "/s an DPS anhängen",
@@ -585,7 +601,6 @@
       "detailsMonitor": "Öffnet das Detailfenster auf dem gewählten Bildschirm und hält es dort.",
       "showTtk": "Neben dem Kampftimer eine Schätzung, wie lange der ganze Bosskampf dauert.",
       "showHealModes": "Der DPS/DMG-Knopf am Meter wechselt auch zu Heilung pro Sekunde und Gesamtheilung.",
-      "showStaggerMode": "Der DPS/DMG-Knopf am Meter zeigt auch, wie viel Stagger jeder Spieler von der Leiste des Bosses abgezogen hat.",
       "showTotalDps": "Eine Leiste unter den Zeilen mit DPS und Schaden der ganzen Gruppe.",
       "roundDps": "13.412 wird als 13k angezeigt.",
       "showSuspendBtn": "Eine Taste am Meter, die das Lesen des Spielverkehrs anhält, bis du sie erneut drückst.",

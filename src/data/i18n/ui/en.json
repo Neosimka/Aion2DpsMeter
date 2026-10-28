@@ -6,18 +6,35 @@
       "total": "DMG",
       "ariaDps": "Showing DPS",
       "ariaDamage": "Showing total damage",
-      "both": "BOTH",
-      "ariaBoth": "Showing DPS and total damage",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "STAG",
       "ariaHps": "Showing raw healing per second (excludes passive regen)",
       "ariaHeal": "Showing total raw healing (excludes passive regen)",
-      "ariaStagger": "Showing stagger dealt to the boss's gauge"
+      "ariaStagger": "Showing stagger dealt to the boss's gauge",
+      "names": {
+        "dps": "Damage per second",
+        "totalDamage": "Total damage",
+        "hps": "Healing per second",
+        "totalHeal": "Total healing",
+        "stagger": "Stagger",
+        "bossStagger": "Boss stagger %"
+      },
+      "sortBy": "Sort by this",
+      "menuTip": "Pick what the rows show. Wheel or right-click: next metric",
+      "bossStaggerTip": "How far the boss's stagger gauge is worn down, on its HP bar",
+      "sortCol": "Sort",
+      "showCol": "Show"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} is available",
       "plugins": "Plugin updates: {list}"
+    },
+    "targetMode": {
+      "lastHitByMe": "The enemy you hit last",
+      "bossTargets": "Bosses only",
+      "trainTargets": "Training dummies",
+      "allTargets": "Every enemy, combined"
     }
   },
   "details": {
@@ -320,7 +337,6 @@
     "odyleEnergy": "Odyle Energy",
     "showTtk": "Show time to kill estimate",
     "showHealModes": "Show healing in the DPS/DMG button",
-    "showStaggerMode": "Show stagger in the DPS/DMG button",
     "showTotalDps": "Show party total",
     "roundDps": "Shorten DPS to thousands (13k)",
     "showDpsSuffix": "Add /s to DPS",
@@ -594,7 +610,6 @@
       "detailsMonitor": "Opens the Details window on the chosen display and keeps it there.",
       "showTtk": "Beside the battle timer, an estimate of how long the whole boss fight will take.",
       "showHealModes": "The DPS/DMG button on the meter also cycles through healing per second and total healing.",
-      "showStaggerMode": "The DPS/DMG button on the meter also shows the stagger each player took off the boss's gauge.",
       "showTotalDps": "A bar under the rows with the party's combined DPS and damage.",
       "roundDps": "13,412 shows as 13k.",
       "showSuspendBtn": "A button on the meter that stops reading game traffic until you press it again.",

@@ -622,6 +622,9 @@ body.linuxOverlay .meter {
   pointer-events: none;
 }
 .bossHpText .bossHpAmt { color: rgba(255, 255, 255, 0.72); }
+/* Boss stagger %, between the two: amber, a gauge apart from HP. */
+.bossHpText .bossHpStag { color: #ffd27a; }
+.bossHpText .bossHpStag:empty { display: none; }
 
 /* ---------- player rows ---------- */
 
@@ -1030,6 +1033,12 @@ html:not(.hoverStale) .list .item:hover { background: rgba(255, 255, 255, 0.075)
 /* Share of party damage. Brighter than the other secondary text on the row:
    it is a number people read at a glance mid-fight, and at 11px over the
    moving bar the muted --hud-sub grey was hard to pick out. */
+/* Extra metrics from the metric menu: smaller and dimmer than the main
+   figure, which the bars and the order follow. */
+.list .item .dps .dpsExtra {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
 .list .item .dps .dpsContribution {
   font-variation-settings: "wght" 600, "wdth" 75;
   font-size: 11px;
@@ -1097,10 +1106,11 @@ html:not(.hoverStale) .list .item:hover { background: rgba(255, 255, 255, 0.075)
   font-style: italic;
   color: var(--hud-sub);
 }
-/* Everyone not in your party on an open-world boss, from its lost HP. */
+/* Everyone not in your party on an open-world boss, from its lost HP.
+   Upright and near-white like a player's name, just a touch softer: the
+   italic grey read as a placeholder, not a row. */
 .meter .item.isOthers .content .name {
-  font-style: italic;
-  color: var(--hud-sub);
+  color: rgba(255, 255, 255, 0.82);
 }
 .meter .item.isOthers { cursor: default; }
 body.mainPlayerNamesBold :is(.meter, .barPreviewPanel) .item .content .name,
@@ -1248,6 +1258,137 @@ body.mainPlayerDpsBold :is(.meter, .barPreviewPanel) .item .content .dps > p {
 }
 .footerBtns .targetModeBtn { min-width: 44px; }
 .footerBtns .metricToggleBtn { min-width: 30px; }
+.footerBtns .footerBtn.isOpen {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+/* The metric menu: in the meter's flow above the footer, so the window
+   grows to hold it. Three columns, as labelled in its head: a radio for the
+   one metric the bars and order follow, the name, a tick for shown. */
+.metricMenu {
+  display: grid;
+  grid-template-columns: minmax(18px, max-content) 1fr minmax(18px, max-content);
+  column-gap: 6px;
+  flex-shrink: 0;
+  width: max-content;
+  min-width: 176px;
+  margin: 6px 8px 4px auto;
+  padding: 5px 6px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(var(--hud-bg), 0.96);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  font-family: var(--hud-tech);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+.metricMenu[hidden] { display: none; }
+.metricMenuHead,
+.metricMenuItem {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+.metricMenuHead {
+  padding: 0 4px 4px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 9px;
+  font-variation-settings: "wght" 700, "wdth" 75;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.metricMenuHeadSort,
+.metricMenuHeadShow { text-align: center; }
+.metricMenuItem {
+  min-height: 22px;
+  padding: 0 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.metricMenuItem:hover { background: rgba(255, 255, 255, 0.07); }
+.metricMenuItem.isPrimary { background: rgba(255, 255, 255, 0.05); cursor: default; }
+
+/* Sort radio: a ring, filled with the accent for the sorting metric. */
+.metricMenuSort {
+  justify-self: center;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.metricMenuSort:hover { border-color: #fff; }
+.metricMenuItem.isPrimary .metricMenuSort {
+  border-color: var(--isUser-fill);
+  box-shadow: inset 0 0 0 2px rgba(var(--hud-bg), 1);
+  background: var(--isUser-fill);
+  cursor: default;
+}
+.metricMenuName {
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.62);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: inherit;
+}
+.metricMenuItem.isShown .metricMenuName { color: rgba(255, 255, 255, 0.9); }
+.metricMenuItem.isPrimary .metricMenuName { color: #fff; font-variation-settings: "wght" 700; }
+
+/* Show tick: a box, filled with a check when the column is on. The sorting
+   metric's is on and dimmed: it is always shown. */
+.metricMenuCheck {
+  justify-self: center;
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+.metricMenuItem:hover .metricMenuCheck { border-color: rgba(255, 255, 255, 0.75); }
+.metricMenuItem.isShown .metricMenuCheck {
+  border-color: var(--isUser-fill);
+  background: var(--isUser-fill);
+}
+.metricMenuItem.isShown .metricMenuCheck::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 0.5px;
+  width: 3px;
+  height: 6px;
+  border: solid rgba(var(--hud-bg), 1);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.metricMenuItem.isPrimary .metricMenuCheck { opacity: 0.45; }
+/* The target mode menu: the same card, a radio per mode, the button's
+   label, then what the mode counts. */
+.targetMenu { min-width: 0; }
+.targetMenu .metricMenuName { letter-spacing: 0.06em; }
+.targetMenuDesc {
+  padding-left: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+.targetMenu .metricMenuItem.isPrimary .targetMenuDesc { color: rgba(255, 255, 255, 0.78); }
+.metricMenuSep {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 3px 2px;
+  background: rgba(255, 255, 255, 0.08);
+}
 .footerBtns .footerBtn:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.11);

@@ -151,8 +151,13 @@ const createMeterUI = ({
     dpsContainer.className = "dps";
     const dpsContribution = document.createElement("p");
     dpsContribution.className = "dpsContribution";
+    // The extra metrics ticked in the metric menu, after the main figure.
+    const dpsExtra = document.createElement("p");
+    dpsExtra.className = "dpsExtra";
+    dpsExtra.style.display = "none";
 
     dpsContainer.appendChild(dpsNumber);
+    dpsContainer.appendChild(dpsExtra);
     dpsContainer.appendChild(dpsContribution);
 
     contentEl.appendChild(rankEl);
@@ -178,6 +183,7 @@ const createMeterUI = ({
       classIconEl,
       classIconImg,
       dpsNumber,
+      dpsExtra,
       dpsContribution,
       fillEl,
       currentRow: null,
@@ -188,6 +194,7 @@ const createMeterUI = ({
       lastIsCjk: false,
       lastIsSupporter: false,
       lastMetricText: "",
+      lastExtraText: "",
       lastContributionText: "",
       lastRankText: "",
       lastFillRatio: -1,
@@ -471,6 +478,12 @@ const createMeterUI = ({
       if (view.lastMetricText !== metricText) {
         view.dpsNumber.textContent = metricText;
         view.lastMetricText = metricText;
+      }
+      const extraText = Array.isArray(metric.extras) ? metric.extras.join(" \u00b7 ") : "";
+      if (view.lastExtraText !== extraText) {
+        view.dpsExtra.textContent = extraText;
+        view.dpsExtra.style.display = extraText ? "" : "none";
+        view.lastExtraText = extraText;
       }
 
       const contributionText = `${damageContribution.toFixed(1)}%`;

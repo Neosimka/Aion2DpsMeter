@@ -253,6 +253,12 @@ impl DpsCalculator {
             -1
         };
         dps_data.target_current_hp = target_current_hp;
+        let target_stagger_pct = if self.current_target != 0 {
+            self.data_storage.stagger_pct(self.current_target).unwrap_or(-1.0)
+        } else {
+            -1.0
+        };
+        dps_data.target_stagger_pct = target_stagger_pct;
         let target_is_boss = self.current_target != 0
             && self.data_storage.mob_code(self.current_target).is_some_and(|code| {
                 self.npc_lookup.is_boss(code) && !self.npc_lookup.is_training_dummy(code)
@@ -316,6 +322,7 @@ impl DpsCalculator {
                 snapshot.target_max_hp = target_max_hp;
                 snapshot.target_total_damage = 0;
                 snapshot.target_current_hp = target_current_hp;
+                snapshot.target_stagger_pct = target_stagger_pct;
                 snapshot.target_is_boss = target_is_boss;
                 snapshot.target_mob_code = target_mob_code;
                 snapshot.dungeon_id = dps_data.dungeon_id;
