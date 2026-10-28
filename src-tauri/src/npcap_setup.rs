@@ -128,6 +128,16 @@ pub fn offer(app: tauri::AppHandle, capturer: PcapCapturer) {
     });
 }
 
+/// The meter's installer starts it with this when the player ticked "Install
+/// Npcap" on its page (wix/main.wxs): Npcap's own installer, downloaded from
+/// npcap.com, follows at once, unasked.
+pub const INSTALL_ARG: &str = "--install-npcap";
+
+#[cfg(feature = "online")]
+fn asked_by_installer() -> bool {
+    std::env::args().any(|a| a == INSTALL_ARG)
+}
+
 /// Ask, download Npcap's installer from npcap.com, run it and start capturing.
 #[cfg(feature = "online")]
 fn offer_download(app: tauri::AppHandle, capturer: PcapCapturer) {
@@ -137,10 +147,14 @@ fn offer_download(app: tauri::AppHandle, capturer: PcapCapturer) {
         let t = texts(state.i18n_data_dir.as_deref(), &lang);
         let http = state.http.clone();
 
-        let (title, ask) = (t.title.clone(), t.ask.clone());
-        let yes = tauri::async_runtime::spawn_blocking(move || platform::dialog::ask_yes_no(&title, &ask))
-            .await
-            .unwrap_or(false);
+        // Started by the installer with "Install Npcap" ticked: the player
+        // has answered already.
+        let yes = asked_by_installer() || {
+            let (title, ask) = (t.title.clone(), t.ask.clone());
+            tauri::async_runtime::spawn_blocking(move || platform::dialog::ask_yes_no(&title, &ask))
+                .await
+                .unwrap_or(false)
+        };
         if !yes {
             tracing::info!("Npcap missing; the player will install it themselves");
             return;
