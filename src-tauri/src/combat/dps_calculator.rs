@@ -347,11 +347,15 @@ impl DpsCalculator {
         // (2026-10-17). The player's own entity comes first, then by id.
         let mut actors: Vec<(i32, i64)> = combined_actors.iter().map(|(&a, &d)| (a, d)).collect();
         actors.sort_unstable_by_key(|&(actor_id, _)| (summon_resolver::resolve(actor_id, &summon_data) != actor_id, actor_id));
+        // The players behind each row (a summon's owner; one character under
+        // an old entity id), for the row's death count.
+        let mut row_players: HashMap<i32, HashSet<i32>> = HashMap::new();
         for (actor_id, damage) in actors {
             let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
             if raw_uid <= 0 { continue; }
             let nickname = resolve_nickname(raw_uid, &nickname_data, &summon_data);
             let uid = *canonical.get(&nickname).unwrap_or(&raw_uid);
+            row_players.entry(uid).or_default().insert(raw_uid);
 
             total_damage += damage as f64;
 
