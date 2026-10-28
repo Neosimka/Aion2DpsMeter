@@ -152,6 +152,46 @@ pub fn set_size(window: &tauri::WebviewWindow, size: tauri::Size) {
     let _ = window.set_size(size);
 }
 
+/// Size and move a window in one `SetWindowPos` (`meter_anchor::resize`), so
+/// no frame is drawn grown the wrong way.
+pub fn set_size_and_position(window: &tauri::WebviewWindow, size: tauri::Size, pos: tauri::PhysicalPosition<i32>) {
+    let Some(hwnd) = hwnd_of(window) else {
+        let _ = window.set_size(size);
+        let _ = window.set_position(tauri::Position::Physical(pos));
+        return;
+    };
+    let Some(physical) = crate::platform::meter_anchor::physical_size(window, &size) else {
+        let _ = window.set_size(size);
+        let _ = window.set_position(tauri::Position::Physical(pos));
+        return;
+    };
+    unsafe {
+        let _ = SetWindowPos(
+            hwnd,
+            None,
+            pos.x,
+            pos.y,
+            physical.width as i32,
+            physical.height as i32,
+            SWP_NOZORDER | SWP_NOACTIVATE,
+        );
+    }
+}
+
+/// The edge the overlay keeps: the meter moves it itself here
+/// (`meter_anchor::resize`), KWin only on KDE Wayland.
+pub fn set_main_anchor(_anchor: crate::platform::meter_anchor::Anchor) {}
+
+/// Whether the overlay's next resize keeps its edge: for KWin on KDE Wayland
+/// only; here `resize_window` moves it itself.
+pub async fn anchor_next_resize(_anchored: bool) {}
+
+/// Whether Settings offers "Meter stays fixed at": always here, where the
+/// meter places its own windows.
+pub fn meter_anchor_available() -> bool {
+    true
+}
+
 /// Linux only: there tao's edge band and the pinned size need it.
 pub fn resizable_edges(_window: &tauri::WebviewWindow, _min: tauri::LogicalSize<f64>) {}
 

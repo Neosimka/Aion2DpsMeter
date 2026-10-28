@@ -89,6 +89,11 @@ pub struct AppState {
     /// The LAN stream overlay for OBS on another PC; off unless enabled.
     #[cfg(feature = "online")]
     pub stream_overlay: crate::stream_overlay::Manager,
+    /// The overlay's height when it was last anchored (Settings → Meter stays
+    /// fixed at), which the next anchored resize goes from: not its height
+    /// now, which a tooltip, the details panel or the promo can have grown
+    /// for a moment. Starts as the saved `window.h`.
+    pub anchored_height: std::sync::atomic::AtomicI32,
 }
 
 /// The overlay's click-through lock: while locked, clicks go through the meter
@@ -265,7 +270,9 @@ fn save_window_place(app: &tauri::AppHandle, title: &str, (x, y, w, h): (i32, i3
 }
 
 /// Where a window belongs, for the window manager to put it (#76). The
-/// overlay sizes itself to its content, so it gets its place only.
+/// overlay sizes itself to its content, so it gets its place, and its height
+/// there only for the edge it keeps (Settings → Meter stays fixed at): with
+/// Bottom, its bottom goes back where it was.
 fn load_window_place(app: &tauri::AppHandle, title: &str) -> Option<(i32, i32, i32, i32)> {
     let label = window_titled(app, title)?;
     // On X11 the meter places its windows itself; KWin puts back only a
@@ -283,7 +290,7 @@ fn load_window_place(app: &tauri::AppHandle, title: &str) -> Option<(i32, i32, i
         Some((x, y, w, h))
     };
     match placed(&label) {
-        Some((x, y, w, h)) => Some(if label == "main" { (x, y, 0, 0) } else { (x, y, w, h) }),
+        Some((x, y, w, h)) => Some(if label == "main" { (x, y, 0, h) } else { (x, y, w, h) }),
         // A plugin's widget never moved: beside its others, not mid-screen.
         None => crate::plugins::widgets::place_beside_others(app, &label, placed).map(|(x, y)| (x, y, 0, 0)),
     }
@@ -977,6 +984,8 @@ fn dps_rate_ms(settings: &Settings) -> u64 {
 
 /// The All Targets time range (Settings), in milliseconds.
 const ALL_TARGETS_WINDOW_KEY: &str = "dpsMeter.allTargetsWindowMs";
+const METER_ANCHOR_KEY: &str = "dpsMeter.meterAnchor";
+const WINDOW_HEIGHT_KEY: &str = "window.h";
 
 fn apply_all_targets_window(state: &AppState, value: &str) {
     if let Ok(ms) = value.trim().parse::<i64>() {
@@ -1159,6 +1168,9 @@ fn update_settings(
     if state.settings.set(&key, &value) {
         if key == ALL_TARGETS_WINDOW_KEY {
             apply_all_targets_window(&state, &value);
+        }
+        if key == METER_ANCHOR_KEY {
+            platform::window::set_main_anchor(platform::meter_anchor::Anchor::from_setting(Some(&value)));
         }
         if key == GLOBAL_HOTKEYS_KEY {
             apply_global_hotkeys(&app);
@@ -2010,7 +2022,12 @@ fn build_features() -> serde_json::Value {
     // supporter's account (bar textures), to test those without one. A
     // release build ignores it.
     let dev_supporter = cfg!(debug_assertions) && std::env::var_os("A2_DEV_SUPPORTER").is_some();
-    serde_json::json!({ "online": cfg!(feature = "online"), "devSupporter": dev_supporter })
+    serde_json::json!({
+        "online": cfg!(feature = "online"),
+        "devSupporter": dev_supporter,
+        "meterAnchor": platform::window::meter_anchor_available(),
+        "meterAnchorDefault": platform::meter_anchor::Anchor::platform_default().name(),
+    })
 }
 
 /// Open a link in the browser. Web and mail links only: the shell hands
@@ -2039,11 +2056,46 @@ fn openable_url(url: &str) -> bool {
     lower.len() > "mailto:".len() && lower.starts_with("mailto:")
 }
 
+fn meter_anchor(state: &tauri::State<'_, AppState>) -> platform::meter_anchor::Anchor {
+    platform::meter_anchor::Anchor::from_setting(state.settings.get(METER_ANCHOR_KEY).as_deref())
+}
+
+/// `async`: on KDE Wayland it waits for the KWin script to hear whether the
+/// resize keeps the edge (`anchor_next_resize`, a round trip), which must not
+/// hold the main thread. The resize itself is still made there, and the
+/// command answers once it is made, so the page's sizes keep their order.
 #[tauri::command]
-fn resize_window(app: tauri::AppHandle, width: f64, height: f64, scale: Option<f64>) {
+async fn resize_window(
+    app: tauri::AppHandle,
+    width: f64,
+    height: f64,
+    scale: Option<f64>,
+    preserve_anchor: Option<bool>,
+    player_resize: Option<bool>,
+) {
+    // A resize keeps the edge only when it says so (the page fitting the
+    // window to the meter): a tooltip, the details panel, the promo or the
+    // resize handle grows it for a moment without moving it.
+    let anchored = preserve_anchor.unwrap_or(false);
+    // Where the meter does not place its own windows, the KWin script keeps
+    // the edge (KDE Wayland), told first whether this resize keeps it.
+    if !platform::window::places_own_windows() {
+        platform::window::anchor_next_resize(anchored).await;
+    }
+    let (done, resized) = tokio::sync::oneshot::channel();
+    let handle = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        resize_overlay(&handle, width, height, scale, anchored, player_resize == Some(true));
+        let _ = done.send(());
+    });
+    let _ = resized.await;
+}
+
+fn resize_overlay(app: &tauri::AppHandle, width: f64, height: f64, scale: Option<f64>, anchored: bool, player_resize: bool) {
     // Only the overlay auto-sizes itself. The details window is sized to a
     // whole monitor by open_details_window and must never be resized from JS.
     let Some(window) = app.get_webview_window("main") else { return };
+    let state = app.state::<AppState>();
     // `width`/`height` are the page's CSS pixels and `scale` its
     // devicePixelRatio. WebView2 draws a CSS pixel at the display scale TIMES
     // Windows' Accessibility "Text size", while a logical size here covers the
@@ -2056,7 +2108,23 @@ fn resize_window(app: tauri::AppHandle, width: f64, height: f64, scale: Option<f
         }),
         None => tauri::Size::Logical(tauri::LogicalSize { width, height }),
     };
-    platform::window::set_size(&window, size);
+    // The player grabbed the resize handle: the edge is kept from wherever
+    // they leave the meter. The next anchored resize, fitting the window to
+    // it, keeps its top and goes from its new height (`meter_anchor::resize`).
+    if player_resize {
+        state.anchored_height.store(0, std::sync::atomic::Ordering::Relaxed);
+    }
+    if !anchored || !platform::window::places_own_windows() {
+        platform::window::set_size(&window, size);
+        return;
+    }
+    // From the height the meter last had when anchored, not its current one:
+    // a tooltip closing would otherwise move it by the tooltip's height. At
+    // start, the saved height: the window opens at tauri.conf's height.
+    let last = state.anchored_height.load(std::sync::atomic::Ordering::Relaxed);
+    if let Some(height) = platform::meter_anchor::resize(&window, size, meter_anchor(&state), (last > 0).then_some(last)) {
+        state.anchored_height.store(height, std::sync::atomic::Ordering::Relaxed);
+    }
 }
 
 /// Linux can load a hidden WebKit window. Map it only after restoring its
@@ -3135,13 +3203,18 @@ async fn begin_window_resize(
 }
 
 #[tauri::command]
-fn finish_window_resize(window: tauri::WebviewWindow, cancel: bool) -> Result<bool, String> {
+fn finish_window_resize(window: tauri::WebviewWindow, state: tauri::State<'_, AppState>, cancel: bool) -> Result<bool, String> {
     if platform::window::compositor_resize_supported(&window) {
         if !cancel && platform::window::resize_pointer_down(&window) != Some(false) {
             return Ok(false);
         }
         let size = window.inner_size().map_err(|e| e.to_string())?;
         platform::window::set_size(&window, tauri::Size::Physical(size));
+        // The player sized the overlay: its edge is kept from this height, not
+        // the one it had before.
+        if window.label() == "main" {
+            state.anchored_height.store(size.height as i32, std::sync::atomic::Ordering::Relaxed);
+        }
     }
     Ok(true)
 }
@@ -3671,6 +3744,13 @@ pub fn run() {
             // uploads on by itself, audit H3).
             let new_install = !app_data_dir.join("settings.json").exists();
             let settings = Settings::new(app_data_dir.clone());
+            platform::window::set_main_anchor(platform::meter_anchor::Anchor::from_setting(
+                settings.get(METER_ANCHOR_KEY).as_deref(),
+            ));
+            let startup_height = settings
+                .get(WINDOW_HEIGHT_KEY)
+                .and_then(|v| v.trim().parse::<i32>().ok())
+                .unwrap_or(0);
             #[cfg(feature = "online")]
             if new_install {
                 settings.set("dpsMeter.newInstall", "true");
@@ -3723,6 +3803,7 @@ pub fn run() {
                 account_seen: Mutex::new(None),
                 #[cfg(feature = "online")]
                 stream_overlay: crate::stream_overlay::Manager::default(),
+                anchored_height: std::sync::atomic::AtomicI32::new(startup_height),
             };
             let capture_suspended = state.capture_suspended.clone();
 
@@ -4147,6 +4228,12 @@ pub fn run() {
                                     if pos.x > -10000 && pos.y > -10000 {
                                         state.settings.set("window.x", &pos.x.to_string());
                                         state.settings.set("window.y", &pos.y.to_string());
+                                        // The anchored height, not the window's: a tooltip
+                                        // open at the save would be taken for the meter's.
+                                        let height = state.anchored_height.load(std::sync::atomic::Ordering::Relaxed);
+                                        if height > 0 {
+                                            state.settings.set(WINDOW_HEIGHT_KEY, &height.to_string());
+                                        }
                                     }
                                 }
                             }

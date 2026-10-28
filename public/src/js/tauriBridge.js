@@ -11,11 +11,17 @@
   // Which optional parts this build has (app.rs build_features). The private
   // build, compiled without online features, has no account, uploads, update
   // check, Send Logs to Dev, Discord activity or stream overlay: html.a2-offline
-  // hides them (styles.css) and the code below skips them.
+  // hides them (styles.css) and the code below skips them. It also says where
+  // Settings offers "Meter stays fixed at", and the edge kept while it is unset.
   window.a2Build = { online: true };
   window.a2BuildReady = invoke("build_features")
     .then((features) => {
-      window.a2Build = { online: features?.online !== false, devSupporter: features?.devSupporter === true };
+      window.a2Build = {
+        online: features?.online !== false,
+        devSupporter: features?.devSupporter === true,
+        meterAnchor: features?.meterAnchor !== false,
+        meterAnchorDefault: features?.meterAnchorDefault,
+      };
       document.documentElement.classList.toggle("a2-offline", !window.a2Build.online);
       return window.a2Build;
     })
@@ -1332,6 +1338,7 @@
           ? Math.max(contentH, Math.min(tooltipReserve.h, room.h))
           : contentH;
     const scale = window.devicePixelRatio || 1;
+    const preserveAnchor = !(fullPanel || promoOpen || tooltipReserve);
     const sizeKey = `${w}x${h}@${scale}`;
     if (sizeKey === lastSizeKey) return pendingWindowSize?.promise || Promise.resolve(true);
     lastSizeKey = sizeKey;
@@ -1345,7 +1352,7 @@
       .then(() => {
         // A queued auto-size must not interrupt a resize the player began.
         if (resizeActive) return false;
-        return invoke("resize_window", { width: w, height: h, scale }).then(() => true);
+        return invoke("resize_window", { width: w, height: h, scale, preserveAnchor }).then(() => true);
       })
       .then((applied) => {
         if (!applied && pendingWindowSize === operation) lastSizeKey = "";
@@ -1523,10 +1530,16 @@
   }, 10000);
 
   // ===== Overlay resize handle =====
+  // The window grows to the room right of and below the meter for the drag,
+  // without moving it, and the edge is kept from wherever the player leaves
+  // it (app.rs resize_window).
   const expandViewport = () => {
     resizeActive = true;
     const space = spaceRightBelow();
-    invoke("resize_window", { width: Math.min(space.w, 2000), height: Math.min(space.h, 1200), scale: window.devicePixelRatio || 1 }).catch(() => {});
+    invoke("resize_window", {
+      width: Math.min(space.w, 2000), height: Math.min(space.h, 1200), scale: window.devicePixelRatio || 1,
+      preserveAnchor: false, playerResize: true,
+    }).catch(() => {});
   };
   const shrinkViewport = () => {
     if (nativeResize) return;

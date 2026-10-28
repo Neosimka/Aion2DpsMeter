@@ -1,6 +1,10 @@
 const SETTING_CHOICES = {
   defaultMeterMode: { allowed: ["bossTargets", "lastHitByMe", "allTargets", "trainTargets"], fallback: "bossTargets" },
   allTargetsWindowMs: { allowed: ["30000", "60000", "120000", "180000", "300000"], fallback: "120000" },
+  // The edge the meter keeps as rows come and go. Unset, the one it kept
+  // before there was a choice: its top where it places its own windows, its
+  // centre on KDE Wayland, where KWin keeps it (app.rs build_features).
+  meterAnchor: { allowed: ["top", "middle", "bottom"], fallback: "top" },
   // How often the backend sends DPS (app.rs DPS_RATES_MS).
   updateRateMs: { allowed: ["100", "200", "250", "500"], fallback: "200" },
   trainSelectionMode: { allowed: ["all", "highestDamage"], fallback: "all" },
@@ -88,6 +92,7 @@ class DpsApp {
       clearOnZone: "dpsMeter.clearOnZone",
       barTexture: "dpsMeter.barTexture",
       barTextureOffset: "dpsMeter.barTextureOffset",
+      meterAnchor: "dpsMeter.meterAnchor",
       meterFillOpacity: "dpsMeter.meterFillOpacity",
       meterFillSaturation: "dpsMeter.meterFillSaturation",
       barGap: "dpsMeter.barGap",
@@ -2796,6 +2801,9 @@ class DpsApp {
     this.discordStatDropdownBtn = document.querySelector(".discordStatDropdownBtn");
     this.discordStatDropdownMenu = document.querySelector(".discordStatDropdownMenu");
     this.trainSelectionModeDropdownMenu = document.querySelector(".trainSelectionModeDropdownMenu");
+    this.meterAnchorDropdownBtn = document.querySelector(".meterAnchorDropdownBtn");
+    this.meterAnchorDropdownMenu = document.querySelector(".meterAnchorDropdownMenu");
+    this.meterAnchorRow = this.meterAnchorDropdownBtn?.closest?.(".settingsRow") || null;
     this.defaultMeterModeDropdownBtn = document.querySelector(".defaultMeterModeDropdownBtn");
     this.defaultMeterModeDropdownMenu = document.querySelector(".defaultMeterModeDropdownMenu");
     this.resetDetectBtn = document.querySelector(".resetDetectBtn");
@@ -2882,10 +2890,20 @@ class DpsApp {
       defaultMeterMode: "bossTargets",
       allTargetsWindowMs: "120000",
       trainSelectionMode: "all",
+      meterAnchor: "top",
       partyStat: "combatPower",
       discordStat: "off",
       barTexture: "none",
     };
+    // "Meter stays fixed at" only where the meter can keep an edge, and
+    // unset, the edge this platform kept (app.rs build_features).
+    Promise.resolve(window.a2BuildReady).then((build) => {
+      if (build?.meterAnchorDefault === "middle") SETTING_CHOICES.meterAnchor.fallback = "middle";
+      const anchor = pickSettingChoice("meterAnchor", this.safeGetSetting(this.storageKeys.meterAnchor));
+      this.settingsSelections.meterAnchor = anchor;
+      this.syncSettingsDropdownSelection(this.meterAnchorDropdownBtn, this.meterAnchorDropdownMenu, anchor);
+      this.updateMeterAnchorVisibility(build?.meterAnchor !== false);
+    });
 
     // The meter already applied these settings. Opening a form must not change
     // the live combat selection or resend saved parameters to the backend.
@@ -3034,6 +3052,7 @@ class DpsApp {
     this.syncPreviewPartyStat();
     this.settingsSelections.discordStat = pickSettingChoice("discordStat", this.safeGetSetting(this.storageKeys.discordStat));
     this.settingsSelections.clearOnZone = pickSettingChoice("clearOnZone", this.safeGetSetting(this.storageKeys.clearOnZone));
+    this.settingsSelections.meterAnchor = pickSettingChoice("meterAnchor", this.safeGetSetting(this.storageKeys.meterAnchor));
     this.settingsSelections.hideOutOfCombat = pickSettingChoice("hideOutOfCombat", this.safeGetSetting(this.storageKeys.hideOutOfCombat));
     this.barTexture = pickSettingChoice("barTexture", this.safeGetSetting(this.storageKeys.barTexture));
     this.settingsSelections.barTexture = this.barTexture;
@@ -4079,6 +4098,11 @@ class DpsApp {
         label: this.i18n?.t("settings.trainingMode.options.highestDamage", "Highest Damage"),
       },
     ];
+    const meterAnchorOptions = [
+      { value: "top", label: this.i18n?.t("settings.meterAnchor.options.top", "Top") },
+      { value: "middle", label: this.i18n?.t("settings.meterAnchor.options.middle", "Centre") },
+      { value: "bottom", label: this.i18n?.t("settings.meterAnchor.options.bottom", "Bottom") },
+    ];
 
     setupDropdown(
       this.languageDropdownBtn,
@@ -4316,6 +4340,17 @@ class DpsApp {
         this.safeSetSetting(this.storageKeys.trainSelectionMode, value);
         window.javaBridge?.setTrainSelectionMode?.(value);
         if (!this.isCollapse) this.fetchDps();
+      }
+    );
+    setupDropdown(
+      this.meterAnchorDropdownBtn,
+      this.meterAnchorDropdownMenu,
+      meterAnchorOptions,
+      this.settingsSelections.meterAnchor,
+      (value) => {
+        if (!value) return;
+        this.settingsSelections.meterAnchor = value;
+        this.safeSetSetting(this.storageKeys.meterAnchor, value);
       }
     );
 
@@ -5863,6 +5898,10 @@ class DpsApp {
     if (this.barTextureHint) this.barTextureHint.hidden = this.isSupporter;
   }
 
+  updateMeterAnchorVisibility(enabled) {
+    if (this.meterAnchorRow) this.meterAnchorRow.hidden = !enabled;
+  }
+
   setSupporter(isSupporter) {
     // A development build may act as a supporter (build_features devSupporter).
     this.isSupporter = !!isSupporter || this.devSupporter === true;
@@ -5993,6 +6032,7 @@ class DpsApp {
       trainSelectionMode: "trainSelectionMode",
       allTargetsWindowMs: "allTargetsWindow",
       updateRateMs: "updateRate",
+      meterAnchor: "meterAnchor",
       partyStat: "partyStat",
       discordStat: "discordStat",
       barTexture: "barTexture",
