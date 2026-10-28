@@ -256,8 +256,8 @@
   // Plugin events, each to its plugin's frame; one without a plugin to all.
   // `listen` hears events sent to any window, plugins' own windows too: the
   // ones for plugins not docked here are left alone.
-  listen("plugin-event", (event) => {
-    const payload = event.payload || {};
+  const onEvent = (payload) => {
+    payload ||= {};
     if (typeof payload.event !== "string") return;
     if (payload.plugin === undefined) {
       if (payload.event === "theme") applyTheme(payload.data);
@@ -265,6 +265,11 @@
       return;
     }
     docked.get(payload.plugin)?.plugin.receive(payload);
+  };
+  listen("plugin-event", (event) => onEvent(event.payload));
+  // The meter's numbered events, several at once (pluginHost.js).
+  listen("plugin-events", (event) => {
+    if (Array.isArray(event.payload)) for (const e of event.payload) onEvent(e);
   });
 
   // The bar: it moves the window, and its buttons.
