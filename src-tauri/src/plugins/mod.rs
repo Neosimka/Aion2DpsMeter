@@ -2350,8 +2350,12 @@ fn inline_page(html: &str, root: &Path, page_dir: &Path) -> (String, Vec<String>
         let lower = tag.to_ascii_lowercase();
         if lower.starts_with("<script") && rest[end + 1..].to_ascii_lowercase().starts_with("</script>") {
             if let Some(code) = attribute(tag, "src").and_then(|src| read(&src)) {
-                // "</script" inside the code would end the element early.
-                let code = code.replace("</script", "<\\/script");
+                // "</script" inside the code would end the element early;
+                // and the page's parser turns CR LF and CR into LF before the
+                // policy hashes a script, so a file with Windows line endings
+                // (a plugin developer's, or the SDK built from a Windows
+                // checkout) was refused, and no plugin ran (2026-10-28).
+                let code = code.replace("</script", "<\\/script").replace("\r\n", "\n").replace('\r', "\n");
                 hashes.push(base64(&sha2::Sha256::digest(code.as_bytes())));
                 out.push_str("<script>");
                 out.push_str(&code);
