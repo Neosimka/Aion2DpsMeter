@@ -82,11 +82,6 @@ killed them), and the Supply Request boards after each reset
 (`src-tauri/src/boss_report.rs`, `src-tauri/src/supply_report.rs`). **Nothing
 about your character** is in these reports.
 
-Under the same switch, installing or updating a plugin from the catalog tells
-the site which plugin, its version, and whether it was an install or an update,
-so its Plugins page can count installs (`report_install` in
-`src-tauri/src/plugins/mod.rs`). Nothing about you or your PC goes with it.
-
 **Logs for the developer, when you send them.** *Settings → Advanced → Send Logs
 to Dev* sends your debug log and your most recent packet logs (see below),
 listing each file and its size before it asks. Only the developer can open them,
