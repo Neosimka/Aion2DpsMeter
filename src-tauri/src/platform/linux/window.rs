@@ -337,9 +337,7 @@ fn click_through_asked() -> &'static std::sync::Mutex<std::collections::HashMap<
 /// it is shown, and once more a little later in case the compositor took
 /// its time.
 fn reapply_click_through(window: &tauri::WebviewWindow) {
-    let Some((ignore, keep)) = click_through_asked().lock().unwrap_or_else(|p| p.into_inner()).get(window.label()).cloned() else {
-        return;
-    };
+    let label = window.label().to_string();
     let window = window.clone();
     tauri::async_runtime::spawn(async move {
         for wait in [80, 400] {
@@ -347,7 +345,12 @@ fn reapply_click_through(window: &tauri::WebviewWindow) {
             if !window.is_visible().unwrap_or(false) {
                 return;
             }
-            input_region(&window, ignore, keep.clone());
+            // What it asks for now, not when it was shown: a widget grown
+            // by its page reports its new area in between, and the old one
+            // put back left the new part of the window click-through.
+            let asked = click_through_asked().lock().unwrap_or_else(|p| p.into_inner()).get(&label).cloned();
+            let Some((ignore, keep)) = asked else { return };
+            input_region(&window, ignore, keep);
         }
     });
 }
