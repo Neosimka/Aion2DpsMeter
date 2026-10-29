@@ -431,7 +431,7 @@ const createMeterUI = ({
       }
       const deaths = Math.max(0, Number(row.deaths) || 0);
       if (view.lastDeaths !== deaths) {
-        view.deathCountEl.textContent = deaths ? `☠${deaths}` : "";
+        view.deathCountEl.textContent = deaths ? String(deaths) : "";
         view.deathCountEl.style.display = deaths ? "" : "none";
         view.deathCountEl.title = deaths
           ? window.i18n?.format?.("meter.deaths", { count: deaths }, `Died ${deaths} times in this fight`) ??
