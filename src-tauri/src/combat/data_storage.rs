@@ -1382,6 +1382,20 @@ impl DataStorage {
         self.inner.read().player_servers.get(name.trim()).copied().unwrap_or(0)
     }
 
+    /// The server to file `name` under in a saved fight, 0 when no record
+    /// has stated one: your own from your self record first (the game's word
+    /// on where you are), anyone's from a self or loot record. Both come
+    /// before the roster's, the top bits of an id a character moved to
+    /// another server keeps (#128).
+    pub fn stated_server(&self, name: &str) -> u16 {
+        let name = name.trim();
+        let inner = self.inner.read();
+        if inner.self_server != 0 && inner.local_character_name.as_deref().map(str::trim) == Some(name) {
+            return inner.self_server;
+        }
+        inner.player_servers.get(name).copied().unwrap_or(0)
+    }
+
     /// Your home server, as your own self record states it; 0 for a record
     /// that states none (a tutorial character), which forgets the last one.
     pub fn note_self_server(&self, server_id: u16) {
@@ -4512,4 +4526,19 @@ mod tests {
         s.note_party_left();
         assert!(s.take_combat_reset_requested(), "an open-world party: someone else on the meter");
     }
+    #[test]
+    fn a_moved_character_is_filed_under_the_server_its_records_state() {
+        // An Israphel player whose id was made on Nemon (#128).
+        let s = DataStorage::new();
+        s.set_local_identity_from_game(7, Some("Arid".into()));
+        s.note_self_server(2101);
+        // A later loot record must not move you back.
+        s.note_player_server("Arid", 2109);
+        assert_eq!(s.stated_server("Arid"), 2101);
+        // Someone else: what a loot record stated, else nothing (the roster's).
+        s.note_player_server("Other", 1102);
+        assert_eq!(s.stated_server("Other"), 1102);
+        assert_eq!(s.stated_server("Nobody"), 0);
+    }
+
 }
