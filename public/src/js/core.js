@@ -1821,6 +1821,7 @@ class DpsApp {
         isSupporter: !!(isObj && value.isSupporter) && this.showSupporterColors !== false,
         // A party member who runs A2Tools too (party_presence.rs).
         usesA2tools: !!(isObj && value.usesA2tools),
+        deaths: isObj ? Math.max(0, Number(value.deaths) || 0) : 0,
       });
     }
 

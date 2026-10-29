@@ -347,11 +347,15 @@ impl DpsCalculator {
         // (2026-10-17). The player's own entity comes first, then by id.
         let mut actors: Vec<(i32, i64)> = combined_actors.iter().map(|(&a, &d)| (a, d)).collect();
         actors.sort_unstable_by_key(|&(actor_id, _)| (summon_resolver::resolve(actor_id, &summon_data) != actor_id, actor_id));
+        // The players behind each row (a summon's owner; one character under
+        // an old entity id), for the row's death count.
+        let mut row_players: HashMap<i32, HashSet<i32>> = HashMap::new();
         for (actor_id, damage) in actors {
             let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
             if raw_uid <= 0 { continue; }
             let nickname = resolve_nickname(raw_uid, &nickname_data, &summon_data);
             let uid = *canonical.get(&nickname).unwrap_or(&raw_uid);
+            row_players.entry(uid).or_default().insert(raw_uid);
 
             total_damage += damage as f64;
 
@@ -565,8 +569,12 @@ impl DpsCalculator {
 
         // Filter and compute DPS
         let party_members = self.data_storage.get_party_members();
+        let fight_deaths = if fight_start <= fight_end { self.data_storage.deaths_between(fight_start, fight_end) } else { Vec::new() };
         let mut to_remove = Vec::new();
         for (&uid, data) in &mut dps_data.map {
+            if let Some(ids) = row_players.get(&uid) {
+                data.deaths = fight_deaths.iter().filter(|(entity, _, _)| ids.contains(entity)).count() as i32;
+            }
             // Combat power joins on the character name: the roster carries an
             // account-level dbid, not the session entity id keyed here.
             let member = party_members.get(&data.nickname);

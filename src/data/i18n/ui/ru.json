@@ -766,7 +766,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "Пользуется A2Tools",
     "dpsSuffix": "/s",
-    "others": "Остальные"
+    "others": "Остальные",
+    "deaths": "Погиб в этом бою: {count}"
   },
   "skills": {
     "fallback": "Умение {code}",

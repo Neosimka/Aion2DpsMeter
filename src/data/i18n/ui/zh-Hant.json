@@ -766,7 +766,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "使用 A2Tools",
     "dpsSuffix": "/秒",
-    "others": "其他"
+    "others": "其他",
+    "deaths": "本場戰鬥中死亡 {count} 次"
   },
   "skills": {
     "fallback": "技能 {code}",

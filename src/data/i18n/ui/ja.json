@@ -766,7 +766,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "A2Toolsを使用中",
     "dpsSuffix": "/s",
-    "others": "その他"
+    "others": "その他",
+    "deaths": "この戦闘で{count}回死亡"
   },
   "skills": {
     "fallback": "スキル {code}",
