@@ -26,6 +26,11 @@ pub(crate) fn is_kde() -> bool {
     crate::platform::kwin_rules::is_kde(&std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default())
 }
 
+/// Hyprland, which sets this for every program it starts.
+pub(crate) fn is_hyprland() -> bool {
+    std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_some()
+}
+
 fn prefer_xwayland(backend_set: bool, desktop: &str, wayland: bool, x11_available: bool) -> bool {
     !backend_set && wayland && x11_available && desktop_is_gnome(desktop)
 }

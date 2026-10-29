@@ -18,7 +18,11 @@ use x11_dl::xlib;
 /// the resize "glitched all over" (2026-10-17). KWin already resized the
 /// meter's other windows this way.
 pub fn compositor_resize_supported(window: &tauri::WebviewWindow) -> bool {
-    if !super::process::is_gnome() && !super::process::is_kde() {
+    // Hyprland too: resized by the app instead, a floating window keeps its
+    // centre, so the meter jumped left as its corner was pressed (the window
+    // grew for the drag) and back on release (#102). Its own resize keeps
+    // the edge that isn't dragged.
+    if !super::process::is_gnome() && !super::process::is_kde() && !super::process::is_hyprland() {
         return false;
     }
     use gtk::prelude::*;
