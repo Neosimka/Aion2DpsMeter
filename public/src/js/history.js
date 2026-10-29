@@ -452,8 +452,10 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     actionsEl.className = "historyRowActions";
 
     // Training dummies are not logs, and a fight still in progress has no end.
-    // The private build uploads nothing (build_features); preview stays.
-    if (!fight.isLive && !fight.isTrain && window.a2Build?.online !== false) {
+    // Only dungeon fights are logs: open-world bosses stay in your history
+    // (share::is_instanced). The private build uploads nothing
+    // (build_features); preview stays.
+    if (!fight.isLive && !fight.isTrain && Number(fight.dungeonId) && window.a2Build?.online !== false) {
       const uploadBtn = document.createElement("button");
       uploadBtn.className = "historyPreviewBtn historyUploadBtn";
       uploadBtn.type = "button";
