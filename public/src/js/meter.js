@@ -303,6 +303,9 @@ const createMeterUI = ({
   };
 
   let lastOrderKey = "";
+  // Each metric's widest figure on the rows, in characters, so the same
+  // metric lines up down the rows (styles.css --mw-<metric>).
+  const columnWidths = new Map();
 
   const renderRows = (rows, rankById) => {
     const now = nowMs();
@@ -334,6 +337,10 @@ const createMeterUI = ({
 
     const needsReorder = orderKey !== lastOrderKey;
     lastOrderKey = orderKey;
+    const widest = new Map();
+    const widen = (mode, text) => {
+      if (mode) widest.set(mode, Math.max(widest.get(mode) || 0, String(text).length));
+    };
 
     for (const [pos, { row, id }] of validRows.entries()) {
       nextVisibleIds.add(id);
@@ -485,8 +492,10 @@ const createMeterUI = ({
       }
       // Each metric in its own colour (data-metric, styles.css).
       const metricMode = metric.mode || "";
+      widen(metricMode, metricText);
       if (view.dpsNumber.dataset.metric !== metricMode) view.dpsNumber.dataset.metric = metricMode;
       const extras = Array.isArray(metric.extras) ? metric.extras : [];
+      for (const e of extras) widen(e.mode, e.text);
       const extraText = extras.map((e) => `${e.mode}:${e.text}`).join("|");
       if (view.lastExtraText !== extraText) {
         view.dpsExtra.replaceChildren(
@@ -546,6 +555,13 @@ const createMeterUI = ({
     }
 
     lastVisibleIds = nextVisibleIds;
+
+    // Set only when a column's widest figure changed length.
+    for (const [mode, chars] of widest) {
+      if (columnWidths.get(mode) === chars) continue;
+      columnWidths.set(mode, chars);
+      elList.style.setProperty(`--mw-${mode}`, `${chars}ch`);
+    }
 
     pruneCache(nextVisibleIds);
   };

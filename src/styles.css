@@ -1062,6 +1062,15 @@ html:not(.hoverStale) .list .item:hover { background: rgba(255, 255, 255, 0.075)
   font-size: 12px;
   opacity: 0.9;
 }
+/* Each metric as wide as its widest figure on the rows (meter.js sets
+   --mw-<metric> in characters; the digits are tabular), right-aligned: the
+   same metric lines up down the rows. */
+.list .item .dps [data-metric] { text-align: right; box-sizing: content-box; }
+.list .item .dps [data-metric="dps"] { min-width: var(--mw-dps, 0); }
+.list .item .dps [data-metric="totalDamage"] { min-width: var(--mw-totalDamage, 0); }
+.list .item .dps [data-metric="hps"] { min-width: var(--mw-hps, 0); }
+.list .item .dps [data-metric="totalHeal"] { min-width: var(--mw-totalHeal, 0); }
+.list .item .dps [data-metric="stagger"] { min-width: var(--mw-stagger, 0); }
 body:not(.noStatColours) .list .item .dps [data-metric="dps"] { color: var(--metric-dps); }
 body:not(.noStatColours) .list .item .dps [data-metric="totalDamage"] { color: var(--metric-totalDamage); }
 body:not(.noStatColours) .list .item .dps [data-metric="hps"] { color: var(--metric-hps); }
