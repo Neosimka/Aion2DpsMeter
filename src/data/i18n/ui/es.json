@@ -19,7 +19,8 @@
         "totalHeal": "Curación total",
         "stagger": "Aturdimiento",
         "bossStagger": "Aturdimiento del jefe %",
-        "statColours": "Colores por estadística"
+        "statColours": "Colores por estadística",
+        "deaths": "Contador de muertes"
       },
       "sortBy": "Ordenar por esto",
       "menuTip": "Elige qué muestran las filas. Rueda o clic derecho: siguiente métrica",

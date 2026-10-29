@@ -19,7 +19,8 @@
         "totalHeal": "Soins totaux",
         "stagger": "Étourdissement",
         "bossStagger": "Étourdissement du boss %",
-        "statColours": "Couleurs des stats"
+        "statColours": "Couleurs des stats",
+        "deaths": "Nombre de morts"
       },
       "sortBy": "Trier par ceci",
       "menuTip": "Choisissez ce qu'affichent les lignes. Molette ou clic droit : métrique suivante",

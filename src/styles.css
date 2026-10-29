@@ -3039,6 +3039,7 @@ body.mainPlayerNamesBold .settingsPanel .themeDropdownMenu .settingsDropdownItem
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
   white-space: nowrap;
 }
+body.noDeaths .list .item .deathCount { display: none !important; }
 .meter.slim .list .item .deathCount {
   height: 10px;
   font-size: 7.5px;

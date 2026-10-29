@@ -19,7 +19,8 @@
         "totalHeal": "총 치유량",
         "stagger": "무력화",
         "bossStagger": "보스 무력화 %",
-        "statColours": "항목별 색상"
+        "statColours": "항목별 색상",
+        "deaths": "사망 횟수"
       },
       "sortBy": "이 항목으로 정렬",
       "menuTip": "행에 표시할 항목을 고릅니다. 휠 또는 우클릭: 다음 항목",

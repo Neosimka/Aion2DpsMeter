@@ -19,7 +19,8 @@
         "totalHeal": "総回復量",
         "stagger": "スタン",
         "bossStagger": "ボスのスタン %",
-        "statColours": "項目の色分け"
+        "statColours": "項目の色分け",
+        "deaths": "死亡回数"
       },
       "sortBy": "この項目で並べ替え",
       "menuTip": "行に表示する項目を選びます。ホイールまたは右クリック：次の項目",

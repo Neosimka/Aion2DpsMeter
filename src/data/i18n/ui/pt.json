@@ -19,7 +19,8 @@
         "totalHeal": "Cura total",
         "stagger": "Atordoamento",
         "bossStagger": "Atordoamento do chefe %",
-        "statColours": "Cores por estatística"
+        "statColours": "Cores por estatística",
+        "deaths": "Contador de mortes"
       },
       "sortBy": "Ordenar por isto",
       "menuTip": "Escolha o que as linhas mostram. Roda ou clique direito: próxima métrica",

@@ -19,7 +19,8 @@
         "totalHeal": "Gesamtheilung",
         "stagger": "Stagger",
         "bossStagger": "Boss-Stagger %",
-        "statColours": "Farben je Wert"
+        "statColours": "Farben je Wert",
+        "deaths": "Todeszähler"
       },
       "sortBy": "Danach sortieren",
       "menuTip": "Wähle, was die Zeilen zeigen. Mausrad oder Rechtsklick: nächster Wert",

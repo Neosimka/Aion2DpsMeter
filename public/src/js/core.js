@@ -132,6 +132,7 @@ class DpsApp {
       extraMetrics: "dpsMeter.extraMetrics",
       showBossStagger: "dpsMeter.showBossStagger",
       statColours: "dpsMeter.statColours",
+      showDeaths: "dpsMeter.showDeaths",
       showTotalDps: "dpsMeter.showTotalDps",
       roundDps: "dpsMeter.roundDps",
       autoDetectDevice: "dpsMeter.autoDetectDevice",
@@ -685,6 +686,9 @@ class DpsApp {
     // Each metric in its own colour (styles.css); on unless turned off.
     this.statColours = this.safeGetStorage(this.storageKeys.statColours) !== "false";
     document.body.classList.toggle("noStatColours", !this.statColours);
+    // The death count badge (meter.js); off unless turned on.
+    this.showDeaths = this.safeGetStorage(this.storageKeys.showDeaths) === "true";
+    document.body.classList.toggle("noDeaths", !this.showDeaths);
     const storedDisplayMode = this.safeGetStorage(this.storageKeys.displayMode);
     // "both" was damage with DPS beside it: now damage, with DPS as an extra.
     if (storedDisplayMode === "both" && !this.extraMetrics.includes("dps")) this.extraMetrics.push("dps");
@@ -2794,12 +2798,10 @@ class DpsApp {
     this.updateRateDropdownBtn = document.querySelector(".updateRateDropdownBtn");
     this.updateRateDropdownMenu = document.querySelector(".updateRateDropdownMenu");
     this.trainSelectionModeDropdownBtn = document.querySelector(".trainSelectionModeDropdownBtn");
-    this.partyStatDropdownBtn = document.querySelector(".partyStatDropdownBtn");
     this.barTextureDropdownBtn = document.querySelector(".barTextureDropdownBtn");
     this.barTextureDropdownMenu = document.querySelector(".barTextureDropdownMenu");
     this.barTextureHint = document.querySelector(".barTextureHint");
     this.textureOffsetCheckbox = document.querySelector(".textureOffsetCheckbox");
-    this.partyStatDropdownMenu = document.querySelector(".partyStatDropdownMenu");
     this.clearOnZoneDropdownBtn = document.querySelector(".clearOnZoneDropdownBtn");
     this.clearOnZoneDropdownMenu = document.querySelector(".clearOnZoneDropdownMenu");
     this.hideOutOfCombatDropdownBtn = document.querySelector(".hideOutOfCombatDropdownBtn");
@@ -4185,19 +4187,6 @@ class DpsApp {
         this.safeSetSetting(this.storageKeys.allTargetsWindowMs, value);
         window.javaBridge?.setAllTargetsWindowMs?.(value);
         if (!this.isCollapse) this.fetchDps();
-      }
-    );
-
-    setupDropdown(
-      this.partyStatDropdownBtn,
-      this.partyStatDropdownMenu,
-      partyStatOptions,
-      this.settingsSelections.partyStat,
-      (value) => {
-        if (!value) return;
-        this.settingsSelections.partyStat = value;
-        this.applyPartyStat(value);
-        this.safeSetSetting(this.storageKeys.partyStat, value);
       }
     );
 
@@ -5734,6 +5723,28 @@ class DpsApp {
         this.renderMetricMenu();
         return;
       }
+      if (mode === "deaths") {
+        this.showDeaths = !this.showDeaths;
+        this.safeSetStorage(this.storageKeys.showDeaths, String(this.showDeaths));
+        document.body.classList.toggle("noDeaths", !this.showDeaths);
+        this.renderMetricMenu();
+        return;
+      }
+      // Beside the names: combat power and gear score, each on or off (the
+      // setting's four values: one, the other, both, neither).
+      if (mode === "combatPower" || mode === "gearScore") {
+        const on = { combatPower: false, gearScore: false };
+        if (this.partyStat === "both") on.combatPower = on.gearScore = true;
+        else if (this.partyStat in on) on[this.partyStat] = true;
+        on[mode] = !on[mode];
+        const value = on.combatPower && on.gearScore ? "both" : on.combatPower ? "combatPower" : on.gearScore ? "gearScore" : "off";
+        this.settingsSelections.partyStat = value;
+        this.applyPartyStat(value);
+        this.safeSetSetting(this.storageKeys.partyStat, value);
+        this.renderMetricMenu();
+        this.renderCurrentRows();
+        return;
+      }
       if (event.target.closest(".metricMenuSort")) {
         if (mode === this.displayMode) return;
         // The old sort metric stays on as a column: the switch loses nothing.
@@ -6016,6 +6027,16 @@ class DpsApp {
     });
     boss.title = t("header.display.bossStaggerTip", "How far the boss's stagger gauge is worn down, on its HP bar");
     menu.appendChild(boss);
+    // Beside the names (Settings' "Beside player names" was here before).
+    const stat = this.partyStat;
+    const cp = item("combatPower", t("settings.partyStat.options.combatPower", "Combat power"),
+      stat === "combatPower" || stat === "both", { sortable: false });
+    const gs = item("gearScore", t("settings.partyStat.options.gearScore", "Gear score"),
+      stat === "gearScore" || stat === "both", { sortable: false });
+    const deaths = item("deaths", t("header.display.names.deaths", "Death count"), this.showDeaths === true, {
+      sortable: false,
+    });
+    menu.append(cp, gs, deaths);
     const colours = item("statColours", t("header.display.names.statColours", "Stat colours"), this.statColours !== false, {
       sortable: false,
     });

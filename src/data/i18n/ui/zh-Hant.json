@@ -19,7 +19,8 @@
         "totalHeal": "總治療",
         "stagger": "破防",
         "bossStagger": "首領破防 %",
-        "statColours": "數值配色"
+        "statColours": "數值配色",
+        "deaths": "死亡次數"
       },
       "sortBy": "依此排序",
       "menuTip": "選擇各列顯示的項目。滾輪或右鍵：下一個項目",
