@@ -459,7 +459,11 @@ html:lang(zh-Hant), html:lang(zh-Hant) body {
   animation: detailsFlash 1s ease-out;
 }
 
-body.linuxOverlay .meter {
+/* No drop shadow on the overlay: its window ends 10px below the meter, so
+   the shadow (28px) was cut into a hard dark band under the footer. The
+   tool windows have room for it. */
+body.linuxOverlay .meter,
+html:not(.detailsWindow):not(.historyWindow):not(.settingsWindow) .meter {
   box-shadow: none;
 }
 
