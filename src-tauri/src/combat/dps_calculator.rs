@@ -1190,7 +1190,14 @@ impl DpsCalculator {
                         hits_received: hits_recv,
                         received: Some(received),
                         dbid: roster.map(|m| m.dbid).unwrap_or(0),
-                        server_id: roster.map(|m| m.server_id).unwrap_or(0),
+                        // The server a self or loot record states first: the
+                        // roster's is its id's top bits, which a character
+                        // moved to another server keeps, so it still names
+                        // the old one (Nemon for an Israphel player, #128).
+                        server_id: match self.data_storage.player_server(nick) {
+                            0 => roster.map(|m| m.server_id).unwrap_or(0),
+                            stated => stated,
+                        },
                         is_supporter: supporters.contains(
                             nick,
                             roster.map(|m| m.dbid).unwrap_or(0),
