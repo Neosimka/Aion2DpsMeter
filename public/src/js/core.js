@@ -42,6 +42,14 @@ const pickSettingChoice = (name, value) => {
   return allowed.includes(String(value)) ? String(value) : fallback;
 };
 
+// The footer menu's displays: the DpsApp field and setting key, its label.
+const FOOTER_DISPLAYS = [
+  ["showTtk", "footerMenu.ttk", "Time to kill estimate"],
+  ["showTotalDps", "footerMenu.partyTotal", "Party total"],
+  ["showOdyle", "footerMenu.odyle", "Odyle energy"],
+  ["showPing", "footerMenu.ping", "Ping"],
+];
+
 // The target mode menu, in the button's old cycle order: mode, the label the
 // button shows, and what it counts.
 const TARGET_MENU_MODES = [
@@ -56,14 +64,9 @@ const TARGET_MENU_MODES = [
 const REMOTE_APPLIED_SETTING_CONTROLS = {
   "dpsMeter.roundDps": ".roundDpsCheckbox",
   "dpsMeter.showDpsSuffix": ".showDpsSuffixCheckbox",
-  "dpsMeter.showTotalDps": ".showTotalDpsCheckbox",
   "dpsMeter.pinMeToTop": ".pinMeToTopCheckbox",
   "dpsMeter.mainPlayerNamesBold": ".playerNamesBoldCheckbox",
   "dpsMeter.mainPlayerDpsBold": ".playerDpsBoldCheckbox",
-  "dpsMeter.showPing": ".showPingCheckbox",
-  "dpsMeter.showOdyle": ".showOdyleCheckbox",
-  "dpsMeter.showTtk": ".showTtkCheckbox",
-  "dpsMeter.showHealModes": ".showHealModesCheckbox",
   "dpsMeter.bossNameSize": ".bossNameSizeInput",
   "dpsMeter.showSupporterColors": ".showSupporterColorsCheckbox",
   "dpsMeter.barTextureOffset": ".textureOffsetCheckbox",
@@ -126,7 +129,6 @@ class DpsApp {
       showOdyle: "dpsMeter.showOdyle",
       odyleLast: "dpsMeter.odyleLast",
       showTtk: "dpsMeter.showTtk",
-      showHealModes: "dpsMeter.showHealModes",
       extraMetrics: "dpsMeter.extraMetrics",
       showBossStagger: "dpsMeter.showBossStagger",
       statColours: "dpsMeter.statColours",
@@ -362,7 +364,6 @@ class DpsApp {
       this.showPing = this.safeGetSetting(this.storageKeys.showPing) !== "false";
       this.showOdyle = this.safeGetSetting(this.storageKeys.showOdyle) === "true";
       this.showTtk = this.safeGetSetting(this.storageKeys.showTtk) !== "false";
-      this.showHealModes = this.safeGetSetting(this.storageKeys.showHealModes) !== "false";
       this.showTotalDps = this.safeGetSetting(this.storageKeys.showTotalDps) !== "false";
       this.roundDps = this.safeGetSetting(this.storageKeys.roundDps) !== "false";
       this.showDpsSuffix = this.safeGetSetting(this.storageKeys.showDpsSuffix) !== "false";
@@ -521,8 +522,6 @@ class DpsApp {
     this.updateOdyle();
     // Time to kill beside the battle timer, for bosses; on unless turned off.
     this.showTtk = this.safeGetSetting(this.storageKeys.showTtk) !== "false";
-    // HPS and total heal in the DPS/DMG button's cycle; on unless turned off.
-    this.showHealModes = this.safeGetSetting(this.storageKeys.showHealModes) !== "false";
     this.ttk = typeof createTtkEstimator === "function" ? createTtkEstimator() : null;
     // Ping is pushed immediately from PingTracker via window._dpsApp.updatePing().
     // A slow fallback poll handles edge cases (e.g. push not wired yet on startup).
@@ -2633,6 +2632,7 @@ class DpsApp {
     });
     this.bindTargetMenu();
     this.bindMetricMenu();
+    this.bindFooterMenu();
     this.logoBtn?.addEventListener("click", () => {
       this.captureMainMeterScreenshot();
     });
@@ -2822,8 +2822,6 @@ class DpsApp {
     this.runAsAdminCheckbox = document.querySelector(".runAsAdminCheckbox");
     this.shareDataCheckbox = document.querySelector(".shareDataCheckbox");
     this.partyPresenceCheckbox = document.querySelector(".partyPresenceCheckbox");
-    this.showPingCheckbox = document.querySelector(".showPingCheckbox");
-    this.showOdyleCheckbox = document.querySelector(".showOdyleCheckbox");
     this.saveRawPacketsCheckbox = document.querySelector(".saveRawPacketsCheckbox");
     this.sendLogsBtn = document.querySelector(".sendLogsBtn");
     this.sendLogsStatus = document.querySelector(".sendLogsStatus");
@@ -3127,41 +3125,6 @@ class DpsApp {
         this.setDebugLogging(isChecked, { persist: true, syncBackend: true });
       });
     }
-    if (this.showPingCheckbox) {
-      this.showPingCheckbox.checked = this.showPing;
-      this.showPingCheckbox.addEventListener("change", (event) => {
-        this.showPing = !!event.target?.checked;
-        this.safeSetSetting(this.storageKeys.showPing, String(this.showPing));
-      });
-    }
-    if (this.showOdyleCheckbox) {
-      this.showOdyleCheckbox.checked = this.showOdyle;
-      this.showOdyleCheckbox.addEventListener("change", (event) => {
-        this.showOdyle = !!event.target?.checked;
-        this.safeSetSetting(this.storageKeys.showOdyle, String(this.showOdyle));
-        this.updateOdyle();
-      });
-    }
-    this.showTtkCheckbox = document.querySelector(".showTtkCheckbox");
-    if (this.showTtkCheckbox) {
-      this.showTtkCheckbox.checked = this.showTtk;
-      this.showTtkCheckbox.addEventListener("change", (event) => {
-        this.showTtk = !!event.target?.checked;
-        this.safeSetSetting(this.storageKeys.showTtk, String(this.showTtk));
-        if (!this.showTtk) this.battleTime?.setTtk?.(null);
-      });
-    }
-    this.showHealModesCheckbox = document.querySelector(".showHealModesCheckbox");
-    if (this.showHealModesCheckbox) {
-      this.showHealModesCheckbox.checked = this.showHealModes;
-      this.showHealModesCheckbox.addEventListener("change", (event) => {
-        this.showHealModes = !!event.target?.checked;
-        this.safeSetSetting(this.storageKeys.showHealModes, String(this.showHealModes));
-        // Turned off while showing healing: back to DPS, heal columns dropped.
-        this.setDisplayMode(this.displayMode, { persist: true });
-        this.renderCurrentRows?.();
-      });
-    }
     // Plugins only: the meter window hidden, the backend keeps it so (and
     // tells every window when it changes, from the hotkey or a plugin bar).
     const showMeterCheckbox = document.querySelector(".showMeterCheckbox");
@@ -3171,15 +3134,6 @@ class DpsApp {
       window.__TAURI__?.event?.listen?.("meter-shown", (event) => { showMeterCheckbox.checked = event.payload !== false; });
       showMeterCheckbox.addEventListener("change", (event) => {
         tauriInvoke("set_meter_shown", { shown: !!event.target?.checked }).catch(() => {});
-      });
-    }
-    this.showTotalDpsCheckbox = document.querySelector(".showTotalDpsCheckbox");
-    if (this.showTotalDpsCheckbox) {
-      this.showTotalDpsCheckbox.checked = this.showTotalDps;
-      this.showTotalDpsCheckbox.addEventListener("change", (event) => {
-        this.showTotalDps = !!event.target?.checked;
-        this.safeSetSetting(this.storageKeys.showTotalDps, String(this.showTotalDps));
-        this.renderCurrentRows();
       });
     }
     this.roundDpsCheckbox = document.querySelector(".roundDpsCheckbox");
@@ -5675,12 +5629,9 @@ class DpsApp {
     }, 0);
   }
 
-  /** The display modes after DPS, in the menu's order, as Settings allow. */
+  /** The display modes after DPS, in the menu's order. */
   displayModes() {
-    const modes = ["totalDamage"];
-    if (this.showHealModes !== false) modes.push("hps", "totalHeal");
-    modes.push("stagger");
-    return modes;
+    return ["totalDamage", "hps", "totalHeal", "stagger"];
   }
 
   setDisplayMode(mode, { persist = false } = {}) {
@@ -5812,7 +5763,10 @@ class DpsApp {
 
   setMetricMenuOpen(open) {
     if (!this.metricMenuEl || this.metricMenuOpen === open) return;
-    if (open) this.setTargetMenuOpen(false);
+    if (open) {
+      this.setTargetMenuOpen(false);
+      this.setFooterMenuOpen?.(false);
+    }
     this.metricMenuOpen = open;
     this.metricMenuEl.hidden = !open;
     this.metricToggleBtn?.classList.toggle("isOpen", open);
@@ -5882,7 +5836,10 @@ class DpsApp {
 
   setTargetMenuOpen(open) {
     if (!this.targetMenuEl || this.targetMenuOpen === open) return;
-    if (open) this.setMetricMenuOpen(false);
+    if (open) {
+      this.setMetricMenuOpen(false);
+      this.setFooterMenuOpen?.(false);
+    }
     this.targetMenuOpen = open;
     this.targetMenuEl.hidden = !open;
     this.targetModeBtn?.classList.toggle("isOpen", open);
@@ -5913,6 +5870,91 @@ class DpsApp {
       desc.className = "targetMenuDesc";
       desc.textContent = t(descKey, descFallback);
       el.append(radio, name, desc);
+      menu.appendChild(el);
+    }
+  }
+
+  // The footer's displays (battle timer, party total, Odyle energy) open a
+  // menu of every footer display to turn on or off, ping included: these
+  // were switches in Settings → Meter Settings.
+  bindFooterMenu() {
+    const area = document.querySelector(".meter .footerInfo");
+    const footer = document.querySelector(".meter .meterFooter");
+    if (!area || !footer) return;
+    const menu = document.createElement("div");
+    menu.className = "metricMenu footerMenu";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("data-no-drag", "true");
+    menu.hidden = true;
+    footer.parentNode.insertBefore(menu, footer);
+    this.footerMenuEl = menu;
+    this.footerMenuOpen = false;
+    const t = (key, fallback) => this.i18n?.t(key, fallback) ?? fallback;
+    area.title = t("footerMenu.tip", "Choose what the footer shows");
+    area.addEventListener("click", () => this.setFooterMenuOpen(!this.footerMenuOpen));
+    area.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      this.setFooterMenuOpen(!this.footerMenuOpen);
+    });
+    menu.addEventListener("click", (event) => {
+      const item = event.target.closest?.("[data-display]");
+      if (!item) return;
+      const display = FOOTER_DISPLAYS.find(([key]) => key === item.dataset.display);
+      if (!display) return;
+      const [key] = display;
+      this[key] = !this[key];
+      this.safeSetSetting(this.storageKeys[key], String(this[key]));
+      if (key === "showTtk" && !this.showTtk) this.battleTime?.setTtk?.(null);
+      if (key === "showOdyle") this.updateOdyle();
+      if (key === "showPing") this.updatePing();
+      if (key === "showTotalDps") this.renderCurrentRows();
+      this.renderFooterMenu();
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (!this.footerMenuOpen) return;
+      if (menu.contains(event.target) || area.contains(event.target)) return;
+      this.setFooterMenuOpen(false);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && this.footerMenuOpen) this.setFooterMenuOpen(false);
+    });
+    window.addEventListener("blur", () => this.setFooterMenuOpen(false));
+  }
+
+  setFooterMenuOpen(open) {
+    if (!this.footerMenuEl || this.footerMenuOpen === open) return;
+    if (open) {
+      this.setMetricMenuOpen(false);
+      this.setTargetMenuOpen(false);
+    }
+    this.footerMenuOpen = open;
+    this.footerMenuEl.hidden = !open;
+    document.querySelector(".meter .footerInfo")?.classList.toggle("isOpen", open);
+    if (open) this.renderFooterMenu();
+    requestAnimationFrame(() => window.javaBridge?.updateOverlaySize?.());
+  }
+
+  renderFooterMenu() {
+    const menu = this.footerMenuEl;
+    if (!menu || !this.footerMenuOpen) return;
+    const t = (key, fallback) => this.i18n?.t(key, fallback) ?? fallback;
+    menu.replaceChildren();
+    for (const [key, labelKey, fallback] of FOOTER_DISPLAYS) {
+      const shown = this[key] !== false;
+      const el = document.createElement("div");
+      el.className = "metricMenuItem";
+      el.dataset.display = key;
+      el.classList.toggle("isShown", shown);
+      el.setAttribute("role", "menuitemcheckbox");
+      el.setAttribute("aria-checked", String(shown));
+      const name = document.createElement("span");
+      name.className = "metricMenuName";
+      name.textContent = t(labelKey, fallback);
+      const check = document.createElement("span");
+      check.className = "metricMenuCheck";
+      check.setAttribute("aria-hidden", "true");
+      el.append(name, check);
       menu.appendChild(el);
     }
   }
@@ -7358,6 +7400,7 @@ class DpsApp {
     if (this._overlayLocked) {
       this.setMetricMenuOpen?.(false);
       this.setTargetMenuOpen?.(false);
+      this.setFooterMenuOpen?.(false);
     }
     if (!this.lockBtn) return;
     this.lockBtn.classList.toggle("isLocked", this._overlayLocked);

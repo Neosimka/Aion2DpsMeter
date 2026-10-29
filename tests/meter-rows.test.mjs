@@ -57,13 +57,11 @@ test("one metric sorts, others ride along as columns; stagger always offered", (
   dps.setDisplayMode("stagger");
   assert.deepEqual(Array.from(dps.extraMetrics), ["dps", "totalDamage"]);
   assert.equal(dps.getMetricForRow(mine).extras.length, 2);
-  // Healing turned off drops it from the menu, as primary and as a column.
-  dps.showHealModes = false;
+  // Healing is always offered (its Settings switch is gone).
   dps.extraMetrics = ["hps"];
   dps.setDisplayMode("totalHeal");
-  assert.equal(dps.displayMode, "dps");
-  assert.deepEqual(Array.from(dps.extraMetrics), []);
-  assert.deepEqual(Array.from(dps.displayModes()), ["totalDamage", "stagger"]);
+  assert.equal(dps.displayMode, "totalHeal");
+  assert.deepEqual(Array.from(dps.extraMetrics), ["hps"]);
   // The old "both" no longer exists as a mode.
   dps.setDisplayMode("both");
   assert.equal(dps.displayMode, "dps");

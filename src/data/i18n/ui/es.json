@@ -338,7 +338,6 @@
     "showOdyle": "Mostrar energía de Odyle",
     "odyleEnergy": "Energía de Odyle",
     "showTtk": "Mostrar tiempo estimado para matar",
-    "showHealModes": "Mostrar curación en el botón DPS/DMG",
     "showTotalDps": "Mostrar total del grupo",
     "roundDps": "Abreviar DPS en miles (13k)",
     "showDpsSuffix": "Añadir /s al DPS",
@@ -602,7 +601,6 @@
       "autoHideMeter": "El medidor se oculta mientras otra ventana está delante del juego y vuelve con él.",
       "detailsMonitor": "Abre la ventana de detalles en la pantalla elegida y la mantiene allí.",
       "showTtk": "Junto al temporizador, una estimación de cuánto durará todo el combate contra el jefe.",
-      "showHealModes": "El botón DPS/DMG del medidor también muestra la curación por segundo y la curación total.",
       "showTotalDps": "Una barra bajo las filas con el DPS y el daño de todo el grupo.",
       "roundDps": "13.412 se muestra como 13k.",
       "showSuspendBtn": "Un botón en el medidor que deja de leer el tráfico del juego hasta que lo pulses de nuevo.",
@@ -922,5 +920,12 @@
     "loading": "Cargando las notas de la versión…",
     "none": "Aún no hay notas de versión.",
     "failed": "No se pudieron cargar las notas de la versión. También están en GitHub, abajo."
+  },
+  "footerMenu": {
+    "tip": "Elige qué muestra el pie",
+    "ttk": "Tiempo estimado para matar",
+    "partyTotal": "Total del grupo",
+    "odyle": "Energía de Odyle",
+    "ping": "Ping"
   }
 }
