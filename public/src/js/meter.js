@@ -146,6 +146,12 @@ const createMeterUI = ({
 
     // Party combat power, shown beside the name. Hidden unless the party roster
     // packet supplied a value for this player.
+    // Deaths in the fight, a small badge after the name and its figure (shown
+    // once above 0): its own element, so a long name's ellipsis never hides it.
+    const deathCountEl = document.createElement("span");
+    deathCountEl.className = "deathCount";
+    deathCountEl.style.display = "none";
+
     const combatPowerEl = document.createElement("span");
     combatPowerEl.className = "combatPower";
     combatPowerEl.style.display = "none";
@@ -170,6 +176,7 @@ const createMeterUI = ({
     contentEl.appendChild(supporterBadgeEl);
     contentEl.appendChild(a2toolsBadgeEl);
     contentEl.appendChild(combatPowerEl);
+    contentEl.appendChild(deathCountEl);
     contentEl.appendChild(dpsContainer);
     rowEl.appendChild(fillTrackEl);
     rowEl.appendChild(contentEl);
@@ -195,6 +202,8 @@ const createMeterUI = ({
       isVisible: false,
       lastNameText: "",
       lastCombatPowerText: "",
+      deathCountEl,
+      lastDeaths: 0,
       lastIsCjk: false,
       lastIsSupporter: false,
       lastMetricText: "",
@@ -380,11 +389,10 @@ const createMeterUI = ({
       }
 
       const rowId = row.id ?? row.name ?? "";
-      let nameText = row.isIdentifying
+      const nameText = row.isIdentifying
         ? window.i18n?.format?.("meter.identifyingPlayer", { id: rowId }, `#${rowId}`) ??
           `#${rowId}`
         : row.name ?? "";
-      if (row.deaths > 0) nameText += ` \u2620${row.deaths}`;
       if (view.lastNameText !== nameText) {
         view.nameEl.textContent = nameText;
         view.lastNameText = nameText;
@@ -420,6 +428,16 @@ const createMeterUI = ({
         view.combatPowerEl.textContent = combatPowerText;
         view.combatPowerEl.style.display = combatPowerText ? "" : "none";
         view.lastCombatPowerText = combatPowerText;
+      }
+      const deaths = Math.max(0, Number(row.deaths) || 0);
+      if (view.lastDeaths !== deaths) {
+        view.deathCountEl.textContent = deaths ? `☠${deaths}` : "";
+        view.deathCountEl.style.display = deaths ? "" : "none";
+        view.deathCountEl.title = deaths
+          ? window.i18n?.format?.("meter.deaths", { count: deaths }, `Died ${deaths} times in this fight`) ??
+            `Died ${deaths} times in this fight`
+          : "";
+        view.lastDeaths = deaths;
       }
 
       // "Unknown" is a row whose class is not known yet: no icon, rather than

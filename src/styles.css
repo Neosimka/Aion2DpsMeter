@@ -2995,6 +2995,31 @@ body.mainPlayerNamesBold .settingsPanel .themeDropdownMenu .settingsDropdownItem
   font-size: 7.5px;
 }
 
+/* Deaths in the fight (meter.js, once above 0): the A2 badge's shape in a
+   muted red, after the name and its figure, so it reads as a mark on the
+   player and never as one of the numbers. */
+.list .item .deathCount {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: -3px;
+  padding: 0 3px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 120, 120, 0.7);
+  background: rgba(45, 10, 12, 0.6);
+  color: #ffa3a3;
+  font: 700 8.5px/1 var(--hud-tech, sans-serif);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+.meter.slim .list .item .deathCount {
+  height: 10px;
+  font-size: 7.5px;
+}
+
 /* The supporter badge — a gold crown beside the name, outlined dark so it
    stays clear on a bar texture.
    Deliberately an icon and not a "PATRON" pill: the slim layouts run an 11.5px

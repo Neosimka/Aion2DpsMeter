@@ -768,7 +768,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "Usa A2Tools",
     "dpsSuffix": "/s",
-    "others": "Otros"
+    "others": "Otros",
+    "deaths": "Murió {count} veces en este combate"
   },
   "skills": {
     "fallback": "Habilidad {code}",

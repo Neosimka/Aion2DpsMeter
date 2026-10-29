@@ -768,7 +768,8 @@
     "identifyingPlayer": "#{id}",
     "a2toolsUser": "A2Tools 사용",
     "dpsSuffix": "/초",
-    "others": "기타"
+    "others": "기타",
+    "deaths": "이번 전투에서 {count}번 사망"
   },
   "skills": {
     "fallback": "스킬 {code}",
