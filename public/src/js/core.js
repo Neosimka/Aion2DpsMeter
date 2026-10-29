@@ -129,6 +129,7 @@ class DpsApp {
       showHealModes: "dpsMeter.showHealModes",
       extraMetrics: "dpsMeter.extraMetrics",
       showBossStagger: "dpsMeter.showBossStagger",
+      statColours: "dpsMeter.statColours",
       showTotalDps: "dpsMeter.showTotalDps",
       roundDps: "dpsMeter.roundDps",
       autoDetectDevice: "dpsMeter.autoDetectDevice",
@@ -682,6 +683,9 @@ class DpsApp {
       this.extraMetrics = [];
     }
     this.showBossStagger = this.safeGetStorage(this.storageKeys.showBossStagger) === "true";
+    // Each metric in its own colour (styles.css); on unless turned off.
+    this.statColours = this.safeGetStorage(this.storageKeys.statColours) !== "false";
+    document.body.classList.toggle("noStatColours", !this.statColours);
     const storedDisplayMode = this.safeGetStorage(this.storageKeys.displayMode);
     // "both" was damage with DPS beside it: now damage, with DPS as an extra.
     if (storedDisplayMode === "both" && !this.extraMetrics.includes("dps")) this.extraMetrics.push("dps");
@@ -5711,6 +5715,8 @@ class DpsApp {
     const ariaLabel = this.i18n?.t(ariaKey, ariaFallback) ?? ariaFallback;
     const extras = this.extraMetrics?.length || 0;
     this.metricToggleBtn.textContent = extras ? `${label}+${extras}` : label;
+    // In the metric's own colour, as its numbers on the rows are.
+    this.metricToggleBtn.dataset.metric = this.displayMode;
     this.metricToggleBtn.setAttribute("aria-label", ariaLabel);
     this.metricToggleBtn.setAttribute("aria-expanded", String(!!this.metricMenuOpen));
     const tip = "Pick what the rows show. Wheel or right-click: next metric";
@@ -5768,6 +5774,13 @@ class DpsApp {
         this.safeSetStorage(this.storageKeys.showBossStagger, String(this.showBossStagger));
         this.renderMetricMenu();
         this.renderCurrentRows();
+        return;
+      }
+      if (mode === "statColours") {
+        this.statColours = !this.statColours;
+        this.safeSetStorage(this.storageKeys.statColours, String(this.statColours));
+        document.body.classList.toggle("noStatColours", !this.statColours);
+        this.renderMetricMenu();
         return;
       }
       if (event.target.closest(".metricMenuSort")) {
@@ -5961,6 +5974,11 @@ class DpsApp {
     });
     boss.title = t("header.display.bossStaggerTip", "How far the boss's stagger gauge is worn down, on its HP bar");
     menu.appendChild(boss);
+    const colours = item("statColours", t("header.display.names.statColours", "Stat colours"), this.statColours !== false, {
+      sortable: false,
+    });
+    colours.title = t("header.display.statColoursTip", "Each stat in its own colour on the rows, the menu and the button");
+    menu.appendChild(colours);
   }
 
   // Time to kill beside the battle timer: bosses only, and only with their HP
@@ -6004,6 +6022,11 @@ class DpsApp {
       this.elBossHpBar.style.display = "";
     }
     if (this.elBossHpFill) {
+      // Glides only when the change shows, as the rows' bars do (meter.js
+      // GLIDE_MIN_JUMP): a boss loses a hair of HP on most updates.
+      const jump = Math.abs(pct - (this._bossHpPct ?? 0));
+      this.elBossHpFill.classList.toggle("noGlide", jump < 3);
+      this._bossHpPct = pct;
       this.elBossHpFill.style.width = `${pct.toFixed(1)}%`;
     }
     // Color shifts as the boss is whittled down.
@@ -6373,7 +6396,13 @@ class DpsApp {
 
   getMetricForRow(row) {
     const metric = this.metricFor(row, this.displayMode);
-    metric.extras = (this.extraMetrics || []).map((mode) => this.metricFor(row, mode).text);
+    metric.mode = this.displayMode;
+    // Worked out only when drawn: the sort asks for every row's value often.
+    const extras = this.extraMetrics || [];
+    Object.defineProperty(metric, "extras", {
+      get: () => extras.map((mode) => ({ mode, text: this.metricFor(row, mode).text })),
+      enumerable: true,
+    });
     return metric;
   }
 
@@ -7186,28 +7215,23 @@ class DpsApp {
 
     let isResizing = false;
     let startX = 0;
-    let startY = 0;
     let startWidth = 0;
-    let startHeight = 0;
     const minWidth = 300;
-    const minHeight = 30;
 
-    // The size the player gave the meter, kept across restarts: it went back
+    // The width the player gave the meter, kept across restarts: it went back
     // to the default on every start (Windows, 2026-10-17). Saved by both
-    // resizes, the corner handle here and the window's edges (tauriBridge.js
-    // sends "meter-resized").
+    // resizes, the corner handle here and the window's edge (tauriBridge.js
+    // sends "meter-resized"). The handle sets the width only: the meter is
+    // as tall as its rows (a saved height, dpsMeter.meterMinHeight, left an
+    // empty box under them and is no longer applied).
     const px = (v) => Math.round(parseFloat(v));
     const saveSize = () => {
       const width = px(this.meterEl.style.width);
-      const height = px(this.meterEl.style.minHeight);
       if (width >= minWidth && width <= 3000) this.safeSetSetting(this.storageKeys.meterWidth, String(width));
-      if (height >= minHeight && height <= 3000) this.safeSetSetting(this.storageKeys.meterMinHeight, String(height));
     };
     if (window.A2_VIEW === "main") {
       const width = px(this.safeGetSetting(this.storageKeys.meterWidth));
-      const height = px(this.safeGetSetting(this.storageKeys.meterMinHeight));
       if (width >= minWidth && width <= 3000) this.meterEl.style.width = `${width}px`;
-      if (height >= minHeight && height <= 3000) this.meterEl.style.minHeight = `${height}px`;
       window.addEventListener("meter-resized", saveSize);
     }
 
@@ -7227,21 +7251,12 @@ class DpsApp {
         return;
       }
       const nextWidth = Math.max(minWidth, startWidth + (event.screenX - startX));
-      const nextHeight = Math.max(minHeight, startHeight + (event.screenY - startY));
       this.meterEl.style.width = `${nextWidth}px`;
-      this.meterEl.style.height = `${nextHeight}px`;
     };
 
     const onMouseUp = () => {
       if (!isResizing) return;
       isResizing = false;
-      // Convert fixed height to min-height so the meter can still grow
-      // when new rows are added, while preserving the user's minimum.
-      const currentHeight = this.meterEl.style.height;
-      if (currentHeight) {
-        this.meterEl.style.minHeight = currentHeight;
-        this.meterEl.style.height = "";
-      }
       saveSize();
     };
 
@@ -7250,9 +7265,7 @@ class DpsApp {
       event.stopPropagation();
       const rect = this.meterEl.getBoundingClientRect();
       startWidth = rect.width;
-      startHeight = rect.height;
       startX = event.screenX;
-      startY = event.screenY;
       isResizing = true;
     });
 

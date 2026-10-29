@@ -11,6 +11,14 @@
 }
 
 :root {
+  /* Metrics: one colour each, on the rows, the metric menu and its button.
+     Stagger is the game's own aqua. */
+  --metric-dps: #ffd166;
+  --metric-totalDamage: #ff9a76;
+  --metric-hps: #7ee2a8;
+  --metric-totalHeal: #c3f27a;
+  --metric-stagger: #5ce8ec;
+
   /* Bars */
   --row-fill: #5fbf87;
   --isUser-fill: #6aa6ff;
@@ -623,7 +631,17 @@ body.linuxOverlay .meter {
 }
 .bossHpText .bossHpAmt { color: rgba(255, 255, 255, 0.72); }
 /* Boss stagger %, between the two: amber, a gauge apart from HP. */
-.bossHpText .bossHpStag { color: #ffd27a; }
+/* On a dark chip in the game's stagger aqua: plain text sat on the red
+   fill and was hard to read. */
+.bossHpText .bossHpStag {
+  padding: 0 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  text-shadow: none;
+  line-height: 1.35;
+}
+body:not(.noStatColours) .bossHpText .bossHpStag { color: var(--metric-stagger); }
 .bossHpText .bossHpStag:empty { display: none; }
 
 /* ---------- player rows ---------- */
@@ -683,6 +701,9 @@ html:not(.hoverStale) .list .item:hover { background: rgba(255, 255, 255, 0.075)
   /* A stepped glide (see .bossHpFill). */
   transition: width var(--bar-glide, 200ms) steps(5, end);
 }
+/* A change too small to see jumps there (meter.js GLIDE_MIN_JUMP). */
+.list .item .fill.noGlide,
+.bossHpFill.noGlide { transition: none; }
 /* The lit edge is the part you actually read at a glance. When the tint
    washes out over bright terrain or at low panel opacity, the edge still
    says exactly where the bar ends — six of them stack into a skyline
@@ -1036,9 +1057,25 @@ html:not(.hoverStale) .list .item:hover { background: rgba(255, 255, 255, 0.075)
 /* Extra metrics from the metric menu: smaller and dimmer than the main
    figure, which the bars and the order follow. */
 .list .item .dps .dpsExtra {
+  display: flex;
+  gap: 6px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  opacity: 0.9;
 }
+/* Each metric as wide as its widest figure on the rows (meter.js sets
+   --mw-<metric> in characters; the digits are tabular), right-aligned: the
+   same metric lines up down the rows. */
+.list .item .dps [data-metric] { text-align: right; box-sizing: content-box; }
+.list .item .dps [data-metric="dps"] { min-width: var(--mw-dps, 0); }
+.list .item .dps [data-metric="totalDamage"] { min-width: var(--mw-totalDamage, 0); }
+.list .item .dps [data-metric="hps"] { min-width: var(--mw-hps, 0); }
+.list .item .dps [data-metric="totalHeal"] { min-width: var(--mw-totalHeal, 0); }
+.list .item .dps [data-metric="stagger"] { min-width: var(--mw-stagger, 0); }
+body:not(.noStatColours) .list .item .dps [data-metric="dps"] { color: var(--metric-dps); }
+body:not(.noStatColours) .list .item .dps [data-metric="totalDamage"] { color: var(--metric-totalDamage); }
+body:not(.noStatColours) .list .item .dps [data-metric="hps"] { color: var(--metric-hps); }
+body:not(.noStatColours) .list .item .dps [data-metric="totalHeal"] { color: var(--metric-totalHeal); }
+body:not(.noStatColours) .list .item .dps [data-metric="stagger"] { color: var(--metric-stagger); }
 .list .item .dps .dpsContribution {
   font-variation-settings: "wght" 600, "wdth" 75;
   font-size: 11px;
@@ -1257,6 +1294,11 @@ body.mainPlayerDpsBold :is(.meter, .barPreviewPanel) .item .content .dps > p {
   transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
 }
 .footerBtns .targetModeBtn { min-width: 44px; }
+body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="dps"] { color: var(--metric-dps); }
+body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="totalDamage"] { color: var(--metric-totalDamage); }
+body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hps"] { color: var(--metric-hps); }
+body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="totalHeal"] { color: var(--metric-totalHeal); }
+body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="stagger"] { color: var(--metric-stagger); }
 .footerBtns .metricToggleBtn { min-width: 30px; }
 .footerBtns .footerBtn.isOpen {
   color: #fff;
@@ -1344,6 +1386,15 @@ body.mainPlayerDpsBold :is(.meter, .barPreviewPanel) .item .content .dps > p {
 }
 .metricMenuItem.isShown .metricMenuName { color: rgba(255, 255, 255, 0.9); }
 .metricMenuItem.isPrimary .metricMenuName { color: #fff; font-variation-settings: "wght" 700; }
+/* Each metric's name in its colour; dimmer while it isn't shown. */
+.metricMenuItem[data-metric="dps"] { --m: var(--metric-dps); }
+.metricMenuItem[data-metric="totalDamage"] { --m: var(--metric-totalDamage); }
+.metricMenuItem[data-metric="hps"] { --m: var(--metric-hps); }
+.metricMenuItem[data-metric="totalHeal"] { --m: var(--metric-totalHeal); }
+.metricMenuItem[data-metric="stagger"],
+.metricMenuItem[data-metric="bossStagger"] { --m: var(--metric-stagger); }
+body:not(.noStatColours) .metricMenu:not(.targetMenu) .metricMenuItem .metricMenuName { color: var(--m, #fff); opacity: 0.6; }
+body:not(.noStatColours) .metricMenu:not(.targetMenu) .metricMenuItem.isShown .metricMenuName { opacity: 1; }
 
 /* Show tick: a box, filled with a check when the column is on. The sorting
    metric's is on and dimmed: it is always shown. */

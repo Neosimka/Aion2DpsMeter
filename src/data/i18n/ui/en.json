@@ -18,13 +18,15 @@
         "hps": "Healing per second",
         "totalHeal": "Total healing",
         "stagger": "Stagger",
-        "bossStagger": "Boss stagger %"
+        "bossStagger": "Boss stagger %",
+        "statColours": "Stat colours"
       },
       "sortBy": "Sort by this",
       "menuTip": "Pick what the rows show. Wheel or right-click: next metric",
       "bossStaggerTip": "How far the boss's stagger gauge is worn down, on its HP bar",
       "sortCol": "Sort",
-      "showCol": "Show"
+      "showCol": "Show",
+      "statColoursTip": "Each stat in its own colour on the rows, the menu and the button"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} is available",

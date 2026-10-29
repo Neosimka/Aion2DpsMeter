@@ -4248,12 +4248,16 @@ pub fn run() {
                                 if let Ok(pos) = window.outer_position() {
                                     // Don't save minimized/hidden positions
                                     if pos.x > -10000 && pos.y > -10000 {
-                                        state.settings.set("window.x", &pos.x.to_string());
-                                        state.settings.set("window.y", &pos.y.to_string());
+                                        let moved_x = state.settings.set("window.x", &pos.x.to_string());
+                                        let moved_y = state.settings.set("window.y", &pos.y.to_string());
                                         // The anchored height, not the window's: a tooltip
                                         // open at the save would be taken for the meter's.
+                                        // Only with a moved position, which it goes with
+                                        // (the edge Settings → "Meter stays fixed at" keeps):
+                                        // the height follows the rows, and saving each
+                                        // change rewrote settings.json all fight long.
                                         let height = state.anchored_height.load(std::sync::atomic::Ordering::Relaxed);
-                                        if height > 0 {
+                                        if height > 0 && (moved_x || moved_y) {
                                             state.settings.set(WINDOW_HEIGHT_KEY, &height.to_string());
                                         }
                                     }

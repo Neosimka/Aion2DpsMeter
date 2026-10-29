@@ -18,13 +18,15 @@
         "hps": "Soins par seconde",
         "totalHeal": "Soins totaux",
         "stagger": "Étourdissement",
-        "bossStagger": "Étourdissement du boss %"
+        "bossStagger": "Étourdissement du boss %",
+        "statColours": "Couleurs des stats"
       },
       "sortBy": "Trier par ceci",
       "menuTip": "Choisissez ce qu'affichent les lignes. Molette ou clic droit : métrique suivante",
       "bossStaggerTip": "L'usure de la jauge d'étourdissement du boss, sur sa barre de PV",
       "sortCol": "Tri",
-      "showCol": "Afficher"
+      "showCol": "Afficher",
+      "statColoursTip": "Chaque stat dans sa couleur, sur les lignes, le menu et le bouton"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} est disponible",

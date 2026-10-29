@@ -18,13 +18,15 @@
         "hps": "초당 치유량",
         "totalHeal": "총 치유량",
         "stagger": "무력화",
-        "bossStagger": "보스 무력화 %"
+        "bossStagger": "보스 무력화 %",
+        "statColours": "항목별 색상"
       },
       "sortBy": "이 항목으로 정렬",
       "menuTip": "행에 표시할 항목을 고릅니다. 휠 또는 우클릭: 다음 항목",
       "bossStaggerTip": "보스 무력화 게이지가 얼마나 깎였는지 HP 바에 표시합니다",
       "sortCol": "정렬",
-      "showCol": "표시"
+      "showCol": "표시",
+      "statColoursTip": "각 항목을 행, 메뉴, 버튼에 고유한 색으로 표시합니다"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} 업데이트가 있습니다",

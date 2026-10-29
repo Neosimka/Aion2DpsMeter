@@ -1198,7 +1198,15 @@ impl DpsCalculator {
                         hits_received: hits_recv,
                         received: Some(received),
                         dbid: roster.map(|m| m.dbid).unwrap_or(0),
-                        server_id: roster.map(|m| m.server_id).unwrap_or(0),
+                        // The server the game's records state: yours from your
+                        // self record, or unknown, never the roster's, which is
+                        // its id's top bits, kept by a character moved to
+                        // another server (Nemon for an Israphel player, #128).
+                        // Others': a self or loot record's, else the roster's.
+                        server_id: self
+                            .data_storage
+                            .stated_server(nick)
+                            .unwrap_or_else(|| roster.map(|m| m.server_id).unwrap_or(0)),
                         is_supporter: supporters.contains(
                             nick,
                             roster.map(|m| m.dbid).unwrap_or(0),
@@ -1256,7 +1264,8 @@ impl DpsCalculator {
                 app_version: crate::entity::fight_record::APP_VERSION.to_string(),
                 mob_code,
                 dungeon_id: fight_dungeon(&self.npc_lookup, mob_code, roster_dungeon),
-                server_id: self.data_storage.fight_server_id(),
+                // Your self record's, or unknown: never a guess (#128).
+                server_id: self.data_storage.self_record_server(),
                 buffs: Some(buffs),
                 stagger: Some(stagger),
             };

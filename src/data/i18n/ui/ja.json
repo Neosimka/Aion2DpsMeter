@@ -18,13 +18,15 @@
         "hps": "秒間回復量",
         "totalHeal": "総回復量",
         "stagger": "スタン",
-        "bossStagger": "ボスのスタン %"
+        "bossStagger": "ボスのスタン %",
+        "statColours": "項目の色分け"
       },
       "sortBy": "この項目で並べ替え",
       "menuTip": "行に表示する項目を選びます。ホイールまたは右クリック：次の項目",
       "bossStaggerTip": "ボスのスタンゲージの減り具合をHPバーに表示します",
       "sortCol": "並べ替え",
-      "showCol": "表示"
+      "showCol": "表示",
+      "statColoursTip": "各項目を行・メニュー・ボタンでそれぞれの色で表示します"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} にアップデートできます",

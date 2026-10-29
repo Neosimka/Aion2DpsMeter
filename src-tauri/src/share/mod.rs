@@ -788,6 +788,7 @@ const ENDED_AFTER_MS: i64 = 10_000;
 pub fn wants_auto_upload(app_data_dir: &Path, record: &FightRecord, now_ms: i64) -> bool {
     let meta = read_meta(app_data_dir, &record.id);
     !record.is_train
+        && is_instanced(record)
         && now_ms - (record.start_time_ms + record.duration_ms) >= ENDED_AFTER_MS
         && slice_path(app_data_dir, &record.id).exists()
         && meta.url.is_none()
@@ -932,6 +933,14 @@ impl UploadFailure {
     }
 }
 
+/// Whether a fight is shared as a log: one in a dungeon or other instance
+/// (the meter saw its dungeon id). Open-world fights, field and world bosses,
+/// stay in the player's own history: they were 3% of logs and players come
+/// for dungeon bosses (2026-10-29).
+pub fn is_instanced(record: &FightRecord) -> bool {
+    record.dungeon_id != 0
+}
+
 #[cfg(feature = "online")]
 /// `upload`, saying whether a failure is worth retrying.
 pub async fn upload_detailed(
@@ -940,6 +949,9 @@ pub async fn upload_detailed(
     record: &FightRecord,
     settings: &crate::config::settings::Settings,
 ) -> Result<UploadResult, UploadFailure> {
+    if !is_instanced(record) {
+        return Err(UploadFailure::fatal("Only dungeon fights are shared as logs."));
+    }
     let mut as_guest = false;
     let token = match crate::account::secret::load_stored(app_data_dir) {
         crate::account::secret::Stored::Token(token) => token,
@@ -1098,6 +1110,8 @@ mod upload_tests {
         }))
         .unwrap();
         r.is_train = is_train;
+        // A dungeon's: only those are logs (is_instanced).
+        r.dungeon_id = 600101;
         r
     }
 
@@ -1240,6 +1254,8 @@ mod upload_tests {
         assert!(wants_auto_upload(&dir, &boss, ended));
         assert!(!wants_auto_upload(&dir, &fight("auto_9_1000", 1_000, 60_000, true), ended),
                 "a training dummy is never a log");
+        let open_world = FightRecord { dungeon_id: 0, ..boss.clone() };
+        assert!(!wants_auto_upload(&dir, &open_world, ended), "an open-world boss is never a log");
         write_meta(&dir, &boss.id, &SliceMeta { uploader_actor_id: None,
                    url: Some("https://a2tools.app/logs/x".into()), visibility: None, ..Default::default() });
         assert!(!wants_auto_upload(&dir, &boss, ended), "already uploaded");

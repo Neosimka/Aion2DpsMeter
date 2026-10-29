@@ -18,13 +18,15 @@
         "hps": "Cura por segundo",
         "totalHeal": "Cura total",
         "stagger": "Atordoamento",
-        "bossStagger": "Atordoamento do chefe %"
+        "bossStagger": "Atordoamento do chefe %",
+        "statColours": "Cores por estatística"
       },
       "sortBy": "Ordenar por isto",
       "menuTip": "Escolha o que as linhas mostram. Roda ou clique direito: próxima métrica",
       "bossStaggerTip": "Quanto da barra de atordoamento do chefe já foi gasta, na barra de vida dele",
       "sortCol": "Ordem",
-      "showCol": "Mostrar"
+      "showCol": "Mostrar",
+      "statColoursTip": "Cada estatística na sua cor nas linhas, no menu e no botão"
     },
     "updates": {
       "meter": "A2Tools DPS Meter {version} está disponível",

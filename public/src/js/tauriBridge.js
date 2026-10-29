@@ -1136,11 +1136,9 @@
     const px = (name) => parseFloat(style[name]) || 0;
     const borderW = style.boxSizing === "border-box" ? 0
       : px("borderLeftWidth") + px("borderRightWidth") + px("paddingLeft") + px("paddingRight");
-    const borderH = style.boxSizing === "border-box" ? 0
-      : px("borderTopWidth") + px("borderBottomWidth") + px("paddingTop") + px("paddingBottom");
-    // Viewport units follow layout immediately, without waiting for resize events.
+    // Viewport units follow layout immediately, without waiting for resize
+    // events. The width only: the meter is as tall as its rows.
     meter.style.width = `max(300px, calc(100vw - ${padding.w + borderW}px))`;
-    meter.style.height = `max(${nativeResize.contentHeight || 30}px, calc(100vh - ${padding.h + borderH}px))`;
   };
 
   const finishNativeResize = (cancel = false) => {
@@ -1172,10 +1170,9 @@
       }
       if (window.A2_VIEW === "main") {
         const meter = document.querySelector(".meter");
-        if (meter?.style.height) {
+        if (meter?.style.width) {
           const style = getComputedStyle(meter);
           meter.style.width = style.width;
-          meter.style.minHeight = style.height;
           meter.style.height = "";
           // Kept across restarts (core.js bindResizeHandle).
           if (!operation.cancel) window.dispatchEvent(new Event("meter-resized"));
@@ -1202,8 +1199,8 @@
         operation.contentHeight = minimum.contentHeight;
         minWidth = minimum.width;
         minHeight = minimum.height;
+        meter.style.minHeight = "";
         followNativeSize();
-        meter.style.minHeight = `${minimum.contentHeight}px`;
       }
     }
     operation.started = invoke("begin_window_resize", {
@@ -1560,7 +1557,8 @@
       if (!primaryHeld) return;
       if (supported) {
         const padding = overlayPadding();
-        startNativeResize("SouthEast", 300 + padding.w, 30 + padding.h);
+        // Sideways only: the handle sets the width, the rows the height.
+        startNativeResize("East", 300 + padding.w, 30 + padding.h);
       } else {
         // Replay an early press once backend detection has completed.
         e.target.dispatchEvent(new MouseEvent("mousedown", e));
