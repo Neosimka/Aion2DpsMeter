@@ -1530,11 +1530,35 @@
   // The window grows to the room right of and below the meter for the drag,
   // without moving it, and the edge is kept from wherever the player leaves
   // it (app.rs resize_window).
+  // On Linux, sideways only and as the drag needs it (growResizeViewport):
+  // a Wayland window can't read where it is (screenX/Y are 0), so the room
+  // "right of and below" it was the whole screen, and a window grown to
+  // that made Hyprland move it, where it stayed once it shrank back (#102).
+  // The handle sets the width only, so the height never needs the room.
+  const RESIZE_SLACK = 400;
   const expandViewport = () => {
     resizeActive = true;
+    const scale = window.devicePixelRatio || 1;
+    if (isLinux) {
+      const width = Math.min(window.innerWidth + RESIZE_SLACK, window.screen?.availWidth || 1920);
+      invoke("resize_window", { width, height: window.innerHeight, scale, preserveAnchor: false, playerResize: true }).catch(() => {});
+      return;
+    }
     const space = spaceRightBelow();
     invoke("resize_window", {
-      width: Math.min(space.w, 2000), height: Math.min(space.h, 1200), scale: window.devicePixelRatio || 1,
+      width: Math.min(space.w, 2000), height: Math.min(space.h, 1200), scale,
+      preserveAnchor: false, playerResize: true,
+    }).catch(() => {});
+  };
+  // The meter dragged to `width` CSS px: on Linux, the window grows sideways
+  // ahead of it (core.js bindResizeHandle calls this on each move).
+  if (window.javaBridge) window.javaBridge.growResizeViewport = (width) => {
+    if (!isLinux || !resizeActive || nativeResize) return;
+    if (width + 40 <= window.innerWidth) return;
+    const target = Math.min(width + RESIZE_SLACK, window.screen?.availWidth || 1920);
+    if (target <= window.innerWidth) return;
+    invoke("resize_window", {
+      width: target, height: window.innerHeight, scale: window.devicePixelRatio || 1,
       preserveAnchor: false, playerResize: true,
     }).catch(() => {});
   };

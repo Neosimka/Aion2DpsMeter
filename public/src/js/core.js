@@ -7315,6 +7315,8 @@ class DpsApp {
       }
       const nextWidth = Math.max(minWidth, startWidth + (event.screenX - startX));
       this.meterEl.style.width = `${nextWidth}px`;
+      // Linux: the window grows sideways ahead of the meter (tauriBridge.js).
+      window.javaBridge?.growResizeViewport?.(nextWidth + 16);
     };
 
     const onMouseUp = () => {
