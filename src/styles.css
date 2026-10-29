@@ -701,6 +701,9 @@ html:not(.hoverStale) .list .item:hover { background: rgba(255, 255, 255, 0.075)
   /* A stepped glide (see .bossHpFill). */
   transition: width var(--bar-glide, 200ms) steps(5, end);
 }
+/* A change too small to see jumps there (meter.js GLIDE_MIN_JUMP). */
+.list .item .fill.noGlide,
+.bossHpFill.noGlide { transition: none; }
 /* The lit edge is the part you actually read at a glance. When the tint
    washes out over bright terrain or at low panel opacity, the edge still
    says exactly where the bar ends — six of them stack into a skyline

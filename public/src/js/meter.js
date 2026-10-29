@@ -48,6 +48,10 @@ const isBrightColor = (value) => {
   return bright;
 };
 
+// The smallest change of a bar's length (share of the row) that glides;
+// smaller ones jump there (see renderRows).
+const GLIDE_MIN_JUMP = 0.03;
+
 const createMeterUI = ({
   elList,
   dpsFormatter,
@@ -516,6 +520,12 @@ const createMeterUI = ({
         // 2px child, and a scaled parent would squash it (and its glow) by
         // the fill ratio. Six absolutely-positioned rows, rAF-throttled, so
         // the layout cost is not measurable.
+        // It glides only when the change shows: each glide step re-lays and
+        // repaints the bar (its texture too), and in a steady fight most
+        // updates move it by a hair, so gliding them all kept every bar
+        // animating, about half the meter's drawing (2026-10-29).
+        const jump = Math.abs(ratio - (view.lastFillRatio ?? 0));
+        view.fillEl.classList.toggle("noGlide", jump < GLIDE_MIN_JUMP);
         view.fillEl.style.width = `${(ratio * 100).toFixed(2)}%`;
         view.lastFillRatio = ratio;
       }

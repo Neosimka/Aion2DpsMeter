@@ -6021,6 +6021,11 @@ class DpsApp {
       this.elBossHpBar.style.display = "";
     }
     if (this.elBossHpFill) {
+      // Glides only when the change shows, as the rows' bars do (meter.js
+      // GLIDE_MIN_JUMP): a boss loses a hair of HP on most updates.
+      const jump = Math.abs(pct - (this._bossHpPct ?? 0));
+      this.elBossHpFill.classList.toggle("noGlide", jump < 3);
+      this._bossHpPct = pct;
       this.elBossHpFill.style.width = `${pct.toFixed(1)}%`;
     }
     // Color shifts as the boss is whittled down.
