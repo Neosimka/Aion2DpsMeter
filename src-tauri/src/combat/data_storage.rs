@@ -1382,18 +1382,30 @@ impl DataStorage {
         self.inner.read().player_servers.get(name.trim()).copied().unwrap_or(0)
     }
 
-    /// The server to file `name` under in a saved fight, 0 when no record
-    /// has stated one: your own from your self record first (the game's word
-    /// on where you are), anyone's from a self or loot record. Both come
-    /// before the roster's, the top bits of an id a character moved to
-    /// another server keeps (#128).
-    pub fn stated_server(&self, name: &str) -> u16 {
+    /// The server to file `name` under in a saved fight, as the game's
+    /// records state it. You: your self record's, the game's word on where you
+    /// are, and Some(0), unknown, when none has come this session, never a
+    /// guess (#128). Anyone else: what a self or loot record stated, None when
+    /// nothing has, for the caller's roster value. Both come before the
+    /// roster's, the top bits of an id a character moved to another server
+    /// keeps, so it names the old one.
+    pub fn stated_server(&self, name: &str) -> Option<u16> {
         let name = name.trim();
         let inner = self.inner.read();
-        if inner.self_server != 0 && inner.local_character_name.as_deref().map(str::trim) == Some(name) {
-            return inner.self_server;
+        if inner.local_character_name.as_deref().map(str::trim) == Some(name) {
+            return Some(inner.self_server);
         }
-        inner.player_servers.get(name).copied().unwrap_or(0)
+        inner.player_servers.get(name).copied()
+    }
+
+    /// The server a saved fight is filed under: your self record's, 0
+    /// (unknown) when none has come this session. Not `fight_server_id`,
+    /// whose fallbacks (your roster entry, the connected host's server, the
+    /// party's majority) guess, and guessed wrong for a moved character or in
+    /// a cross-server dungeon (#128). The game sends the record on every zone
+    /// you enter.
+    pub fn self_record_server(&self) -> u16 {
+        self.inner.read().self_server
     }
 
     /// Your home server, as your own self record states it; 0 for a record
@@ -4531,14 +4543,19 @@ mod tests {
         // An Israphel player whose id was made on Nemon (#128).
         let s = DataStorage::new();
         s.set_local_identity_from_game(7, Some("Arid".into()));
+        // No self record yet: you are on no known server, not a guessed one.
+        s.note_player_server("Arid", 2109);
+        assert_eq!(s.stated_server("Arid"), Some(0));
+        assert_eq!(s.self_record_server(), 0);
         s.note_self_server(2101);
         // A later loot record must not move you back.
         s.note_player_server("Arid", 2109);
-        assert_eq!(s.stated_server("Arid"), 2101);
+        assert_eq!(s.stated_server("Arid"), Some(2101));
+        assert_eq!(s.self_record_server(), 2101);
         // Someone else: what a loot record stated, else nothing (the roster's).
         s.note_player_server("Other", 1102);
-        assert_eq!(s.stated_server("Other"), 1102);
-        assert_eq!(s.stated_server("Nobody"), 0);
+        assert_eq!(s.stated_server("Other"), Some(1102));
+        assert_eq!(s.stated_server("Nobody"), None);
     }
 
 }
