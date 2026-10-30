@@ -13,7 +13,7 @@
 use a2tools_dps_meter_lib::capture::evidence_slice;
 use a2tools_dps_meter_lib::rederive::{derive_decoded, Decoded, DeriveError};
 use flate2::read::GzDecoder;
-use ruzstd::StreamingDecoder;
+use ruzstd::decoding::StreamingDecoder;
 use worker::*;
 
 /// The meter's own data tables, compiled in. Without the NPC table no target
@@ -39,6 +39,9 @@ const MAX_GZIPPED: usize = 16 * 1024 * 1024;
 // peaked at 77 MiB of heap, a 47 MiB one (577 players, 6 minutes) at 191 MiB
 // (2026-10-21). Above this a slice is refused, not run out of memory.
 const MAX_RECORD_BYTES: usize = 36 * 1024 * 1024;
+// A zstd frame's window is allocated as declared, before any output: no
+// bigger than the records it could hold (#131).
+const MAX_ZSTD_WINDOW: u64 = MAX_RECORD_BYTES as u64;
 
 /// The slice inside an upload: zstd from meters 2.0.67 on, gzip before, told
 /// apart by their magic bytes, so every stored slice still derives. Read as it
@@ -47,7 +50,7 @@ const MAX_RECORD_BYTES: usize = 36 * 1024 * 1024;
 /// A bomb stops at the limit. None for anything that is not a slice.
 fn read_slice(body: &[u8]) -> Option<Decoded> {
     if body.starts_with(&[0x28, 0xB5, 0x2F, 0xFD]) {
-        evidence_slice::decode_from(StreamingDecoder::new(body).ok()?, MAX_RECORD_BYTES)
+        evidence_slice::decode_from(StreamingDecoder::new_with_max_window_size(body, MAX_ZSTD_WINDOW).ok()?, MAX_RECORD_BYTES)
     } else {
         evidence_slice::decode_from(GzDecoder::new(body), MAX_RECORD_BYTES)
     }
@@ -59,7 +62,7 @@ fn looks_like_slice(body: &[u8]) -> bool {
     use std::io::Read;
     let mut magic = [0u8; 4];
     let read = if body.starts_with(&[0x28, 0xB5, 0x2F, 0xFD]) {
-        StreamingDecoder::new(body).ok().is_some_and(|mut r| r.read_exact(&mut magic).is_ok())
+        StreamingDecoder::new_with_max_window_size(body, MAX_ZSTD_WINDOW).ok().is_some_and(|mut r| r.read_exact(&mut magic).is_ok())
     } else {
         GzDecoder::new(body).read_exact(&mut magic).is_ok()
     };
