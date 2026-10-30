@@ -11,7 +11,7 @@
 //! anyone with the slice and the published source.
 
 use a2tools_dps_meter_lib::capture::evidence_slice;
-use a2tools_dps_meter_lib::rederive::{derive_decoded, Decoded, DeriveError};
+use a2tools_dps_meter_lib::rederive::{derive_decoded_with, Decoded, DeriveError, Tables};
 use flate2::read::GzDecoder;
 use ruzstd::decoding::StreamingDecoder;
 use worker::*;
@@ -23,6 +23,11 @@ use worker::*;
 const NPCS: &str = include_str!("../../src/data/i18n/npcs/en.json");
 const SKILLS: &str = include_str!("../../src/data/i18n/skills/en.json");
 const DOTS: &str = include_str!("../../src/data/dot_skill_ids.json");
+
+/// The tables above, parsed once per isolate rather than on every request
+/// (~15 ms each, twice when the first pass found nothing). Read only while
+/// deriving, so every request gets the same answer as with its own copy.
+static TABLES: std::sync::LazyLock<Tables> = std::sync::LazyLock::new(|| Tables::load(NPCS, SKILLS, DOTS));
 
 /// Upper bounds, generous against real slices (a party boss fight compresses to
 /// tens or hundreds of KB) and tight against anything built to make this Worker
@@ -113,7 +118,7 @@ async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .and_then(|raw| serde_json::from_slice(&raw).ok())
         .unwrap_or_default();
 
-    match derive_decoded(&decoded, NPCS, SKILLS, DOTS) {
+    match derive_decoded_with(&decoded, &TABLES) {
         Ok(fight) => {
             let leaked = evidence_slice::leaked_names(&decoded.0, &names);
             let mut json = serde_json::to_value(&fight)?;
