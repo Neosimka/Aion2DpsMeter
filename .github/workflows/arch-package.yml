@@ -224,28 +224,52 @@ jobs:
           ls /usr/share/applications/ | grep -i a2tools
 
   # The RPM repository on the CDN (linux/rpm/), which Fedora and the
-  # image-based Fedoras install and update the meter from.
+  # image-based Fedoras install and update the meter from. Its package and
+  # its index (repomd.xml) are signed with the Linux packages key (secret
+  # LINUX_SIGNING_KEY; the public half is packaging/linux/a2tools.asc, served
+  # as linux/a2tools.asc) and a2tools.repo has dnf check both: otherwise a
+  # package swapped on the CDN would install as root (audit M4). The signed
+  # .rpm here is the one to publish, at every address.
   rpm-repo:
     name: RPM repository
     needs: deb-rpm
     runs-on: ubuntu-24.04
     container: fedora:41
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.ref }}
+          sparse-checkout: packaging/linux
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: deb-rpm-packages
-      - name: Metadata
+          path: built
+      - name: Sign and index
+        env:
+          LINUX_SIGNING_KEY: ${{ secrets.LINUX_SIGNING_KEY }}
         run: |
-          dnf install -y createrepo_c
+          set -euo pipefail
+          test -n "$LINUX_SIGNING_KEY" || { echo "LINUX_SIGNING_KEY is not set: the repository can't be signed"; exit 1; }
+          dnf install -y createrepo_c rpm-sign gnupg2
+          export GNUPGHOME="$(mktemp -d)"
+          printf '%s\n' "$LINUX_SIGNING_KEY" | gpg --batch --import
+          # The key that signs is the one the repo file names.
+          fpr=$(gpg --batch --with-colons --show-keys packaging/linux/a2tools.asc | awk -F: '/^fpr/ {print $10; exit}')
+          gpg --batch --list-secret-keys "$fpr" > /dev/null
           mkdir -p repo/rpm
-          cp a2tools-dps-meter-*.x86_64.rpm repo/rpm/
+          cp built/a2tools-dps-meter-*.x86_64.rpm repo/rpm/
+          rpmsign --define "_gpg_name $fpr" --define "__gpg $(command -v gpg)" --addsign repo/rpm/*.rpm
+          rpm --import packaging/linux/a2tools.asc
+          rpm -K repo/rpm/*.rpm | tee /dev/stderr | grep -q 'signatures OK'
           createrepo_c repo/rpm
+          gpg --batch --yes --local-user "$fpr" --armor --detach-sign repo/rpm/repodata/repomd.xml
+          cp packaging/linux/a2tools.asc repo/
           ls -laR repo
       # Installed from the repository, the way a player does, rather than
-      # from the file.
+      # from the file, with both signatures checked.
       - name: Install from it
         run: |
-          printf '[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file://%s/repo/rpm/\ngpgcheck=0\n' "$PWD" \
+          printf '[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file://%s/repo/rpm/\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=file://%s/repo/a2tools.asc\n' "$PWD" "$PWD" \
             > /etc/yum.repos.d/a2tools.repo
           dnf install -y a2-tools-dps-meter
           getcap /usr/bin/a2tools-dps-meter | grep cap_net_raw
@@ -292,7 +316,7 @@ jobs:
           # ("max depth exceeded").
           sudo podman $PODMAN_ROOT run --rm -v "$PWD/repo:/repo:ro" ghcr.io/ublue-os/bazzite:stable bash -euc '
             cat /etc/os-release | grep -E "^(NAME|VERSION)="
-            printf "[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file:///repo/rpm/\ngpgcheck=0\n" > /etc/yum.repos.d/a2tools.repo
+            printf "[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file:///repo/rpm/\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=file:///repo/a2tools.asc\n" > /etc/yum.repos.d/a2tools.repo
             if rpm-ostree install a2-tools-dps-meter; then
               echo "installed with rpm-ostree"
             else

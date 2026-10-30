@@ -44,6 +44,8 @@ sudo curl -Lo /etc/yum.repos.d/a2tools.repo https://cdn.a2tools.app/linux/a2tool
 sudo dnf install a2-tools-dps-meter
 ```
 
+The repository and its packages are signed. dnf asks once whether to trust the A2Tools key; its fingerprint is `C955 98B7 90B4 DBE0 3F42 A314 50A5 2827 76C1 84DA`. If you added the repository before version 2.0.87, run the `curl` line again so your system checks the signatures too. This applies to the image-based Fedoras below as well.
+
 ### Bazzite, Silverblue, Kinoite, Aurora, Bluefin
 
 These image-based Fedoras keep the system read-only and add packages by layering them with `rpm-ostree`, which takes effect after a restart. Add the A2Tools repository, layer the meter, and restart:

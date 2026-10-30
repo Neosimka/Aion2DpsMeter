@@ -32,7 +32,8 @@ impl Manager {
             Manager::Apt => "/usr/bin/apt-get install -y --allow-downgrades",
             Manager::Dpkg => "/usr/bin/dpkg -i",
             Manager::Dnf => "/usr/bin/dnf install -y",
-            // Our packages are not signed with a key zypper knows.
+            // Signed, but with a key zypper doesn't know; the package's
+            // hash is the signed manifest's, checked before this runs.
             Manager::Zypper => "/usr/bin/zypper --non-interactive install --allow-unsigned-rpm",
             Manager::Rpm => "/usr/bin/rpm -U --replacepkgs",
         }
