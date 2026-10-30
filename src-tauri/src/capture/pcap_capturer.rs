@@ -136,7 +136,7 @@ impl PcapLib {
         let mut loaded = None;
         for name in crate::platform::pcap::LIBRARIES {
             // SAFETY: loading libpcap runs no initialisation we depend on not running.
-            match unsafe { Library::new(name) } {
+            match unsafe { crate::platform::pcap::load(name) } {
                 Ok(lib) => {
                     loaded = Some(lib);
                     break;
@@ -882,7 +882,7 @@ mod tests {
     /// files only). Skipped where no libpcap is installed.
     #[test]
     fn the_capture_filter_passes_the_game_and_nothing_else() {
-        let Some(lib) = crate::platform::pcap::LIBRARIES.iter().find_map(|n| unsafe { Library::new(n) }.ok()) else {
+        let Some(lib) = crate::platform::pcap::LIBRARIES.iter().find_map(|n| unsafe { crate::platform::pcap::load(n) }.ok()) else {
             eprintln!("no libpcap: skipped");
             return;
         };

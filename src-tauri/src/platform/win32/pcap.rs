@@ -62,11 +62,31 @@ fn system32() -> Option<std::path::PathBuf> {
     }
 }
 
+/// Load the capture library `name` by its full path: from `System32\Npcap`,
+/// else System32 itself (Npcap's WinPcap-compatible mode), never by the
+/// usual search, which goes on into PATH when Npcap isn't installed, and
+/// PATH has folders the user can write (audit L1). Its own dependency
+/// (Packet.dll) is looked for next to it first.
+///
+/// # Safety
+/// Loading a library runs its initialisation, as `libloading::Library::new`.
+pub unsafe fn load(name: &str) -> Result<libloading::Library, libloading::Error> {
+    use libloading::os::windows::{Library, LOAD_WITH_ALTERED_SEARCH_PATH};
+    prepare();
+    let Some(system) = system32() else {
+        return unsafe { Library::load_with_flags(name, LOAD_WITH_ALTERED_SEARCH_PATH) }.map(Into::into);
+    };
+    let npcap = system.join("Npcap").join(name);
+    match unsafe { Library::load_with_flags(&npcap, LOAD_WITH_ALTERED_SEARCH_PATH) } {
+        Ok(lib) => Ok(lib.into()),
+        Err(_) => unsafe { Library::load_with_flags(system.join(name), LOAD_WITH_ALTERED_SEARCH_PATH) }.map(Into::into),
+    }
+}
+
 /// Whether the capture library can be loaded at all.
 pub fn library_available() -> bool {
-    prepare();
     // SAFETY: loading Npcap runs no initialisation we depend on not running.
-    LIBRARIES.iter().any(|name| unsafe { libloading::Library::new(name).is_ok() })
+    LIBRARIES.iter().any(|name| unsafe { load(name).is_ok() })
 }
 
 /// Run Npcap's installer and wait until it closes. It needs administrator

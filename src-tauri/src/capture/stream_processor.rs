@@ -29,32 +29,39 @@ struct PendingCompactSkillContext {
     skill_raw: i32,
 }
 
-/// Bounded LRU set for deduplication.
+/// Bounded set for deduplication: the oldest key goes when it is full. A
+/// hash set, with the order kept beside it: a list scanned up to 16 384
+/// times per lookup cost a crafted packet a lot (audit L8).
 struct BoundedHashSet {
-    set: Vec<String>,
+    set: HashSet<String>,
+    order: std::collections::VecDeque<String>,
     max_size: usize,
 }
 
 impl BoundedHashSet {
     fn new(max_size: usize) -> Self {
         Self {
-            set: Vec::new(),
+            set: HashSet::new(),
+            order: std::collections::VecDeque::new(),
             max_size,
         }
     }
 
     fn contains(&self, key: &str) -> bool {
-        self.set.iter().any(|s| s == key)
+        self.set.contains(key)
     }
 
     fn insert(&mut self, key: String) -> bool {
         if self.contains(&key) {
             return false;
         }
-        if self.set.len() >= self.max_size {
-            self.set.remove(0);
+        if self.order.len() >= self.max_size {
+            if let Some(oldest) = self.order.pop_front() {
+                self.set.remove(&oldest);
+            }
         }
-        self.set.push(key);
+        self.set.insert(key.clone());
+        self.order.push_back(key);
         true
     }
 }
