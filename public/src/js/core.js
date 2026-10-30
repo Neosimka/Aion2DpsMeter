@@ -3085,7 +3085,7 @@ class DpsApp {
     // A2Tools users in the party see each other (party_presence.rs): on
     // unless turned off.
     if (this.partyPresenceCheckbox) {
-      this.partyPresenceCheckbox.checked = this.safeGetSetting(this.storageKeys.partyPresence) !== "false";
+      this.partyPresenceCheckbox.checked = this.safeGetSetting(this.storageKeys.partyPresence) === "true";
       this.partyPresenceCheckbox.addEventListener("change", (event) => {
         this.safeSetSetting(this.storageKeys.partyPresence, event.target?.checked ? "true" : "false");
       });
@@ -7641,9 +7641,9 @@ class DpsApp {
   }
 
   // A one-time popup about showing A2Tools users in the party to each other,
-  // ticked: shown once to everyone, on a new install and after the update
-  // that brings it. Done keeps the tick's answer; ×, Escape or a click
-  // outside keep it on (it says so, and Settings changes it).
+  // unticked: it tells party members you use a meter, so it is the player's
+  // to turn on (#131). Done keeps the tick's answer; ×, Escape or a click
+  // outside keep what was set (off, unless turned on before).
   maybeShowPartyPromo() {
     const promo = document.querySelector("#partyPromo");
     if (!promo) return false;
@@ -7653,7 +7653,7 @@ class DpsApp {
     const onKey = (event) => {
       if (event.key === "Escape") {
         event.stopPropagation();
-        answer(this.safeGetSetting(this.storageKeys.partyPresence) !== "false");
+        answer(this.safeGetSetting(this.storageKeys.partyPresence) === "true");
       }
     };
     const answer = (enabled) => {
@@ -7667,7 +7667,7 @@ class DpsApp {
       promo.setAttribute("aria-hidden", "true");
       document.removeEventListener("keydown", onKey, true);
     };
-    const kept = () => this.safeGetSetting(this.storageKeys.partyPresence) !== "false";
+    const kept = () => this.safeGetSetting(this.storageKeys.partyPresence) === "true";
     promo.querySelector(".partyPromoDone")?.addEventListener("click", () => answer(!!checkbox?.checked));
     promo.querySelector(".partyPromoClose")?.addEventListener("click", () => answer(kept()));
     promo.addEventListener("click", (event) => {

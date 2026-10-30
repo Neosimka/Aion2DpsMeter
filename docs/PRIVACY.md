@@ -63,8 +63,8 @@ Training dummies are never uploaded. Turning automatic uploads off stops them
 immediately; it does not remove logs already uploaded, which you manage from
 your account.
 
-**Party presence.** *Settings → Privacy → Show A2Tools users in my party*, on
-unless you turn it off (asked once). While you are in a party, the meter sends a
+**Party presence.** *Settings → Privacy → Show A2Tools users in my party*, off
+unless you turn it on (asked once, unticked; on by default before 2.0.87). While you are in a party, the meter sends a
 hash of your character's name and server, and of each party member's, so that
 members who also use A2Tools see a small A2 tag beside each other's names: on
 each party change and every 10 minutes (`src-tauri/src/party_presence.rs`).
@@ -332,7 +332,7 @@ marketing.
   ids. None of that is published, but it is not hidden from the service.
 - **Party presence links people.** The hashes it sends can be matched to any
   name the site already knows, so the site can see who plays together among
-  A2Tools users. Turn it off in Settings → Privacy if that matters to you.
+  A2Tools users. It is off unless you turn it on in Settings → Privacy.
 - **The slice is derived, not audited line by line.** The allowlist and the name
   checks are tests of what we know to look for. The lifted damage spans carry a
   bounded number of bytes we cannot name.
