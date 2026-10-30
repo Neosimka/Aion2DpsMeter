@@ -97,7 +97,8 @@ async fn fetch_installer(http: &reqwest::Client) -> Result<PathBuf, String> {
         .await
         .and_then(|r| r.error_for_status())
         .map_err(|e| e.to_string())?;
-    let bytes = response.bytes().await.map_err(|e| e.to_string())?;
+    // Npcap's installers are 1-2 MB.
+    let bytes = crate::update_check::read_capped(response, 32 * 1024 * 1024).await?;
     // A Windows program, and about the size of one (1.89 is 1.3 MB).
     if bytes.len() < 200_000 || !bytes.starts_with(b"MZ") {
         return Err("the download is not an installer".into());

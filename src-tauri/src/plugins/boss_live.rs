@@ -142,7 +142,14 @@ async fn run(app: tauri::AppHandle, server: u32, mut rx: watch::Receiver<Vec<Str
         if set.is_empty() {
             return;
         }
-        let connected = tokio::time::timeout(Duration::from_secs(15), tokio_tungstenite::connect_async(live_url(server))).await;
+        // A boss update is a few hundred bytes; a message past this is not one (#131).
+        let config = tokio_tungstenite::tungstenite::protocol::WebSocketConfig {
+            max_message_size: Some(1 << 20),
+            max_frame_size: Some(1 << 20),
+            ..Default::default()
+        };
+        let connect = tokio_tungstenite::connect_async_with_config(live_url(server), Some(config), false);
+        let connected = tokio::time::timeout(Duration::from_secs(15), connect).await;
         let mut ws = match connected {
             Ok(Ok((ws, _))) => ws,
             Ok(Err(e)) => {

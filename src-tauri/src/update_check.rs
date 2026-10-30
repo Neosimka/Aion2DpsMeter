@@ -37,6 +37,8 @@ const TIMEOUT: Duration = Duration::from_secs(15);
 const MAX_MANIFEST: usize = 64 * 1024;
 /// Five releases' notes in four languages are some 40 KB.
 const MAX_CHANGELOG: usize = 1024 * 1024;
+/// An Ed25519 signature in hex is 128 characters.
+const MAX_SIGNATURE: usize = 1024;
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -63,11 +65,8 @@ pub struct Manifest {
 /// Fetch the manifest and check it: its signature (when there is one, or
 /// always once `REQUIRE_SIGNATURE`), then read it.
 pub async fn fetch(client: &reqwest::Client) -> Result<Manifest, String> {
-    let body = get(client, MANIFEST_URL).await?.ok_or("no update manifest")?;
-    if body.len() > MAX_MANIFEST {
-        return Err("the update manifest is too big".into());
-    }
-    match get(client, SIGNATURE_URL).await? {
+    let body = get(client, MANIFEST_URL, MAX_MANIFEST).await?.ok_or("no update manifest")?;
+    match get(client, SIGNATURE_URL, MAX_SIGNATURE).await? {
         Some(sig) => verify(UPDATE_PUBLIC_KEY_HEX, &body, String::from_utf8_lossy(&sig).trim())?,
         None if REQUIRE_SIGNATURE => return Err("the update manifest is not signed".into()),
         None => tracing::warn!("Update: the manifest has no signature (accepted in this version)"),
@@ -88,17 +87,14 @@ pub async fn fetch_changelog(client: &reqwest::Client) -> Result<serde_json::Val
         Some(u) => (u.as_str(), format!("{u}.sig")),
         None => (CHANGELOG_URL, CHANGELOG_SIGNATURE_URL.to_string()),
     };
-    let body = get(client, url).await?.ok_or("no release notes")?;
-    if body.len() > MAX_CHANGELOG {
-        return Err("the release notes are too big".into());
-    }
-    let sig = get(client, &sig_url).await?.ok_or("the release notes are not signed")?;
+    let body = get(client, url, MAX_CHANGELOG).await?.ok_or("no release notes")?;
+    let sig = get(client, &sig_url, MAX_SIGNATURE).await?.ok_or("the release notes are not signed")?;
     verify(UPDATE_PUBLIC_KEY_HEX, &body, String::from_utf8_lossy(&sig).trim())?;
     serde_json::from_slice(&body).map_err(|e| format!("release notes: {e}"))
 }
 
 /// A file's bytes, or None when it isn't there (404).
-async fn get(client: &reqwest::Client, url: &str) -> Result<Option<Vec<u8>>, String> {
+async fn get(client: &reqwest::Client, url: &str, cap: usize) -> Result<Option<Vec<u8>>, String> {
     let response = client.get(url).timeout(TIMEOUT).send().await.map_err(|e| e.to_string())?;
     if response.status() == reqwest::StatusCode::NOT_FOUND {
         return Ok(None);
@@ -106,8 +102,24 @@ async fn get(client: &reqwest::Client, url: &str) -> Result<Option<Vec<u8>>, Str
     if !response.status().is_success() {
         return Err(format!("HTTP {}", response.status()));
     }
-    let bytes = response.bytes().await.map_err(|e| e.to_string())?;
-    Ok(Some(bytes.to_vec()))
+    read_capped(response, cap).await.map(Some)
+}
+
+/// A response's body, read only as far as `cap`: a file that is not ours
+/// (a bad mirror, a hijacked download) is refused before it is all in
+/// memory, not after (#131).
+pub(crate) async fn read_capped(mut response: reqwest::Response, cap: usize) -> Result<Vec<u8>, String> {
+    if response.content_length().is_some_and(|n| n > cap as u64) {
+        return Err(format!("larger than {cap} bytes"));
+    }
+    let mut body = Vec::new();
+    while let Some(chunk) = response.chunk().await.map_err(|e| e.to_string())? {
+        if body.len() + chunk.len() > cap {
+            return Err(format!("larger than {cap} bytes"));
+        }
+        body.extend_from_slice(&chunk);
+    }
+    Ok(body)
 }
 
 /// Check `body`'s Ed25519 signature (hex) with `key_hex`.

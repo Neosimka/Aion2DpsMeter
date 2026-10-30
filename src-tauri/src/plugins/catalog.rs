@@ -140,11 +140,7 @@ async fn get(http: &reqwest::Client, url: &str, cap: usize) -> Result<Vec<u8>, S
     if !response.status().is_success() {
         return Err(format!("{url}: {}", response.status()));
     }
-    let bytes = response.bytes().await.map_err(|e| format!("{url}: {e}"))?;
-    if bytes.len() > cap {
-        return Err(format!("{url}: larger than {cap} bytes"));
-    }
-    Ok(bytes.to_vec())
+    crate::update_check::read_capped(response, cap).await.map_err(|e| format!("{url}: {e}"))
 }
 
 /// Download the catalog and check its signature. The list and its signature

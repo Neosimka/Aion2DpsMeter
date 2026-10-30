@@ -205,6 +205,8 @@ pub fn sync_game_hiding(app: &tauri::AppHandle) {
 }
 /// Largest value one storage key may hold.
 const MAX_STORED: usize = 1024 * 1024;
+/// Most storage keys one plugin may keep (#131); the busiest keeps seven.
+const MAX_STORED_KEYS: usize = 256;
 /// How long a decoded event waits before it is stamped with the character and
 /// sent. At login the game sends some data (the pet list) a few records
 /// before the one that says which character is playing; the wait lets that
@@ -2254,6 +2256,9 @@ pub fn plugin_storage_set(app: tauri::AppHandle, window: tauri::WebviewWindow, p
     let file = data_file(&app, &id, &key)?;
     if let Some(dir) = file.parent() {
         std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+        if !file.exists() && std::fs::read_dir(dir).map_or(0, |d| d.count()) >= MAX_STORED_KEYS {
+            return Err(format!("at most {MAX_STORED_KEYS} storage keys"));
+        }
     }
     std::fs::write(file, value).map_err(|e| e.to_string())
 }

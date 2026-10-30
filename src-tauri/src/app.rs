@@ -1907,14 +1907,11 @@ async fn fetch_supporter_roster(client: &reqwest::Client, etag: Option<&str>) ->
         .get(reqwest::header::ETAG)
         .and_then(|v| v.to_str().ok())
         .map(str::to_string);
-    let Ok(bytes) = response.bytes().await else {
-        return RosterFetch::Failed;
-    };
     // A roster for ten thousand supporters is about 80 KB; anything far past
     // that is not one of ours.
-    if bytes.len() > 8 * 1024 * 1024 {
+    let Ok(bytes) = crate::update_check::read_capped(response, 8 * 1024 * 1024).await else {
         return RosterFetch::Failed;
-    }
+    };
     match crate::supporters::Roster::parse(&bytes) {
         Some(roster) => RosterFetch::Fresh(roster, tag),
         None => RosterFetch::Failed,
