@@ -115,8 +115,9 @@ impl FightRecord {
 /// The local player's name is NOT obscured.
 pub fn obscure_nickname(name: &str) -> String {
     let chars: Vec<char> = name.chars().collect();
+    // One character would be the name itself (#131).
     if chars.len() <= 1 {
-        return name.to_string();
+        return if chars.is_empty() { String::new() } else { "*".to_string() };
     }
     if chars.len() == 2 {
         return format!("{}*", chars[0]);
@@ -133,6 +134,12 @@ pub fn obscure_nickname(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_one_character_name_is_masked() {
+        assert_eq!(obscure_nickname("劍"), "*");
+        assert_eq!(obscure_nickname(""), "");
+    }
 
     fn old_record() -> serde_json::Value {
         serde_json::json!({
