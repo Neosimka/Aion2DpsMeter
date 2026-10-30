@@ -67,12 +67,22 @@ pet-souls/
 
 Each plugin runs in a sandboxed iframe inside a host window the meter owns (one small window per plugin panel, like Details):
 
-- The iframe has `sandbox="allow-scripts"` and no `allow-same-origin`: an opaque origin, no access to the host page, its storage or `window.__TAURI__`.
+- The iframe has `sandbox="allow-scripts"` and no `allow-same-origin`: an opaque origin, no access to the host page or its storage. (On Windows the frame does get Tauri's globals; see below for why that gives it nothing.)
 - Its files are served by the meter from a `plugin://<id>/` scheme with their own Content-Security-Policy: `default-src 'none'; script-src plugin:; style-src plugin: 'unsafe-inline'; img-src plugin: data:; connect-src 'none'`. No network, no remote scripts.
 - It talks to the meter only by `postMessage` to the host page, which checks every request against the manifest's permissions before passing anything to the backend.
 - The host window's label is added to the Tauri capabilities so the host can call the backend; the iframe itself never can.
 
-To verify early (open question 1): that Tauri's injected IPC script and global do not reach a sandboxed child frame on WebView2 and WebKitGTK, and that the backend refuses IPC from a frame's opaque origin.
+**Tested (2026-10-30, audit H2).** A dev-mode probe plugin tried every way into the app's IPC from its frame. It ran hidden in the dock, as plugins do, and made each call with an allowed command (`plugin_storage_set`) that would have left a file in its data folder:
+
+| | Windows (WebView2 156, meter 2.0.87-dev) | Linux (WebKitGTK, KDE Wayland, meter 2.0.83) |
+|---|---|---|
+| Tauri's globals in the frame | `__TAURI__`, `__TAURI_INTERNALS__`, `ipc`, `chrome.webview` all there: wry injects its scripts into subframes | none; only WebKit's own `webkit.messageHandlers` |
+| `invoke()` through them | never answered (4 s), and no file was written: the backend never got the call | — |
+| a message posted straight to the IPC (`chrome.webview` / `webkit.messageHandlers.ipc`) | no effect | no effect (it lacks the invoke key) |
+| `fetch` to the IPC's URL | refused (the plugin's CSP) | refused |
+| the parent page (`parent.document`, `top.__TAURI__`) | blocked: origin `null` | blocked: sandboxed, no `allow-same-origin` |
+
+On Windows the frame's messages reach `CoreWebView2Frame.WebMessageReceived`, which wry doesn't listen to, so they go nowhere. On Linux the frame lacks the per-run invoke key. Behind both, the backend lets plugin windows, the dock and widgets call only the commands their host pages use (`plugins::allowed_from`). Run the probe again on a WebView2, WebKitGTK, Tauri or wry upgrade; `tools/escape-probe` is that plugin (load its folder in developer mode; it writes `probe.json` to its plugin data).
 
 ## The plugin API (apiVersion 1)
 
