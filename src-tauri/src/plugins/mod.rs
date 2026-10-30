@@ -1361,19 +1361,28 @@ pub fn find_updates_at_start(app: &tauri::AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         // A plugin held at load (installed before installs kept their
-        // catalog, mostly) is checked at once, not after the delay.
-        if let Ok(host) = host(&app) {
-            if host.list().iter().any(held) {
-                if let Some(state) = app.try_state::<AppState>() {
-                    match catalog::fetch(&state.http).await {
-                        Ok(catalog) => {
-                            repair_held(&app, &host, &catalog).await;
-                        }
-                        Err(e) => tracing::info!("Plugins: held plugins not checked: {e}"),
-                    }
+        // catalog, mostly) is checked at once, not after the delay, and
+        // again every HELD_RETRY until the catalog answers: started
+        // offline, it runs soon after the connection is back, not at the
+        // next update check hours later.
+        let held_app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            loop {
+                let Ok(host) = host(&held_app) else { return };
+                let Some(state) = held_app.try_state::<AppState>() else { return };
+                if !host.list().iter().any(held) {
+                    return;
                 }
+                match catalog::fetch(&state.http).await {
+                    Ok(catalog) => {
+                        repair_held(&held_app, &host, &catalog).await;
+                        return;
+                    }
+                    Err(e) => tracing::info!("Plugins: held plugins not checked yet: {e}"),
+                }
+                tokio::time::sleep(HELD_RETRY).await;
             }
-        }
+        });
         tokio::time::sleep(UPDATE_ALERT_DELAY).await;
         // At start, then every 6 hours for a meter left running for days.
         // Each check replaces what the title offers: updates installed from
@@ -1386,6 +1395,10 @@ pub fn find_updates_at_start(app: &tauri::AppHandle) {
         }
     });
 }
+
+/// How often a held plugin is checked again while the catalog can't be read.
+#[cfg(feature = "online")]
+const HELD_RETRY: std::time::Duration = std::time::Duration::from_secs(30);
 
 /// How often the plugin updates are looked for again after the first time.
 #[cfg(feature = "online")]
