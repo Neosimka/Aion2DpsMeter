@@ -150,6 +150,10 @@ windows = { version = "0.59", features = [
     "Win32_Security_Authorization",
     # DPAPI, for encrypting the account token at rest.
     "Win32_Security_Cryptography",
+    # Npcap's installer: its Authenticode signature and signer, before it runs.
+    "Win32_Security_WinTrust",
+    "Win32_Security_Cryptography_Catalog",
+    "Win32_Security_Cryptography_Sip",
     "Win32_System_Threading",
     # Npcap's folder on the DLL search path (SetDllDirectoryW).
     "Win32_System_LibraryLoader",
