@@ -8799,6 +8799,10 @@ html.a2-offline .historyUploadBtn {
   font-size: 13px;
   line-height: 1.5;
 }
+.settingsPanel .hotkeyConsentCard .pluginConsentNote {
+  font-size: 12px;
+  opacity: 0.75;
+}
 /* A plugin the last update check changed: a green arrow by its version. */
 .settingsPanel .pluginUpdated {
   box-shadow: inset 2px 0 0 #4ade80;

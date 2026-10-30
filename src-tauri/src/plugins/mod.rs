@@ -1215,7 +1215,7 @@ fn prompt_texts(data_dir: Option<&Path>, lang: &str) -> PromptTexts {
         perm_window: perm("permWindow", "Show and hide its own window, without taking focus from the game"),
         perm_widgets: perm("permWidgets", "Show small windows of its own, which you can move anywhere and lock in place"),
         perm_character: perm("permCharacter", "See your character's name, server, class and level"),
-        perm_decoder: perm("permDecoder", "Read your own game data: {name}"),
+        perm_decoder: perm("permDecoder", "Read selected game fields (may include other players): {name}"),
         perm_fps: perm("permFps", "Show the game's frame rate (on Windows, the meter asks to run as administrator for it)"),
         perm_death_recap: perm("permDeathRecap", "After a player kills you: who they were and the damage they did to you"),
         perm_screenshot: perm("permScreenshot", "Take screenshots of its own window, to the clipboard and your screenshot folder"),
@@ -2612,9 +2612,9 @@ mod tests {
         let (a, b) = (available("a", "1.0.0", "1.1.0", &[]), available("b", "2.0", "2.1", &["storage", "decoder:pets"]));
         let two = update_prompt(&en, &[&a, &b]);
         assert!(two.starts_with("Plugin updates are available:"));
-        assert!(two.contains("Plugin b 2.0 → 2.1\n    The new version also asks to:\n    • Save its own data on this computer\n    • Read your own game data: pets"));
+        assert!(two.contains("Plugin b 2.0 → 2.1\n    The new version also asks to:\n    • Save its own data on this computer\n    • Read selected game fields (may include other players): pets"));
         let de = update_prompt(&prompt_texts(Some(&data), "de"), &[&b]);
-        assert!(de.contains("Jetzt aktualisieren?") && de.contains("Deine eigenen Spieldaten lesen: pets"), "{de}");
+        assert!(de.contains("Jetzt aktualisieren?") && de.contains("Ausgewählte Spieldaten lesen (können andere Spieler betreffen): pets"), "{de}");
     }
 
     /// What's new: each version's notes under its update, in the player's
