@@ -300,6 +300,15 @@ pub fn start_drag(window: &tauri::WebviewWindow) {
     let _ = window.start_dragging();
 }
 
+/// A tool window behind others, brought in front (see the Windows one). The
+/// compositor decides whether it takes focus.
+pub fn bring_forward(window: &tauri::WebviewWindow) {
+    let _ = window.unminimize();
+    let _ = window.show();
+    let _ = window.set_always_on_top(true);
+    let _ = window.set_focus();
+}
+
 /// Show a window on top without taking focus from the game. A plain show
 /// maps the window and the window manager activates it as a new window
 /// (KWin did, under XWayland, for each plugin alert), so GTK is told first

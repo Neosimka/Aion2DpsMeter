@@ -2417,6 +2417,39 @@ fn keep_on_top_while_ours(app: &tauri::AppHandle, label: &str, focused: bool) {
     });
 }
 
+/// A tool window `bring_forward` raised, without focus, stays on top only
+/// while the meter or the game is in front, as `keep_on_top_while_ours` keeps
+/// a focused one: that one is unpinned when it loses focus, which a window
+/// raised without it never does, so it floated over the app clicked next.
+/// Watched until another app takes the front (unpinned then), the window
+/// takes focus (its own handler from then), it closes, or 30 minutes pass.
+fn unpin_when_left(app: &tauri::AppHandle, label: &str) {
+    let app = app.clone();
+    let label = label.to_string();
+    std::thread::spawn(move || {
+        let mut ours = platform::window::front_is_ours_or_game();
+        for _ in 0..(30 * 60 * 4) {
+            std::thread::sleep(std::time::Duration::from_millis(250));
+            let Some(window) = app.get_webview_window(&label) else { return };
+            if window.is_focused().unwrap_or(false) {
+                return;
+            }
+            let now = platform::window::front_is_ours_or_game();
+            if ours && !now {
+                let handle = app.clone();
+                let label = label.clone();
+                let _ = app.run_on_main_thread(move || {
+                    if let Some(window) = handle.get_webview_window(&label) {
+                        let _ = window.set_always_on_top(false);
+                    }
+                });
+                return;
+            }
+            ours = now;
+        }
+    });
+}
+
 /// Remember where tool window `label` is and its size. Called on every move
 /// and resize, and every 5 s as before: with only the timer, a window moved
 /// and closed within 5 s reopened where it had been (Battle History,
@@ -2647,9 +2680,10 @@ pub(crate) async fn open_settings_window(app: tauri::AppHandle) -> Result<(), St
         if !ready {
             return Ok(());
         }
-        let _ = existing.show();
-        let _ = existing.unminimize();
-        let _ = existing.set_always_on_top(true);
+        // In front of everything, even where focus is refused (Windows, from
+        // the overlay), then asked for the keyboard for its fields.
+        platform::window::bring_forward(&existing);
+        unpin_when_left(&app, "settings");
         let _ = existing.set_focus();
         // Already open (perhaps behind the game): check the account again.
         // A hidden one also resumes its form, without repeating page startup.
@@ -2892,19 +2926,20 @@ async fn request_details_view(
         if let Ok(mut pending) = PENDING_DETAILS_REQUEST.lock() {
             pending.remove(&label);
         }
-        // Raise it if it was put away, but do not steal focus from a window
-        // that is already on screen — the click came from an overlay sitting
-        // on top of a full-screen game, and pulling focus would tab out of it.
+        // Raise it if it was put away. One already on screen but behind
+        // other windows is brought in front without taking focus: the click
+        // came from an overlay on top of a full-screen game, and pulling focus
+        // would tab out of it (and Windows refuses it anyway: the overlay is
+        // never the program in front).
         let hidden = !window.is_visible().unwrap_or(true)
             || window.is_minimized().unwrap_or(false);
         if hidden {
             let _ = window.unminimize();
             let _ = window.show();
             let _ = window.set_focus();
-        } else if kind == "fight" {
-            // Re-asking for a fight that is already open means "show me that
-            // one", so bring it forward even though it was never hidden.
-            let _ = window.set_focus();
+        } else {
+            platform::window::bring_forward(&window);
+            unpin_when_left(&app, &label);
         }
         app.emit_to(&label, "details-request", payload)
             .map_err(|e| e.to_string())?;

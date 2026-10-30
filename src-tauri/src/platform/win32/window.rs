@@ -34,6 +34,24 @@ pub fn start_drag(window: &tauri::WebviewWindow) {
     }
 }
 
+/// A tool window already open but behind others (or minimised), brought in
+/// front of them all when its button is clicked again. Windows refuses the
+/// front to a program that isn't in front (the overlay never is: it takes no
+/// focus), so it is raised, not activated: on top, the game keeping the
+/// keyboard. `set_focus` alone left it where it was.
+pub fn bring_forward(window: &tauri::WebviewWindow) {
+    let Some(hwnd) = hwnd_of(window) else { return };
+    unsafe {
+        let shown = if IsIconic(hwnd).as_bool() { SW_SHOWNOACTIVATE } else { SW_SHOWNA };
+        let _ = ShowWindow(hwnd, shown);
+        let _ = SetWindowPos(
+            hwnd, Some(HWND_TOPMOST),
+            0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
+        );
+    }
+}
+
 /// Bring the overlay back on top without taking focus from the game.
 pub fn show_on_top_without_focus(window: &tauri::WebviewWindow) {
     let Some(hwnd) = hwnd_of(window) else { return };
