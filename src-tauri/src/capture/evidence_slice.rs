@@ -613,7 +613,9 @@ impl Blinder {
         if is_event(buf) {
             return 0;
         }
-        let mut i = if header.length > 0 { header.length as usize + 2 } else { 0 };
+        let start = if header.length > 0 { header.length as usize + 2 } else { 0 };
+        let tokens = self.token_fields(buf, start);
+        let mut i = start;
         while i < buf.len() {
             let len = buf[i] as usize;
             if !(MIN_NAME_BYTES..=MAX_NAME_BYTES).contains(&len) || i + 1 + len > buf.len() {
@@ -621,7 +623,13 @@ impl Blinder {
                 continue;
             }
             let span = &buf[i + 1..i + 1 + len];
-            if !looks_like_text(span) || self.known_tokens.contains(span) || embedded_header(buf, i) {
+            // A span that runs into a token field is a misreading of it: a
+            // byte before the field's own length taken for one. "!f819387e"
+            // is `09` read as a length, then the token field's length (`21`)
+            // and its first bytes: the service took it for a name not
+            // blinded, and refused the upload (some 4,700 a day, 2026-10-30).
+            let overlaps = tokens.iter().any(|&(from, to)| i + 1 < to && from < i + 1 + len);
+            if !looks_like_text(span) || overlaps || embedded_header(buf, i) {
                 i += 1;
                 continue;
             }
@@ -633,6 +641,23 @@ impl Blinder {
             i += 1 + len;
         }
         replaced
+    }
+
+    /// Where `buf` (from `start`) holds a token this slice knows as a whole
+    /// `<len><token>` field: the byte ranges of those fields, length byte
+    /// included.
+    fn token_fields(&self, buf: &[u8], start: usize) -> Vec<(usize, usize)> {
+        let mut fields = Vec::new();
+        for j in start..buf.len() {
+            let len = buf[j] as usize;
+            if (MIN_NAME_BYTES..=MAX_NAME_BYTES).contains(&len)
+                && j + 1 + len <= buf.len()
+                && self.known_tokens.contains(&buf[j + 1..j + 1 + len])
+            {
+                fields.push((j, j + 1 + len));
+            }
+        }
+        fields
     }
 
     /// Does any known name overlap `buf[from..to]`?
@@ -867,7 +892,15 @@ pub fn unblinded_names(records: &[(i32, Vec<u8>)], blind_map: &HashMap<String, u
 /// as `name_field_contents` reads them, so the count is the one looking for
 /// each name in turn gave (the tests keep that as the reference).
 pub fn leaked_names(records: &[(i32, Vec<u8>)], names: &[String]) -> usize {
-    let names: Vec<&[u8]> = names.iter().map(|n| n.as_bytes()).filter(|n| !n.is_empty()).collect();
+    // A masked name (a guest upload's "Na***a", "A*") is the meter's, never
+    // the game's: finding it proves nothing, and a short one turns up in a
+    // big fight's data by chance ("02 41 2a" is three bytes; 14 MB holds
+    // about one), which refused the upload as a leak (2026-10-30).
+    let names: Vec<&[u8]> = names
+        .iter()
+        .map(|n| n.as_bytes())
+        .filter(|n| !n.is_empty() && !n.contains(&b'*'))
+        .collect();
     if names.is_empty() {
         return 0;
     }
@@ -1940,6 +1973,35 @@ mod tests {
             .count()
     }
 
+    /// A token field read one byte early is no name: `09`, then the field's
+    /// own length (`21`, "!") and the token's first bytes read as
+    /// "!f819387e". 4,700 uploads a day were refused for it (2026-10-30,
+    /// `45 36` and `41 36`). A real name in the same packet is still found.
+    /// A guest upload's names are masked; one that short matches ordinary
+    /// bytes by chance, and none can leak a name.
+    #[test]
+    fn masked_names_are_not_looked_for() {
+        let record = vec![0x05, 0x10, 0x02, b'A', b'*', 0x00];
+        assert_eq!(leaked_names(&[(0, record)], &["A*".to_string(), "Na***a".to_string()]), 0);
+    }
+
+    #[test]
+    fn a_token_field_read_one_byte_early_is_no_name() {
+        let token = "f819387e548f0c2a77d1e93b5a40c6d81";
+        let mut body = vec![0, 0, 0, 0, 0xc6, 0x09, token.len() as u8];
+        body.extend_from_slice(token.as_bytes());
+        body.extend_from_slice(&[0, 0, 5]);
+        body.extend_from_slice(b"Alice");
+        let mut packet = Vec::new();
+        let total = body.len() + 2 + 1;
+        packet.push(total as u8);
+        packet.extend_from_slice(&[0x45, 0x36]);
+        packet.extend_from_slice(&body);
+        let mut blinder = Blinder::exempting(HashSet::from([token.as_bytes().to_vec()]));
+        assert_eq!(blinder.blind_name_shaped(&mut packet), 1, "Alice, and only Alice");
+        assert!(packet.windows(token.len()).any(|w| w == token.as_bytes()), "the token is left whole");
+    }
+
     #[test]
     fn one_pass_over_the_names_counts_leaks_as_one_name_at_a_time_did() {
         let named: Vec<Vec<u8>> = records_with_names().into_iter().map(|(r, _)| r).collect();
@@ -2294,3 +2356,4 @@ mod tests {
         assert!(decode(&framed(&[0x04, 0x38, 0x01])).is_none());
     }
 }
+
