@@ -119,9 +119,12 @@ impl StreamProcessor {
         for frame in &framing.frames {
             match frame.kind {
                 super::framing::FrameKind::Bundle => {
+                    super::framing::new_read();
                     self.unwrap_bundle(frame.payload(buffer), 1);
                 }
                 super::framing::FrameKind::Packet => {
+                    // Bundles carried inside it are opened (identity).
+                    super::framing::new_read();
                     self.parse_perfect_packet(frame.bytes(buffer));
                     self.scan_embedded_bundles_for_identity(frame.bytes(buffer));
                 }

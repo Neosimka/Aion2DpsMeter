@@ -349,11 +349,28 @@ pub fn length_value(body_len: usize) -> u32 {
     body_len as u32 + 4
 }
 
+/// What one top-level bundle may decompress to, the bundles nested in it
+/// included: four levels of 1 MB bundles that each hold more of them would
+/// otherwise multiply (#131). Real ones are a few hundred KB at most.
+const MAX_DECOMPRESSED_PER_READ: usize = 8 * MAX_DECOMPRESSED_BYTES;
+
+thread_local! {
+    static READ_BUDGET: std::cell::Cell<usize> = const { std::cell::Cell::new(MAX_DECOMPRESSED_PER_READ) };
+}
+
+/// Start a top-level bundle's budget (`MAX_DECOMPRESSED_PER_READ`): every
+/// walk calls it before opening a bundle it found at the top, so the ones
+/// nested in it share what is left.
+pub fn new_read() {
+    READ_BUDGET.with(|b| b.set(MAX_DECOMPRESSED_PER_READ));
+}
+
 /// Decompress a bundle payload (one that starts at its `FF FF`).
 ///
 /// `FF FF (2) + decompressed_size (4 LE) + lz4 block`. Returns `None` for
 /// anything malformed, because a bundle that will not decompress is a resync
-/// artefact rather than an error worth surfacing.
+/// artefact rather than an error worth surfacing, and for one past what is
+/// left of the read's budget (`new_read`).
 pub fn decompress_bundle(payload: &[u8]) -> Option<Vec<u8>> {
     if payload.len() < 7 {
         return None;
@@ -362,6 +379,11 @@ pub fn decompress_bundle(payload: &[u8]) -> Option<Vec<u8>> {
     if size == 0 || size > MAX_DECOMPRESSED_BYTES {
         return None;
     }
+    let left = READ_BUDGET.with(|b| b.get());
+    if size > left {
+        return None;
+    }
+    READ_BUDGET.with(|b| b.set(left - size));
     lz4_flex::decompress(&payload[6..], size).ok()
 }
 
@@ -480,6 +502,17 @@ mod tests {
         let mut bad = varint(40_000);
         bad.extend([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F]);
         assert!(!bundle_header_at(&bad, varint(40_000).len()));
+    }
+
+    #[test]
+    fn a_read_decompresses_no_more_than_its_budget() {
+        let payload = bundle(&vec![7u8; MAX_DECOMPRESSED_BYTES]);
+        let payload = &payload[payload.iter().position(|&b| b == 0xFF).unwrap()..];
+        new_read();
+        let opened = (0..10).filter(|_| decompress_bundle(payload).is_some()).count();
+        assert_eq!(opened, MAX_DECOMPRESSED_PER_READ / MAX_DECOMPRESSED_BYTES);
+        new_read();
+        assert!(decompress_bundle(payload).is_some());
     }
 
     #[test]

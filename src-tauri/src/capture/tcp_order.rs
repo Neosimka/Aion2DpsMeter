@@ -20,6 +20,9 @@
 const GAP_WAIT_MS: i64 = 250;
 /// Or this many bytes waiting behind it, whichever comes first.
 const MAX_WAITING_BYTES: usize = 256 * 1024;
+/// Or this many segments: tiny ones would stay under the bytes while each
+/// sort of the list grows (#131).
+const MAX_WAITING_SEGMENTS: usize = 512;
 /// A segment this far from where the stream is (either way) is another
 /// stream in all but name (a reconnect from the same ports): start over.
 const FAR: i64 = 4 * 1024 * 1024;
@@ -79,7 +82,7 @@ impl TcpOrder {
         // A hole that has waited long enough: its bytes are not coming.
         while let Some(&(first, _, since)) = self.waiting.first() {
             let late = at_ms > 0 && since > 0 && at_ms - since >= GAP_WAIT_MS;
-            if !late && self.waiting_bytes <= MAX_WAITING_BYTES {
+            if !late && self.waiting_bytes <= MAX_WAITING_BYTES && self.waiting.len() <= MAX_WAITING_SEGMENTS {
                 break;
             }
             let next = self.next.unwrap_or(first);

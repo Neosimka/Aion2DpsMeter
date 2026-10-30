@@ -702,6 +702,9 @@ fn packets_in(record: &[u8]) -> Vec<Vec<u8>> {
             match frame.kind {
                 FrameKind::Packet => out.push(frame.bytes(buffer).to_vec()),
                 FrameKind::Bundle => {
+                    if top {
+                        framing::new_read();
+                    }
                     if let Some(inner) = framing::decompress_bundle(frame.payload(buffer)) {
                         walk_into(&inner, out, depth + 1, false);
                     }
@@ -796,6 +799,9 @@ pub fn expand(record: &[u8]) -> Vec<u8> {
             match frame.kind {
                 FrameKind::Packet => out.extend_from_slice(frame.bytes(buffer)),
                 FrameKind::Bundle => {
+                    if top {
+                        framing::new_read();
+                    }
                     if let Some(inner) = framing::decompress_bundle(frame.payload(buffer)) {
                         walk_into(&inner, out, depth + 1, false);
                     }
@@ -831,6 +837,9 @@ pub fn unblinded_names(records: &[(i32, Vec<u8>)], blind_map: &HashMap<String, u
                     *found += blinder.blind_name_shaped(&mut packet);
                 }
                 FrameKind::Bundle => {
+                    if top {
+                        framing::new_read();
+                    }
                     if let Some(inner) = framing::decompress_bundle(frame.payload(buffer)) {
                         walk(&inner, false, depth + 1, blinder, found);
                     }
@@ -911,6 +920,9 @@ fn for_each_packet(record: &[u8], visit: &mut dyn FnMut(&[u8])) {
             match frame.kind {
                 FrameKind::Packet => visit(frame.bytes(buffer)),
                 FrameKind::Bundle => {
+                    if top {
+                        framing::new_read();
+                    }
                     if let Some(inner) = framing::decompress_bundle(frame.payload(buffer)) {
                         walk_into(&inner, visit, depth + 1, false);
                     }
@@ -1080,6 +1092,7 @@ fn filter_stream(
                 out.push(packet);
             }
             FrameKind::Bundle => {
+                framing::new_read();
                 let Some(decompressed) = framing::decompress_bundle(frame.payload(buffer)) else {
                     continue;
                 };
@@ -1235,6 +1248,7 @@ fn bundle_inner(packet: &[u8]) -> Option<Vec<u8>> {
     if payload.get(..2)? != [0xFF, 0xFF] {
         return None;
     }
+    framing::new_read();
     let inner = framing::decompress_bundle(payload)?;
     // Only when it wraps back to the same bytes: the record then reads back
     // exactly as it went in.
@@ -1332,7 +1346,8 @@ pub fn decode_from(mut r: impl std::io::Read, max_record_bytes: usize) -> Option
     }
 
     let rec_count = u32::from_le_bytes(array(&mut r)?) as usize;
-    let mut records = Vec::with_capacity(rec_count.min(1 << 20));
+    // The count is the sender's word: grow as records arrive, not ahead.
+    let mut records = Vec::with_capacity(rec_count.min(1 << 12));
     let mut total = 0usize;
     for _ in 0..rec_count {
         let dt = i32::from_le_bytes(array(&mut r)?);
@@ -1353,6 +1368,11 @@ pub fn decode_from(mut r: impl std::io::Read, max_record_bytes: usize) -> Option
             let record = bytes(&mut r, len)?;
             if version == 1 { upgrade_v1_record(&record) } else { record }
         };
+        // No capture is empty: a run of empty records would cost nothing
+        // against the cap while the list grows without end (#131).
+        if record.is_empty() {
+            return None;
+        }
         total += record.len();
         if total > max_record_bytes {
             return None;
@@ -1389,6 +1409,9 @@ fn upgrade_v1_record(record: &[u8]) -> Vec<u8> {
                 break;
             }
             let body = &buf[o + n..o + size];
+            if bundle && top {
+                framing::new_read();
+            }
             let rewritten = match bundle {
                 true if depth < MAX_BUNDLE_DEPTH => framing::decompress_bundle(body)
                     .and_then(|inner| reframe(&inner, false, depth + 1))

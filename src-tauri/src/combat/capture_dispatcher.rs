@@ -46,6 +46,10 @@ const TLS_CONTENT_TYPES: [u8; 4] = [0x14, 0x15, 0x16, 0x17];
 const TLS_VERSIONS: [u8; 5] = [0x00, 0x01, 0x02, 0x03, 0x04];
 const WINDOW_CHECK_STOPPED_MS: i64 = 10_000;
 const WINDOW_CHECK_RUNNING_MS: i64 = 60_000;
+/// Connections read while unlocked, each with its own parser: past this, the
+/// one whose signature went quiet longest makes room. Spoofed packets that
+/// carry a signature would otherwise grow a parser each (#131).
+const MAX_CANDIDATE_FLOWS: usize = 16;
 pub(crate) const STALE_CONNECTION_MS: i64 = 120_000;
 /// Once locked, a connection on another port takes over the lock when the
 /// locked port has sent nothing for this long and the new one sustains the
@@ -445,6 +449,14 @@ impl CaptureDispatcher {
             let a = cap.src_port.min(cap.dst_port);
             let b = cap.src_port.max(cap.dst_port);
             let key = (a, b);
+
+            if unlocked && assemblers.len() >= MAX_CANDIDATE_FLOWS && !assemblers.contains_key(&key) {
+                let quietest = assemblers.keys().copied().min_by_key(|k| sig_hits.get(k).map_or(0, |h| h.1));
+                if let Some(k) = quietest {
+                    assemblers.remove(&k);
+                    sig_hits.remove(&k);
+                }
+            }
 
             let (assembler, processor, order) = assemblers.entry(key).or_insert_with(|| {
                 let mut proc = StreamProcessor::new(self.data_storage.clone(), self.skill_lookup.clone(), self.npc_lookup.clone());
