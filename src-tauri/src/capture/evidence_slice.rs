@@ -267,6 +267,15 @@ pub const ALLOWED_OPCODES: &[(&[u8; 2], &str)] = &[
     (&[0x2C, 0x38], "buff/debuff removed"),
 ];
 
+/// A map load's or a party roster's opcode (`21 36`, `02 97`), for the
+/// slice's whereabouts; None for any other packet.
+fn whereabouts_opcode(packet: &[u8]) -> Option<[u8; 2]> {
+    let len = super::stream_processor::read_varint(packet, 0);
+    let at = usize::try_from(len.length).ok().filter(|&n| n > 0)?;
+    let op: [u8; 2] = packet.get(at..at + 2)?.try_into().ok()?;
+    matches!(op, [0x21, 0x36] | [0x02, 0x97]).then_some(op)
+}
+
 /// One captured buffer, as the packet logger recorded it.
 #[derive(Debug, Clone)]
 pub struct CapturedPacket {
@@ -1182,6 +1191,12 @@ pub fn build(
     // next segment starting mid-packet — the window selects what is *kept*, not
     // what is parsed.
     let mut streams: HashMap<&str, PacketAccumulator> = HashMap::new();
+    // The latest map load and party roster from before the prelude: what
+    // says which dungeon this is. A run entered more than PRELUDE_MS before
+    // its last boss uploaded neither, and the service filed the fight as the
+    // open world (some 90 a day the meter had filed under a dungeon,
+    // 2026-10-30). Kept only when the window holds no newer one.
+    let mut whereabouts: Vec<(i64, Vec<u8>)> = Vec::new();
 
     for cap in packets {
         let acc = streams
@@ -1196,7 +1211,16 @@ pub fn build(
         let consumed = filter_stream(acc.snapshot(), &mut blinder, &mut kept, &mut stats, keep);
         acc.discard_bytes(consumed);
 
-        if cap.captured_at_ms < from - PRELUDE_MS || cap.captured_at_ms > to {
+        if cap.captured_at_ms < from - PRELUDE_MS {
+            for packet in kept {
+                if let Some(op) = whereabouts_opcode(&packet) {
+                    whereabouts.retain(|(_, p)| whereabouts_opcode(p) != Some(op));
+                    whereabouts.push((cap.captured_at_ms, packet));
+                }
+            }
+            continue;
+        }
+        if cap.captured_at_ms > to {
             continue;
         }
 
@@ -1208,6 +1232,12 @@ pub fn build(
 
     if records.is_empty() {
         return Err(SliceError::Empty);
+    }
+    // First, so the window's own map load or roster, if any, still wins.
+    whereabouts.retain(|(_, w)| !records.iter().any(|(_, p)| whereabouts_opcode(p) == whereabouts_opcode(w)));
+    for (at, packet) in whereabouts.into_iter().rev() {
+        let dt = (at - fight_start_ms).clamp(i32::MIN as i64, i32::MAX as i64) as i32;
+        records.insert(0, (dt, packet));
     }
 
     // The verifier. Everything above is pattern work; this is what we actually
@@ -2189,6 +2219,34 @@ mod tests {
         ];
         let slice = build(&packets, 100_000, 200_000, &HashMap::new(), KEY).unwrap();
         assert_eq!(slice.records.len(), 2);
+    }
+
+    /// The dungeon reaches the slice: a map load and roster from long before
+    /// the prelude come first, other old state stays out, and one inside the
+    /// window leaves the older of its kind out.
+    #[test]
+    fn the_latest_map_load_and_roster_come_however_old() {
+        let start = 50 * 60_000;
+        let map = [0x21, 0x36, 0x01];
+        let roster = [0x02, 0x97, 0x05];
+        let spawn = [0x41, 0x36, 0x07];
+        let hit = [0x04, 0x38, 0x01];
+        let packets = vec![
+            cap(1_000, &map),
+            cap(2_000, &roster),
+            cap(3_000, &spawn),
+            cap(start, &hit),
+        ];
+        let slice = build(&packets, start, start + 10_000, &HashMap::new(), KEY).unwrap();
+        let ops: Vec<Option<[u8; 2]>> = slice.records.iter().map(|(_, p)| whereabouts_opcode(p)).collect();
+        assert_eq!(ops, vec![Some([0x21, 0x36]), Some([0x02, 0x97]), None]);
+        assert_eq!(slice.records[0].0, (1_000 - start) as i32);
+
+        let mut later = packets.clone();
+        later.insert(3, cap(start - 1_000, &map));
+        let slice = build(&later, start, start + 10_000, &HashMap::new(), KEY).unwrap();
+        let maps = slice.records.iter().filter(|(_, p)| whereabouts_opcode(p) == Some([0x21, 0x36])).count();
+        assert_eq!(maps, 1);
     }
 
     #[test]
