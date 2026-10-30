@@ -6011,8 +6011,228 @@ body.isHistoryWindow .historyPanel .historyHeader .closeX {
   color: rgba(255, 255, 255, 0.78);
 }
 
+/* Fights and Personal bests, beside the title. "On" is the theme accent. */
+.historyPanel .historyTabs {
+  display: flex;
+  gap: 2px;
+  margin: 0 auto 0 12px;
+}
+.historyPanel .historyTab {
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--hud-sub);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.historyPanel .historyTab:hover {
+  color: var(--title);
+}
+.historyPanel .historyTab.active {
+  color: #fff;
+  background: color-mix(in srgb, var(--isUser-fill) 22%, transparent);
+  border-color: color-mix(in srgb, var(--isUser-fill) 55%, transparent);
+}
+.historyPanel .historyTab:focus-visible {
+  outline: 2px solid var(--accent, #8fc2ff);
+  outline-offset: 1px;
+}
+/* The bests have no views, order, period or delete. */
+.historyPanel.bestsTab .historyViewToggle,
+.historyPanel.bestsTab .historyDeleteToggle,
+.historyPanel.bestsTab .historyFilters2,
+.historyPanel:not(.bestsTab) .historyBestsSort {
+  display: none;
+}
+
+/* The second line of filters: period, order, wipes hidden. */
+.historyPanel .historyFilters {
+  flex-wrap: wrap;
+}
+.historyPanel .historyFilters2 {
+  align-items: center;
+  padding-top: 0;
+}
+.historyPanel .historyFilters2 .historyFilterSelect {
+  flex: 0 1 auto;
+  width: auto;
+}
+.historyPanel .historyFilterSearch {
+  flex: 1.4;
+  min-width: 140px;
+  padding: 0 8px;
+  background-image: none;
+}
+.historyPanel .historySortLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--hud-sub);
+}
+.historyPanel .historyKillsOnly {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+}
+.historyPanel .historyKillsOnly input {
+  accent-color: var(--isUser-fill);
+}
+
+/* A row's party DPS and yours (the theme accent), with your share. */
+/* Each figure whole on its line: "2026-10-30 11:50" broke in two. */
+.historyPanel .historyRowMeta > span {
+  white-space: nowrap;
+}
+.historyPanel .historyRowStat b {
+  font-variation-settings: "wght" 700, "wdth" 87.5;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.86);
+}
+.historyPanel .historyRowMine b {
+  color: var(--isUser-fill);
+}
+.historyPanel .historyRowShare {
+  color: var(--hud-faint);
+}
+.historyPanel .historyWipeBadge,
+.historyPanel .historyPbBadge,
+.historyPanel .historyFinalBadge {
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: var(--hud-tech);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.historyPanel .historyWipeBadge {
+  color: #ffb3ad;
+  border: 1px solid rgba(224, 82, 74, 0.55);
+}
+.historyPanel .historyPbBadge {
+  color: #1a1204;
+  background: #f3c969;
+}
+.historyPanel .historyFinalBadge {
+  margin-left: 6px;
+  color: var(--hud-sub);
+  border: 1px solid var(--pane-field-border);
+}
+
+/* Personal bests: a dungeon, its bosses' bests in columns. */
+.historyPanel .historyBestRow {
+  display: grid;
+  grid-template-columns: 1.7fr 0.8fr 0.9fr 0.8fr;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--hud-hairline);
+}
+.historyPanel .historyBestHead {
+  padding: 7px 14px;
+  font-family: var(--hud-tech);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hud-faint);
+}
+.historyPanel .historyBestDungeonName {
+  padding: 10px 14px 4px;
+  font-family: var(--hud-tech);
+  font-variation-settings: "wght" 700, "wdth" 87.5;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--title);
+}
+.historyPanel .historyBestName {
+  min-width: 0;
+}
+.historyPanel .historyBestCounts {
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-sub);
+}
+.historyPanel .historyBestCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 3px 6px;
+  margin: -3px -6px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-family: var(--hud-tech);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+}
+.historyPanel .historyBestCell:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+.historyPanel .historyBestCell:disabled {
+  cursor: default;
+  color: var(--hud-faint);
+}
+.historyPanel .historyBestCell:focus-visible {
+  outline: 2px solid var(--accent, #8fc2ff);
+  outline-offset: 1px;
+}
+.historyPanel .historyBestValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+.historyPanel .historyBestRow > .historyBestCell:nth-child(3) .historyBestValue {
+  color: var(--isUser-fill);
+}
+.historyPanel .historyBestUnconfirmed {
+  margin-left: 2px;
+  color: var(--hud-faint);
+}
+.historyPanel .historyBestSub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--hud-sub);
+}
+.historyPanel .historyBestClass {
+  width: 14px;
+  height: 14px;
+}
+.historyPanel .historyBestDungeon .historyShowAll {
+  margin-left: 34px;
+}
+.historyPanel .historyBestDungeon .historyBestRow {
+  padding-left: 34px;
+}
+
 .historyPanel .historyRowIcons {
   gap: 3px;
+  /* A full party's twelve icons wrap rather than squeeze the figures. */
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.historyPanel .historyRowInfo {
+  flex: 1 0 auto;
 }
 .historyPanel .historyRowClassIcon {
   width: 20px;

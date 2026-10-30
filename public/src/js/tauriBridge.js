@@ -895,6 +895,11 @@
         .catch(() => false);
     },
 
+    // Personal bests per character and dungeon boss (a promise).
+    getPersonalBests() {
+      return invoke("get_personal_bests").catch(() => []);
+    },
+
     getFightDetails(id) {
       // Async — returns a promise
       return invoke("load_fight", { id }).then((r) => JSON.stringify(r)).catch(() => null);

@@ -267,6 +267,11 @@ fn canonicalise(record: &mut FightRecord) {
     record.actors.sort_by_key(|a| a.actor_id);
     record.jobs.sort();
     record.job_ids.sort_unstable();
+    // History's own (you, the kill, the HP's source): the log service reports
+    // the kill in its checks, and its records stay as they were.
+    record.local_actor_id = None;
+    record.killed = None;
+    record.max_hp_from_spawn = None;
     // Buffs come from the slice's abnormal records (meter 2.0.56 on). A slice
     // from an older meter has none, so its timeline is empty: say "no buff
     // data" (None) rather than "no buffs were seen". Every real fight has some.

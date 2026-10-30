@@ -1351,6 +1351,10 @@
         <div class="historyPanel" role="dialog" aria-modal="true">
           <div class="historyHeader">
             <div class="historyTitle" data-i18n="history.title">Battle History</div>
+            <div class="historyTabs" role="tablist">
+              <button class="historyTab" type="button" role="tab" data-tab="fights" data-i18n="history.tabFights">Fights</button>
+              <button class="historyTab" type="button" role="tab" data-tab="bests" data-i18n="history.tabBests">Personal bests</button>
+            </div>
             <div class="historyViewToggle" role="group" aria-label="History view">
               <button class="historyViewBtn historyViewDungeon" type="button" data-view="dungeon" title="Group by dungeon">
                 <i data-lucide="castle"></i>
@@ -1371,7 +1375,8 @@
             <div class="closeX historyClose">×</div>
           </div>
           <div class="historyFilters">
-            <select class="historyFilterBoss historyFilterSelect" aria-label="Filter by boss"></select>
+            <input class="historyFilterSearch historyFilterSelect" type="search" data-i18n-placeholder="history.search" placeholder="Boss or dungeon…" />
+            <select class="historyFilterCharacter historyFilterSelect" aria-label="Character"></select>
             <div class="historyFilterPlayer historyClassDropdown">
               <div class="historyClassDropdownTrigger historyFilterSelect">
                 <span class="historyClassDropdownLabel"></span>
@@ -1379,7 +1384,15 @@
               </div>
               <div class="historyClassDropdownMenu"></div>
             </div>
-            <select class="historyFilterDate historyFilterSelect" aria-label="Filter by date"></select>
+            <select class="historyFilterDifficulty historyFilterSelect" aria-label="Difficulty"></select>
+            <select class="historyBestsSort historyFilterSelect" aria-label="Order"></select>
+          </div>
+          <div class="historyFilters historyFilters2">
+            <select class="historyFilterPeriod historyFilterSelect" aria-label="Period"></select>
+            <label class="historySortLabel"><span data-i18n="history.sort">Sort</span>
+              <select class="historyFilterSort historyFilterSelect"></select>
+            </label>
+            <label class="historyKillsOnly"><input type="checkbox" class="historyKillsOnlyBox" /> <span data-i18n="history.killsOnly">Kills only</span></label>
           </div>
           <div class="historyBody">
             <div class="historyEmpty" data-i18n="history.empty" style="display:none">No boss fights recorded yet.</div>

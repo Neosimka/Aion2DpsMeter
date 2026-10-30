@@ -523,6 +523,15 @@ async fn get_fight_history(app: tauri::AppHandle) -> Result<Vec<FightSummary>, S
     }).await
 }
 
+/// Every personal best (`history::personal_bests`), off the main thread as
+/// `get_fight_history` is.
+#[tauri::command]
+async fn get_personal_bests(app: tauri::AppHandle) -> Result<Vec<crate::history::personal_bests::Encounter>, String> {
+    crate::blocking::HISTORY.run(move || {
+        app.state::<AppState>().fight_history.personal_bests()
+    }).await
+}
+
 #[tauri::command]
 async fn save_fight(app: tauri::AppHandle, record: FightRecord) -> Result<(), String> {
     crate::blocking::HISTORY.run(move || {
@@ -4448,6 +4457,7 @@ pub fn run() {
             get_details_context,
             get_fight_buffs,
             get_fight_history,
+            get_personal_bests,
             save_fight,
             load_fight,
             delete_fight,
