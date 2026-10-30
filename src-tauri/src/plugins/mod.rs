@@ -612,6 +612,10 @@ impl PluginHost {
                 }),
             }
         }
+        #[cfg(feature = "online")]
+        if let Ok(dir) = plugins_dir(app) {
+            catalog::keep_serials_in(&dir);
+        }
         let installed = plugins_dir(app)
             .ok()
             .and_then(|dir| std::fs::read_dir(dir).ok())
@@ -625,7 +629,13 @@ impl PluginHost {
                 Ok(l) if loaded.iter().any(|x: &Loaded| x.manifest.id == l.manifest.id) => {
                     tracing::info!("Plugins: {} runs from its developer folder, not the installed copy", l.manifest.id);
                 }
-                Ok(l) => loaded.push(Loaded { reviewed: true, ..l }),
+                Ok(l) => match check_installed(app, &l) {
+                    Ok(()) => loaded.push(Loaded { reviewed: true, ..l }),
+                    Err(e) => {
+                        tracing::warn!("Plugins: installed {} {} held: {e}", l.manifest.id, l.manifest.version);
+                        errors.push(PluginInfo { reviewed: true, error: Some(e), ..info(&l) });
+                    }
+                },
                 Err(e) => tracing::warn!("Plugins: installed {} does not load: {e}", dir.display()),
             }
         }
@@ -924,6 +934,73 @@ impl PluginHost {
     }
 }
 
+/// An installed plugin checked against the signed catalog its install kept
+/// (`catalog::verify_installed`): until it passes, it is held, listed with
+/// why, and doesn't run. The offline build installs nothing and takes the
+/// folder as it is.
+fn check_installed(app: &tauri::AppHandle, l: &Loaded) -> Result<(), String> {
+    #[cfg(feature = "online")]
+    {
+        let root = plugins_dir(app)?;
+        catalog::verify_installed(&root, &l.dir, &l.manifest.id, &l.manifest.version).map_err(|e| match e {
+            catalog::Unverified::NoProof => {
+                "Not checked against the plugin catalog yet: it runs once it is, at start or on Check for updates.".to_string()
+            }
+            catalog::Unverified::Changed(why) => format!(
+                "Its files are not the reviewed ones ({why}), so it doesn't run: it is installed again from the catalog at start or on Check for updates."
+            ),
+        })
+    }
+    #[cfg(not(feature = "online"))]
+    {
+        let _ = (app, l);
+        Ok(())
+    }
+}
+
+/// Whether an installed plugin is held (`check_installed`).
+#[cfg(feature = "online")]
+fn held(p: &PluginInfo) -> bool {
+    p.reviewed && p.error.is_some()
+}
+
+/// The held plugins put right from `catalog`: one whose files are its
+/// version's there keeps that catalog and runs (every install before 2.0.87,
+/// once); one changed, or of a version the catalog has moved on from, is
+/// installed again from it, unless that asks for a permission it didn't
+/// have (then it's offered as an update). Whether any runs now.
+#[cfg(feature = "online")]
+async fn repair_held(app: &tauri::AppHandle, host: &Arc<PluginHost>, catalog: &catalog::Catalog) -> bool {
+    let (Ok(root), Some(state)) = (plugins_dir(app), app.try_state::<AppState>()) else { return false };
+    let mut changed = false;
+    for p in host.list().into_iter().filter(held) {
+        let Some(entry) = catalog.plugins.iter().find(|e| e.id == p.id) else { continue };
+        if entry.version == p.version && catalog::adopt(entry, &root).is_ok() {
+            tracing::info!("Plugins: {} {} checked against the catalog", p.id, p.version);
+            changed = true;
+            continue;
+        }
+        let asks_more = entry.permissions.iter().any(|x| !p.permissions.contains(x));
+        if catalog::newer(&p.version, &entry.version) || (entry.version != p.version && asks_more) {
+            continue;
+        }
+        match catalog::install(&state.http, entry, &root).await {
+            Ok(_) => {
+                tracing::info!("Plugins: {} {} installed again from the catalog", entry.id, entry.version);
+                changed = true;
+            }
+            Err(e) => tracing::info!("Plugins: {} could not be installed again: {e}", entry.id),
+        }
+    }
+    if changed {
+        host.reload(app);
+        refresh_windows(app, host);
+        restore_windows(app);
+        let _ = app.emit_to("settings", "plugins-changed", ());
+    }
+    changed
+}
+
 fn info(l: &Loaded) -> PluginInfo {
     PluginInfo {
         id: l.manifest.id.clone(),
@@ -1071,7 +1148,8 @@ fn refresh_windows(app: &tauri::AppHandle, host: &PluginHost) {
 /// to install.
 #[cfg(feature = "online")]
 fn newer_entries(catalog: catalog::Catalog, host: &PluginHost) -> Vec<(PluginAvailable, catalog::Entry)> {
-    let installed: Vec<PluginInfo> = host.list().into_iter().filter(|p| p.reviewed && p.error.is_none()).collect();
+    // Held ones too: an update is how one asking for more comes back.
+    let installed: Vec<PluginInfo> = host.list().into_iter().filter(|p| p.reviewed).collect();
     installed
         .into_iter()
         .filter_map(|p| {
@@ -1093,9 +1171,10 @@ fn newer_entries(catalog: catalog::Catalog, host: &PluginHost) -> Vec<(PluginAva
 
 /// The catalog's newer versions of installed plugins.
 #[cfg(feature = "online")]
-async fn available_updates(app: &tauri::AppHandle, host: &PluginHost) -> Result<Vec<PluginAvailable>, String> {
+async fn available_updates(app: &tauri::AppHandle, host: &Arc<PluginHost>) -> Result<Vec<PluginAvailable>, String> {
     let http = app.try_state::<AppState>().ok_or("no app state")?.http.clone();
     let catalog = catalog::fetch(&http).await?;
+    repair_held(app, host, &catalog).await;
     Ok(newer_entries(catalog, host).into_iter().map(|(a, _)| a).collect())
 }
 
@@ -1281,6 +1360,20 @@ fn update_prompt(t: &PromptTexts, updates: &[&PluginAvailable]) -> String {
 pub fn find_updates_at_start(app: &tauri::AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
+        // A plugin held at load (installed before installs kept their
+        // catalog, mostly) is checked at once, not after the delay.
+        if let Ok(host) = host(&app) {
+            if host.list().iter().any(held) {
+                if let Some(state) = app.try_state::<AppState>() {
+                    match catalog::fetch(&state.http).await {
+                        Ok(catalog) => {
+                            repair_held(&app, &host, &catalog).await;
+                        }
+                        Err(e) => tracing::info!("Plugins: held plugins not checked: {e}"),
+                    }
+                }
+            }
+        }
         tokio::time::sleep(UPDATE_ALERT_DELAY).await;
         // At start, then every 6 hours for a meter left running for days.
         // Each check replaces what the title offers: updates installed from
@@ -1312,6 +1405,7 @@ async fn find_updates(app: &tauri::AppHandle, at_start: bool) {
             return;
         }
     };
+    repair_held(app, &host, &catalog).await;
     let declined: HashMap<String, String> =
         state.settings.get(DECLINED_UPDATES_KEY).and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
     let updates = updates_to_offer(newer_entries(catalog, &host), &declined);
@@ -1542,10 +1636,13 @@ pub fn plugin_uninstall(app: tauri::AppHandle, id: String) -> Result<PluginsView
     }
     remember_window(&app, &id, None);
     set_disabled(&app, &id, false);
-    let dir = plugins_dir(&app)?.join(&id);
+    let root = plugins_dir(&app)?;
+    let dir = root.join(&id);
     if dir.is_dir() {
         std::fs::remove_dir_all(&dir).map_err(|e| e.to_string())?;
     }
+    #[cfg(feature = "online")]
+    catalog::remove_proof(&root, &id);
     let host = host(&app)?;
     host.reload(&app);
     dock::sync(&app, None);
