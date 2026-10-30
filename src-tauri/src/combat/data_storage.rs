@@ -768,6 +768,10 @@ struct Inner {
     /// and comes back with the next self record: a fight saved in between is
     /// still yours, on your server. See `fight_server_id`.
     self_server: u16,
+    /// The character `self_server` was stated for: another one the game
+    /// names (a switch, named by loot before its own self record) forgets
+    /// it, so it does not inherit the last one's server (#133).
+    self_server_owner: Option<String>,
     /// The class and level your own self record last stated, with the name it
     /// was for, so a character switch does not carry the last one's over.
     self_profile: Option<(String, Option<JobClass>, Option<u32>)>,
@@ -885,6 +889,7 @@ impl DataStorage {
                 loot_identity: LootIdentity::default(),
                 player_servers: HashMap::new(),
                 self_server: 0,
+                self_server_owner: None,
                 self_profile: None,
                 self_gear_score: None,
                 self_combat_power: None,
@@ -1412,7 +1417,9 @@ impl DataStorage {
     /// that states none (a tutorial character), which forgets the last one.
     pub fn note_self_server(&self, server_id: u16) {
         if server_id == 0 || crate::capture::servers::exists(server_id) {
-            self.inner.write().self_server = server_id;
+            let mut inner = self.inner.write();
+            inner.self_server = server_id;
+            inner.self_server_owner = inner.local_character_name.as_deref().map(|n| n.trim().to_string());
         }
     }
 
@@ -1510,9 +1517,13 @@ impl DataStorage {
 
     /// The local player's own server as the game stated it (a self or loot
     /// record), 0 when it hasn't yet. Unlike `fight_server_id`, never a
-    /// guess from the party or the connection.
+    /// guess from the party or the connection. The self record's first: a
+    /// loot record states a moved character's old server (#133).
     pub fn own_server(&self) -> u16 {
         let inner = self.inner.read();
+        if inner.self_server != 0 {
+            return inner.self_server;
+        }
         let local = inner.local_character_name.as_deref().map(str::trim);
         if let Some(&server) = local.and_then(|n| inner.player_servers.get(n)) {
             return server;
@@ -3297,6 +3308,12 @@ fn set_game_identity(inner: &mut Inner, id: i64, name: Option<String>) {
     inner.loot_identity.stats_streak = None;
     inner.local_identity_from_game = true;
     inner.local_player_id = Some(id);
+    // Another character: the last one's self record is not this one's.
+    let named = name.as_deref().map(str::trim).filter(|n| !n.is_empty());
+    if named.is_some() && inner.self_server_owner.as_deref().is_some_and(|o| Some(o) != named) {
+        inner.self_server = 0;
+        inner.self_server_owner = None;
+    }
     inner.local_character_name = name;
 }
 
@@ -4556,6 +4573,24 @@ mod tests {
         s.note_player_server("Other", 1102);
         assert_eq!(s.stated_server("Other"), Some(1102));
         assert_eq!(s.stated_server("Nobody"), None);
+        // Live profiles and reports too, not only saved fights.
+        assert_eq!(s.own_server(), 2101);
+    }
+
+    #[test]
+    fn a_switch_named_by_loot_does_not_inherit_the_last_server() {
+        let s = DataStorage::new();
+        s.set_local_identity_from_game(7, Some("Arid".into()));
+        s.note_self_server(2101);
+        // A zone move drops the name; the same character keeps its server.
+        s.set_local_identity_from_game(8, Some("Arid".into()));
+        assert_eq!(s.self_record_server(), 2101);
+        // Another character, named by loot before its own self record.
+        s.set_local_identity_from_game(9, Some("Alt".into()));
+        assert_eq!(s.self_record_server(), 0);
+        assert_eq!(s.stated_server("Alt"), Some(0));
+        s.note_self_server(1102);
+        assert_eq!(s.own_server(), 1102);
     }
 
 }
