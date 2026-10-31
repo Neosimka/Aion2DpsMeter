@@ -315,6 +315,9 @@ fn set_disabled(app: &tauri::AppHandle, id: &str, off: bool) {
         ids.push(id.to_string());
     }
     state.settings.set(DISABLED_KEY, &serde_json::to_string(&ids).unwrap_or_default());
+    if let Ok(host) = host(app) {
+        host.set_off(app, id, off);
+    }
 }
 
 /// Turn a plugin on (it starts now and with every start of the meter) or off
@@ -413,6 +416,10 @@ pub struct PluginHost {
     /// Plugins closed with their window's ×, this run: a reload (an install,
     /// Check for updates, a folder added) does not start them again.
     closed: Mutex<HashSet<String>>,
+    /// Plugins turned off (Settings): they stay loaded, listed with their
+    /// data, but nothing is decoded, queued or kept for them (talyaseen,
+    /// #137), as they ran on unseen and their replay log filled.
+    off: RwLock<HashSet<String>>,
 }
 
 impl Default for PluginHost {
@@ -427,6 +434,7 @@ impl Default for PluginHost {
             pending: Mutex::default(),
             queued: Condvar::new(),
             log: Mutex::default(),
+            off: RwLock::default(),
             seq: Mutex::new(0),
             run,
             flusher: AtomicBool::new(false),
@@ -643,6 +651,7 @@ impl PluginHost {
         tracing::info!("Plugins: {} loaded (developer mode {})", loaded.len(), if dev { "on" } else { "off" });
         *self.loaded.write().unwrap_or_else(|p| p.into_inner()) = loaded;
         *self.errors.write().unwrap_or_else(|p| p.into_inner()) = errors;
+        *self.off.write().unwrap_or_else(|p| p.into_inner()) = disabled(app).into_iter().collect();
 
         if !self.flusher.swap(true, Ordering::SeqCst) {
             let host = Arc::clone(self);
@@ -766,6 +775,35 @@ impl PluginHost {
         }
     }
 
+    /// Turn a plugin's events off or on: off, what waits for it and its
+    /// replay log go, and so do its live boss and frame-rate follows (its
+    /// window's going drops those, but one in the dock has none).
+    fn set_off(&self, app: &tauri::AppHandle, id: &str, off: bool) {
+        let mut set = self.off.write().unwrap_or_else(|p| p.into_inner());
+        if !off {
+            set.remove(id);
+            return;
+        }
+        set.insert(id.to_string());
+        drop(set);
+        self.pending.lock().unwrap_or_else(|p| p.into_inner()).retain(|p| p.plugin != id);
+        self.log.lock().unwrap_or_else(|p| p.into_inner()).remove(id);
+        boss_live::forget_plugin(app, id);
+        fps::forget_plugin(id);
+    }
+
+    /// The loaded plugins that are on, by id, with whatever `keep` picks.
+    fn on_ids(&self, keep: impl Fn(&Loaded) -> bool) -> Vec<String> {
+        let off = self.off.read().unwrap_or_else(|p| p.into_inner());
+        self.loaded
+            .read()
+            .unwrap_or_else(|p| p.into_inner())
+            .iter()
+            .filter(|l| !off.contains(&l.manifest.id) && keep(l))
+            .map(|l| l.manifest.id.clone())
+            .collect()
+    }
+
     fn on_frame(&self, app: &tauri::AppHandle, packet: &[u8]) {
         let len = crate::capture::stream_processor::read_varint(packet, 0).length;
         if len <= 0 {
@@ -774,8 +812,9 @@ impl PluginHost {
         let at = len as usize;
         let Some(opcode) = packet.get(at..at + 2) else { return };
         let body = &packet[at + 2..];
+        let off = self.off.read().unwrap_or_else(|p| p.into_inner()).clone();
         let loaded = self.loaded.read().unwrap_or_else(|p| p.into_inner());
-        for plugin in loaded.iter() {
+        for plugin in loaded.iter().filter(|l| !off.contains(&l.manifest.id)) {
             for d in plugin.decoders.iter().filter(|d| d.opcode == opcode) {
                 let Some(data) = d.decode(body) else { continue };
                 // Only the player's own doings, for a decoder that asks so.
@@ -856,8 +895,7 @@ impl PluginHost {
     /// An unnumbered event to every loaded plugin (pluginHost.js hands it
     /// straight on).
     fn tell_all(&self, app: &tauri::AppHandle, event: &str, data: Value) {
-        let ids: Vec<String> =
-            self.loaded.read().unwrap_or_else(|p| p.into_inner()).iter().map(|l| l.manifest.id.clone()).collect();
+        let ids = self.on_ids(|_| true);
         for id in ids {
             let msg = serde_json::json!({ "plugin": id, "event": event, "data": data });
             emit_plugin(app, &id, msg);
@@ -867,14 +905,7 @@ impl PluginHost {
     /// A numbered event (see `flush`) to the plugins with a permission.
     /// `read_ms` is when it happened (unix ms).
     fn queue_permitted(&self, permission: &str, event: &str, read_ms: i64, data: Value) {
-        let ids: Vec<String> = self
-            .loaded
-            .read()
-            .unwrap_or_else(|p| p.into_inner())
-            .iter()
-            .filter(|l| l.manifest.permissions.iter().any(|p| p == permission))
-            .map(|l| l.manifest.id.clone())
-            .collect();
+        let ids = self.on_ids(|l| l.manifest.permissions.iter().any(|p| p == permission));
         let mut pending = self.pending.lock().unwrap_or_else(|p| p.into_inner());
         for plugin in ids {
             pending.push(Pending {
@@ -891,14 +922,7 @@ impl PluginHost {
 
     /// An unnumbered event to the plugins with a permission.
     fn tell_permitted(&self, app: &tauri::AppHandle, permission: &str, event: &str, data: Value) {
-        let ids: Vec<String> = self
-            .loaded
-            .read()
-            .unwrap_or_else(|p| p.into_inner())
-            .iter()
-            .filter(|l| l.manifest.permissions.iter().any(|p| p == permission))
-            .map(|l| l.manifest.id.clone())
-            .collect();
+        let ids = self.on_ids(|l| l.manifest.permissions.iter().any(|p| p == permission));
         for id in ids {
             let msg = serde_json::json!({ "plugin": id, "event": event, "data": data });
             emit_plugin(app, &id, msg);
@@ -909,14 +933,7 @@ impl PluginHost {
     /// an unnumbered event straight on).
     fn tell_character(&self, app: &tauri::AppHandle, who: Option<Value>) {
         let Some(who) = who else { return };
-        let ids: Vec<String> = self
-            .loaded
-            .read()
-            .unwrap_or_else(|p| p.into_inner())
-            .iter()
-            .filter(|l| l.manifest.permissions.iter().any(|p| p == "events:character"))
-            .map(|l| l.manifest.id.clone())
-            .collect();
+        let ids = self.on_ids(|l| l.manifest.permissions.iter().any(|p| p == "events:character"));
         for id in ids {
             let event = serde_json::json!({ "plugin": id, "event": "character", "data": who });
             emit_plugin(app, &id, event);
