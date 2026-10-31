@@ -4,8 +4,8 @@
       "version": "2.1.5",
       "date": "2026-10-31",
       "notes": {
-        "fr": "- En bas du meter, le nombre de joueurs autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte.",
-        "en": "- En bas du meter, le nombre de joueurs autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte."
+        "fr": "- En bas du meter, le nombre de joueurs vivants autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Les joueurs morts ne comptent pas. Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte.",
+        "en": "- En bas du meter, le nombre de joueurs vivants autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Les joueurs morts ne comptent pas. Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte."
       }
     },
     {

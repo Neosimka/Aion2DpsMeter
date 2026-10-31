@@ -4,7 +4,9 @@
 //! visibilité (`44/45 36`, avec son serveur) et dit quand il en sort
 //! (`note_despawn`) ; un chargement de carte redistribue les identifiants, donc
 //! la liste repart de zéro. La faction se lit au serveur : 1xxx Élyséens,
-//! 2xxx Asmodiens. Rien n'est lu dans le jeu, seulement le réseau.
+//! 2xxx Asmodiens. Les joueurs morts ne comptent pas : mort quand le jeu
+//! l'annonce, de nouveau en vie quand il réapparaît, que ses PV remontent ou
+//! qu'il agit (frappe ou soigne). Rien n'est lu dans le jeu, seulement le réseau.
 
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
@@ -17,6 +19,7 @@ struct Seen {
     /// 0 quand le serveur n'est pas connu.
     server: u16,
     at: i64,
+    dead: bool,
 }
 
 fn players() -> &'static Mutex<HashMap<i32, Seen>> {
@@ -38,16 +41,36 @@ fn faction(server: u16) -> u8 {
 pub fn spawn(id: i32, server: Option<u16>) {
     let Ok(mut p) = players().lock() else { return };
     let server = server.unwrap_or(0);
-    let entry = p.entry(id).or_insert(Seen { server, at: 0 });
+    let entry = p.entry(id).or_insert(Seen { server, at: 0, dead: false });
     if server != 0 {
         entry.server = server;
     }
+    // Une réapparition (après une mort, au point de résurrection) : en vie.
+    entry.dead = false;
     entry.at = crate::clock::now_ms();
     if p.len() > MAX_PLAYERS {
         let mut all: Vec<(i32, i64)> = p.iter().map(|(&k, s)| (k, s.at)).collect();
         all.sort_by_key(|&(_, at)| at);
         for (k, _) in all.into_iter().take(p.len() - MAX_PLAYERS) {
             p.remove(&k);
+        }
+    }
+}
+
+/// Une entité est morte (joueur ou non : seuls les joueurs suivis comptent).
+pub fn died(id: i32) {
+    if let Ok(mut p) = players().lock() {
+        if let Some(s) = p.get_mut(&id) {
+            s.dead = true;
+        }
+    }
+}
+
+/// Un joueur est de nouveau en vie : ses PV remontent, ou il frappe ou soigne.
+pub fn alive(id: i32) {
+    if let Ok(mut p) = players().lock() {
+        if let Some(s) = p.get_mut(&id).filter(|s| s.dead) {
+            s.dead = false;
         }
     }
 }
@@ -74,7 +97,7 @@ pub fn counts(me: Option<i32>, my_server: u16) -> (u32, u32, u32) {
     let mine = faction(my_server);
     let (mut allies, mut enemies, mut unknown) = (0, 0, 0);
     for (&id, s) in p.iter() {
-        if Some(id) == me {
+        if Some(id) == me || s.dead {
             continue;
         }
         let f = faction(s.server);
@@ -109,15 +132,21 @@ mod tests {
     #[test]
     fn allies_and_enemies_by_server() {
         clear();
-        spawn(10, Some(1303)); // moi
-        spawn(11, Some(1301));
-        spawn(12, Some(2105));
-        spawn(13, None);
-        spawn(14, Some(2105));
-        assert_eq!(counts(Some(10), 1303), (1, 2, 1));
-        gone(12);
-        assert_eq!(counts(Some(10), 1303), (1, 1, 1));
-        assert_eq!(counts(Some(10), 0), (0, 0, 3), "sans ta faction : inconnus");
+        spawn(987610, Some(1303)); // moi
+        spawn(987611, Some(1301));
+        spawn(987612, Some(2105));
+        spawn(987613, None);
+        spawn(987614, Some(2105));
+        assert_eq!(counts(Some(987610), 1303), (1, 2, 1));
+        died(987611);
+        died(987614);
+        assert_eq!(counts(Some(987610), 1303), (0, 1, 1), "les morts ne comptent pas");
+        alive(987611);
+        spawn(987614, Some(2105)); // réapparu au point de résurrection
+        assert_eq!(counts(Some(987610), 1303), (1, 2, 1));
+        gone(987612);
+        assert_eq!(counts(Some(987610), 1303), (1, 1, 1));
+        assert_eq!(counts(Some(987610), 0), (0, 0, 3), "sans ta faction : inconnus");
         clear();
         assert_eq!(counts(None, 1303), (0, 0, 0));
     }

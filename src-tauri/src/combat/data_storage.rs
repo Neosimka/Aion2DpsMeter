@@ -1867,6 +1867,8 @@ impl DataStorage {
         let skill_code = pdp.skill_code();
         let actor_id = pdp.actor_id();
         let target_id = pdp.target_id();
+        // Aion2DpsMeter : qui frappe est en vie.
+        crate::a2d_nearby::alive(actor_id);
 
         // Not damage: a spirit and its owner naming each other.
         if let Some((summon, owner)) = owner_link(skill_code, actor_id, target_id) {
@@ -2119,6 +2121,7 @@ impl DataStorage {
     pub fn mark_entity_dead(&self, entity_id: i32) {
         #[cfg(feature = "desktop")]
         crate::a2d_radar::note_gone(entity_id);
+        crate::a2d_nearby::died(entity_id);
         let mut inner = self.inner.write();
         // A field boss killed in the open world: its exact time, to share
         // (online builds only: boss_report.rs sends it).
@@ -2146,6 +2149,12 @@ impl DataStorage {
     pub fn note_hp(&self, entity_id: i32, hp: i32) {
         let mut inner = self.inner.write();
         let before = inner.last_hp.insert(entity_id, hp);
+        // Aion2DpsMeter : joueurs autour de toi, morts ou en vie.
+        if hp == 0 {
+            crate::a2d_nearby::died(entity_id);
+        } else {
+            crate::a2d_nearby::alive(entity_id);
+        }
         if hp == 0 && before.is_some_and(|b| b > 0) {
             inner.death_log.push_back((entity_id, now_ms(), None));
             while inner.death_log.len() > MAX_DEATHS {
@@ -2789,6 +2798,8 @@ impl DataStorage {
     /// Record a heal tick done by `actor_id` with `skill_code` (is_hot marks a HoT).
     /// Keyed by the healer so "healing done" can be shown per player. Self-heals count.
     pub fn append_heal(&self, actor_id: i32, skill_code: i32, amount: i64, is_hot: bool, timestamp: i64) {
+        // Aion2DpsMeter : qui soigne est en vie.
+        crate::a2d_nearby::alive(actor_id);
         if amount <= 0 || !self.is_plausible_entity_id(actor_id) {
             return;
         }
