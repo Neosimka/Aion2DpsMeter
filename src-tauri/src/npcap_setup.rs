@@ -89,7 +89,8 @@ fn installer_name(page: &str) -> Option<String> {
 #[cfg(feature = "online")]
 async fn fetch_installer(http: &reqwest::Client) -> Result<PathBuf, String> {
     let page = http.get(SITE).send().await.and_then(|r| r.error_for_status()).map_err(|e| e.to_string())?;
-    let page = page.text().await.map_err(|e| e.to_string())?;
+    // Read up to 1 MB: the page only names the installer (talyaseen, #140).
+    let page = String::from_utf8_lossy(&crate::update_check::read_capped(page, 1024 * 1024).await?).into_owned();
     let name = installer_name(&page).ok_or("npcap.com lists no installer")?;
     let response = http
         .get(format!("{SITE}dist/{name}"))

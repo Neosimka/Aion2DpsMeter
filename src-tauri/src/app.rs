@@ -1765,7 +1765,15 @@ async fn download_and_install_update(app: &tauri::AppHandle, url: &str, expected
     if !response.status().is_success() {
         return Err(format!("HTTP {}", response.status()));
     }
+    // At most MAX_PACKAGE (packages are under 24 MB), counted as it comes,
+    // since a server may give no length; and a download that fails leaves no
+    // partial file (talyaseen, #140).
+    const MAX_PACKAGE: u64 = 256 * 1024 * 1024;
+    let too_big = || format!("the update package is larger than {MAX_PACKAGE} bytes");
     let total_size = response.content_length().unwrap_or(0);
+    if total_size > MAX_PACKAGE {
+        return Err(too_big());
+    }
     let msi_path = update_download_path(&url_owned)?;
 
     let mut file = tokio::fs::File::create(&msi_path).await.map_err(|e| e.to_string())?;
@@ -1774,22 +1782,32 @@ async fn download_and_install_update(app: &tauri::AppHandle, url: &str, expected
     let mut last_pct: u64 = 0;
     let mut hasher = Sha256::new();
 
-    while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| e.to_string())?;
-        hasher.update(&chunk);
-        file.write_all(&chunk).await.map_err(|e| e.to_string())?;
-        downloaded += chunk.len() as u64;
-        if total_size > 0 {
-            let pct = (downloaded * 100 / total_size).min(100);
-            if pct != last_pct {
-                last_pct = pct;
-                let _ = app_clone.emit("download-progress", pct);
-                tracing::info!("Download: {}%", pct);
+    let saved: Result<(), String> = async {
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk.map_err(|e| e.to_string())?;
+            if downloaded + chunk.len() as u64 > MAX_PACKAGE {
+                return Err(too_big());
+            }
+            hasher.update(&chunk);
+            file.write_all(&chunk).await.map_err(|e| e.to_string())?;
+            downloaded += chunk.len() as u64;
+            if total_size > 0 {
+                let pct = (downloaded * 100 / total_size).min(100);
+                if pct != last_pct {
+                    last_pct = pct;
+                    let _ = app_clone.emit("download-progress", pct);
+                    tracing::info!("Download: {}%", pct);
+                }
             }
         }
+        file.flush().await.map_err(|e| e.to_string())
     }
-    file.flush().await.map_err(|e| e.to_string())?;
+    .await;
     drop(file);
+    if let Err(e) = saved {
+        let _ = tokio::fs::remove_file(&msi_path).await;
+        return Err(e);
+    }
 
     let actual: String = hasher.finalize().iter().map(|b| format!("{b:02x}")).collect();
     if !package_hash_matches(expected_sha256, &actual) {
