@@ -4,8 +4,8 @@
       "version": "2.1.4",
       "date": "2026-10-31",
       "notes": {
-        "fr": "- Le nombre de morts à côté du pseudo repart à zéro à chaque combat : chaque boss, et donc chaque donjon, a son propre compteur.",
-        "en": "- Le nombre de morts à côté du pseudo repart à zéro à chaque combat : chaque boss, et donc chaque donjon, a son propre compteur."
+        "fr": "- Le nombre de morts à côté du pseudo repart à zéro à chaque combat : chaque boss, et donc chaque donjon, a son propre compteur.\n- Une petite tête de mort devant le nombre de morts.",
+        "en": "- Le nombre de morts à côté du pseudo repart à zéro à chaque combat : chaque boss, et donc chaque donjon, a son propre compteur.\n- Une petite tête de mort devant le nombre de morts."
       }
     },
     {
