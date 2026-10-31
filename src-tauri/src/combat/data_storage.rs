@@ -5,6 +5,8 @@ use std::sync::Arc;
 use parking_lot::{Mutex, RwLock};
 
 use crate::capture::abnormal;
+use crate::combat::death_recap::{self, DeathRecaps};
+use crate::combat::stagger::{End, Outcome, StaggerHit, StaggerLog, StaggerWindow};
 
 use crate::entity::damage_packet::ParsedDamagePacket;
 use crate::entity::job_class::JobClass;
@@ -60,6 +62,31 @@ const ROSTER_BIND_EVERY: u32 = 64;
 const ABNORMAL_RETENTION_MS: i64 = 30 * 60 * 1000;
 /// How often, in capture time, the timeline drops what is past retention.
 const ABNORMAL_PRUNE_EVERY_MS: i64 = 60 * 1000;
+
+/// Daily Duty's count among the content counts (`content_counts`): an id
+/// the game's entries never have (the entry parser turns away id 0).
+pub const DAILY_DUTY_ID: u32 = 0;
+
+/// A Daily Duty offer of the board (see
+/// `StreamProcessor::parse_daily_duty_packet`). State 01 is open, 02 taken,
+/// 04 completed (handed in).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DutyOffer {
+    pub offer: u32,
+    pub quest: u32,
+    /// Your quest number, once taken (what giving it up names).
+    pub number: u32,
+    pub state: u8,
+}
+
+/// The Daily Duty board: its offers, the next reset (unix ms, moved on when
+/// played through it), and the reset the game sent it with.
+#[derive(Debug, Clone)]
+struct DutyBoard {
+    offers: Vec<DutyOffer>,
+    reset_ms: i64,
+    sent_reset_ms: i64,
+}
 
 fn now_ms() -> i64 {
     crate::clock::now_ms()
@@ -332,6 +359,8 @@ pub struct ActorCombatData {
     pub regen: i64,
     pub damage_received: i64,
     pub hits_received: i32,
+    /// How the hits taken were met (shield blocks, parries...).
+    pub received: crate::entity::details_context::ReceivedHits,
     pub last_damage_time: i64,
     pub job: Option<JobClass>,
     /// Skills keyed by (raw_skill_code, is_dot)
@@ -346,6 +375,7 @@ impl ActorCombatData {
         self.regen += other.regen;
         self.damage_received += other.damage_received;
         self.hits_received += other.hits_received;
+        self.received.add(other.received);
         self.last_damage_time = self.last_damage_time.max(other.last_damage_time);
         self.job = self.job.or(other.job);
         for (key, skill) in other.skills {
@@ -365,6 +395,7 @@ impl ActorCombatData {
             regen: 0,
             damage_received: 0,
             hits_received: 0,
+            received: Default::default(),
             last_damage_time: 0,
             job: None,
             skills: HashMap::new(),
@@ -392,6 +423,7 @@ impl TargetCombatData {
                 regen: actor.regen,
                 damage_received: actor.damage_received,
                 hits_received: actor.hits_received,
+                received: actor.received,
                 last_damage_time: actor.last_damage_time,
                 job: actor.job,
                 skills: actor.skills.iter().map(|(&key, skill)| (key, skill.clone_light())).collect(),
@@ -494,6 +526,13 @@ pub struct DataStorage {
     /// yet. Its own lock: it is fed every packet, and nothing here needs it
     /// together with `inner`.
     abnormals: Mutex<AbnormalLog>,
+    /// Stagger gauges and their windows (see `combat::stagger`). Its own
+    /// lock, as `abnormals`: fed by its own records, read when a fight is
+    /// saved.
+    stagger: Mutex<StaggerLog>,
+    /// Who killed you (see `combat::death_recap`). Its own lock, as
+    /// `stagger`.
+    death_recaps: Mutex<DeathRecaps>,
 }
 
 /// The timeline and when it was last pruned.
@@ -565,6 +604,12 @@ struct Inner {
     /// fought should still get rows. See `party_placeholders_wanted`.
     party_roster_at_ms: i64,
     party_placeholders_hidden: bool,
+    /// The party key of the last roster that had you in it; `None` outside a
+    /// party. See `is_other_party`.
+    own_party_key: Option<u32>,
+    /// Whether a roster since the party began has had you in it. Only then
+    /// does a whole roster without you say you left (see `set_party_roster_of`).
+    self_in_roster: bool,
     /// Damage records since `bind_roster_names_by_class` last ran. Counted in
     /// records rather than time so a replay names players where a live meter
     /// did.
@@ -604,6 +649,10 @@ struct Inner {
     abyss_artifacts: crate::capture::abyss_artifacts::ArtifactState,
     abyss_artifacts_seen_ms: i64,
     abyss_artifacts_seq: u64,
+    /// The Supply Requests boards, as last told at login
+    /// (`capture::supply_requests`), and a count that moves with each.
+    supply_requests: Vec<crate::capture::supply_requests::Board>,
+    supply_requests_seq: u64,
     /// Entities whose max HP came from their spawn record, so a percentage of
     /// it can be trusted (a peak seen later may be below the real max).
     spawn_hp_ids: HashSet<i32>,
@@ -664,12 +713,37 @@ struct Inner {
     /// `StreamProcessor::parse_odyle_energy_packet`.
     odyle_energy: Option<(u32, u32)>,
     /// The character that energy is, for the window to remember it by
-    /// across a meter restart. A login's list comes some seconds before the
-    /// self record naming who logged in, so until that record it has no
-    /// owner (`odyle_awaits_self_record`): the name still known then can be
-    /// the character before a switch.
+    /// across a meter restart, and the content counts and Daily Duty board
+    /// with it. A login's list comes some seconds before the self record
+    /// naming who logged in, so until that record it has no owner
+    /// (`odyle_awaits_self_record`): the name still known then can be the
+    /// character before a switch. An update or a board in a session the game
+    /// has named (a meter started mid-session) is theirs.
     odyle_owner: Option<String>,
     odyle_awaits_self_record: bool,
+    /// The game's entry counts by entry id (`0b 61` / `0c 61`), whose owner
+    /// is Odyle energy's (they come in the same list).
+    content_counts: std::collections::BTreeMap<u32, [u32; 2]>,
+    /// The shop's purchase limits by item id: (bought, next reset unix ms).
+    /// See `parse_shop_and_craft_packet`.
+    shop_limits: std::collections::BTreeMap<u32, (u32, i64)>,
+    /// Crafts made by recipe id, as the crafting window or a craft last said.
+    craft_counts: std::collections::BTreeMap<u32, u32>,
+    /// Kinah gained today with the game's time of it (unix ms), and Abyss
+    /// Points this week with the week's limit and when seen (`a5 ff` /
+    /// `a6 ff`, `a9 ff`). A login's (`a9 ff` just before its list, `a5 ff`
+    /// just after) wait in `login_kinah` / `login_abyss_points` for the self
+    /// record, so they never show under the character before.
+    kinah_today: Option<(u64, i64)>,
+    abyss_points: Option<(u64, u64, i64)>,
+    login_kinah: Option<(u64, i64)>,
+    login_abyss_points: Option<(u64, u64, i64)>,
+    /// The Daily Duty board. See `parse_daily_duty_packet`.
+    daily_duty: Option<DutyBoard>,
+    /// The entry list's time entries (kind `01`) by id: the time and when it
+    /// was seen (unix ms). An Abyss passage's usage time left (ms), the times
+    /// of others. Gone again as a count.
+    content_times: std::collections::BTreeMap<u32, (u64, i64)>,
 
     // Local player
     local_player_id: Option<i64>,
@@ -696,6 +770,10 @@ struct Inner {
     /// and comes back with the next self record: a fight saved in between is
     /// still yours, on your server. See `fight_server_id`.
     self_server: u16,
+    /// The character `self_server` was stated for: another one the game
+    /// names (a switch, named by loot before its own self record) forgets
+    /// it, so it does not inherit the last one's server (#133).
+    self_server_owner: Option<String>,
     /// The class and level your own self record last stated, with the name it
     /// was for, so a character switch does not carry the last one's over.
     self_profile: Option<(String, Option<JobClass>, Option<u32>)>,
@@ -760,6 +838,8 @@ impl DataStorage {
                 party_members: HashMap::new(),
                 former_party_members: HashMap::new(),
                 party_roster_at_ms: 0,
+                own_party_key: None,
+                self_in_roster: false,
                 damage_since_roster_bind: 0,
                 party_placeholders_hidden: false,
                 current_dungeon_id: 0,
@@ -775,6 +855,8 @@ impl DataStorage {
                 abyss_artifacts: crate::capture::abyss_artifacts::ArtifactState { wars: Vec::new(), artifacts: Vec::new() },
                 abyss_artifacts_seen_ms: 0,
                 abyss_artifacts_seq: 0,
+                supply_requests: Vec::new(),
+                supply_requests_seq: 0,
                 spawn_hp_ids: HashSet::new(),
                 boss_hp_now: HashMap::new(),
                 boss_hp_sent: HashMap::new(),
@@ -794,6 +876,15 @@ impl DataStorage {
                 odyle_energy: None,
                 odyle_owner: None,
                 odyle_awaits_self_record: false,
+                content_counts: Default::default(),
+                shop_limits: Default::default(),
+                craft_counts: Default::default(),
+                kinah_today: None,
+                abyss_points: None,
+                login_kinah: None,
+                login_abyss_points: None,
+                daily_duty: None,
+                content_times: Default::default(),
                 local_player_id: None,
                 supporters: std::sync::Arc::new(crate::supporters::Roster::default()),
                 local_character_name: None,
@@ -801,6 +892,7 @@ impl DataStorage {
                 loot_identity: LootIdentity::default(),
                 player_servers: HashMap::new(),
                 self_server: 0,
+                self_server_owner: None,
                 self_profile: None,
                 self_gear_score: None,
                 self_combat_power: None,
@@ -811,6 +903,8 @@ impl DataStorage {
             combat_reset_requested: AtomicBool::new(false),
             before_reset: RwLock::new(None),
             abnormals: Mutex::new(AbnormalLog { timeline: abnormal::Timeline::default(), pruned_ms: NEVER_MS }),
+            stagger: Mutex::new(StaggerLog::default()),
+            death_recaps: Mutex::new(DeathRecaps::default()),
         }
     }
 
@@ -871,6 +965,101 @@ impl DataStorage {
         self.abnormals.lock().timeline.clear();
     }
 
+    /// The stagger gauge an entity's spawn carries (its starting value).
+    pub fn note_stagger_spawn(&self, entity: i32, max: u32, rest: u32) {
+        self.stagger.lock().note_spawn(entity, max, rest);
+    }
+
+    /// How far `entity`'s stagger gauge is worn down, 0-100, if it has one.
+    pub fn stagger_pct(&self, entity: i32) -> Option<f64> {
+        let (max, rest) = self.stagger.lock().gauge(entity)?;
+        (max > 0).then(|| f64::from(max.saturating_sub(rest)) * 100.0 / f64::from(max))
+    }
+
+    /// A gauge update (`05 E0 .. 03 01`), at the current time.
+    pub fn note_stagger_gauge(&self, entity: i32, max: u32, rest: u32, status: u8) {
+        tracing::debug!("Stagger gauge: entity {} at {}/{} status {}", entity, rest, max, status);
+        self.stagger.lock().note_gauge(entity, max, rest, status, now_ms());
+    }
+
+    /// A gauge broke (`05 E0 .. 00 03 02`), at the current time.
+    pub fn note_stagger_break(&self, entity: i32) {
+        tracing::debug!("Stagger gauge: entity {} broken", entity);
+        self.stagger.lock().note_break(entity, now_ms());
+    }
+
+    /// A hit with a value, or a DoT tick, that the next update of the
+    /// target's gauge may take (`StaggerLog::note_hit`).
+    pub fn note_stagger_hit(&self, target: i32, actor: i32, skill: i32, dot: bool) {
+        self.stagger.lock().note_hit(target, actor, skill, now_ms(), dot);
+    }
+
+    /// An entry of a hit with no value (`StaggerLog::note_hit_entry`).
+    pub fn note_stagger_hit_entry(&self, target: i32, actor: i32, skill: i32) {
+        self.stagger.lock().note_hit_entry(target, actor, skill);
+    }
+
+    /// The gauge of `entity` as last known: (max, rest).
+    #[cfg(test)]
+    pub fn stagger_gauge(&self, entity: i32) -> Option<(u32, u32)> {
+        self.stagger.lock().gauge(entity)
+    }
+
+    /// Stagger taken off the gauges of `entities` by each actor and skill
+    /// from `start_ms` to `end_ms`, summons as themselves (the meter resolves
+    /// them as it does damage). Deductions with no actor are left out.
+    pub fn stagger_totals(&self, start_ms: i64, end_ms: i64, entities: &HashSet<i32>) -> HashMap<(i32, i32), i64> {
+        let mut out: HashMap<(i32, i32), i64> = HashMap::new();
+        for w in self.stagger.lock().windows_between(start_ms, end_ms) {
+            if !entities.contains(&w.entity) {
+                continue;
+            }
+            for h in w.hits.iter().filter(|h| h.actor != 0 && h.ms >= start_ms && h.ms <= end_ms) {
+                *out.entry((h.actor, h.skill)).or_default() += h.value as i64;
+            }
+        }
+        out
+    }
+
+    /// The stagger window open on `entity`, if any.
+    #[cfg(test)]
+    pub fn stagger_open_window(&self, entity: i32) -> Option<crate::combat::stagger::Window> {
+        self.stagger.lock().open_window(entity).cloned()
+    }
+
+    /// The stagger windows with a deduction from `start_ms` to `end_ms`
+    /// (`StaggerLog::windows_between`), for a fight starting at `start_ms`:
+    /// times from its start, summons resolved to their owners.
+    pub fn fight_stagger(&self, start_ms: i64, end_ms: i64) -> Vec<StaggerWindow> {
+        let windows = self.stagger.lock().windows_between(start_ms, end_ms);
+        let inner = self.inner.read();
+        windows
+            .into_iter()
+            .map(|w| StaggerWindow {
+                entity: w.entity,
+                mob_code: inner.mob_storage.get(&w.entity).copied().unwrap_or(0),
+                max: w.max,
+                start: w.start_ms - start_ms,
+                end: w.end_ms.unwrap_or(end_ms) - start_ms,
+                result: w.outcome().unwrap_or(Outcome::Missed),
+                ended: w.ended.unwrap_or(End::FightEnd),
+                missing: w.missing,
+                incomplete: w.incomplete,
+                hits: w
+                    .hits
+                    .iter()
+                    .map(|h| StaggerHit {
+                        t: h.ms - start_ms,
+                        actor: summon_resolver::resolve(h.actor, &inner.summon_storage),
+                        skill: h.skill,
+                        value: h.value,
+                        ambiguous: h.ambiguous,
+                    })
+                    .collect(),
+            })
+            .collect()
+    }
+
     /// Called when a self/world teleport (zone-change opcode) is seen. Resets
     /// combat data only if not in active combat (lull) and not recently reset
     /// (debounce), so the meter starts clean on entering a dungeon/instance
@@ -918,10 +1107,23 @@ impl DataStorage {
         }
     }
 
+    /// When the meter last counted damage, dealt or taken (clock ms);
+    /// `None` if it has not since the meter started. "Hide out of combat"
+    /// (app.rs) times its wait from it.
+    pub fn last_damage_ms(&self) -> Option<i64> {
+        Some(self.last_damage_ms.load(Ordering::Relaxed)).filter(|&ms| ms != NEVER_MS)
+    }
+
     /// When the last zone-change combat reset happened (clock ms), `NEVER_MS`
     /// if it has not.
     pub fn last_zone_reset_ms(&self) -> i64 {
         self.last_zone_reset_ms.load(Ordering::Relaxed)
+    }
+
+    /// When the party last ended (`end_party`, which resets combat too),
+    /// clock ms; `NEVER_MS` if it has not.
+    pub fn party_ended_at_ms(&self) -> i64 {
+        self.inner.read().party_ended_at_ms
     }
 
     /// Consumed by the dps calculator to drop its cached snapshot/saved-target
@@ -951,7 +1153,21 @@ impl DataStorage {
             || inner.local_character_name != name
             || inner.loot_identity.applied;
         inner.loot_identity.applied = false;
-        if inner.odyle_energy.is_some() && (inner.odyle_awaits_self_record || inner.odyle_owner.is_none()) {
+        if let Some(kinah) = inner.login_kinah.take() {
+            inner.kinah_today = Some(kinah);
+        }
+        if let Some(points) = inner.login_abyss_points.take() {
+            inner.abyss_points = Some(points);
+        }
+        let known = inner.odyle_energy.is_some()
+            || !inner.content_counts.is_empty()
+            || !inner.content_times.is_empty()
+            || inner.daily_duty.is_some()
+            || !inner.shop_limits.is_empty()
+            || !inner.craft_counts.is_empty()
+            || inner.kinah_today.is_some()
+            || inner.abyss_points.is_some();
+        if known && (inner.odyle_awaits_self_record || inner.odyle_owner.is_none()) {
             inner.odyle_owner = name.clone();
             inner.odyle_awaits_self_record = false;
         }
@@ -1159,7 +1375,9 @@ impl DataStorage {
 
     /// `name`'s home server, as a self or loot record states it.
     pub fn note_player_server(&self, name: &str, server_id: u16) {
-        if !(1000..3000).contains(&server_id) {
+        // Only a server that exists: a misread one stuck to a player and went
+        // out with their boss reports (2258 for ten days, 2026-10-27).
+        if !crate::capture::servers::exists(server_id) {
             return;
         }
         let mut inner = self.inner.write();
@@ -1174,11 +1392,39 @@ impl DataStorage {
         self.inner.read().player_servers.get(name.trim()).copied().unwrap_or(0)
     }
 
+    /// The server to file `name` under in a saved fight, as the game's
+    /// records state it. You: your self record's, the game's word on where you
+    /// are, and Some(0), unknown, when none has come this session, never a
+    /// guess (#128). Anyone else: what a self or loot record stated, None when
+    /// nothing has, for the caller's roster value. Both come before the
+    /// roster's, the top bits of an id a character moved to another server
+    /// keeps, so it names the old one.
+    pub fn stated_server(&self, name: &str) -> Option<u16> {
+        let name = name.trim();
+        let inner = self.inner.read();
+        if inner.local_character_name.as_deref().map(str::trim) == Some(name) {
+            return Some(inner.self_server);
+        }
+        inner.player_servers.get(name).copied()
+    }
+
+    /// The server a saved fight is filed under: your self record's, 0
+    /// (unknown) when none has come this session. Not `fight_server_id`,
+    /// whose fallbacks (your roster entry, the connected host's server, the
+    /// party's majority) guess, and guessed wrong for a moved character or in
+    /// a cross-server dungeon (#128). The game sends the record on every zone
+    /// you enter.
+    pub fn self_record_server(&self) -> u16 {
+        self.inner.read().self_server
+    }
+
     /// Your home server, as your own self record states it; 0 for a record
     /// that states none (a tutorial character), which forgets the last one.
     pub fn note_self_server(&self, server_id: u16) {
-        if server_id == 0 || (1000..3000).contains(&server_id) {
-            self.inner.write().self_server = server_id;
+        if server_id == 0 || crate::capture::servers::exists(server_id) {
+            let mut inner = self.inner.write();
+            inner.self_server = server_id;
+            inner.self_server_owner = inner.local_character_name.as_deref().map(|n| n.trim().to_string());
         }
     }
 
@@ -1276,9 +1522,13 @@ impl DataStorage {
 
     /// The local player's own server as the game stated it (a self or loot
     /// record), 0 when it hasn't yet. Unlike `fight_server_id`, never a
-    /// guess from the party or the connection.
+    /// guess from the party or the connection. The self record's first: a
+    /// loot record states a moved character's old server (#133).
     pub fn own_server(&self) -> u16 {
         let inner = self.inner.read();
+        if inner.self_server != 0 {
+            return inner.self_server;
+        }
         let local = inner.local_character_name.as_deref().map(str::trim);
         if let Some(&server) = local.and_then(|n| inner.player_servers.get(n)) {
             return server;
@@ -1342,18 +1592,257 @@ impl DataStorage {
     /// and after a server transfer, whose owner the next self record names.
     pub fn set_odyle_energy(&self, basic: u32, charged: u32, whole_list: bool) {
         let mut inner = self.inner.write();
-        if whole_list {
-            inner.odyle_owner = None;
-            inner.odyle_awaits_self_record = true;
-        } else if inner.odyle_owner.is_none() && !inner.odyle_awaits_self_record && inner.local_identity_from_game {
-            // A meter started mid-session: the game named you already.
-            inner.odyle_owner = inner.local_character_name.clone();
-        }
+        own_list(&mut inner, whole_list);
         if inner.odyle_energy != Some((basic, charged)) {
             tracing::info!("Odyle energy: {basic} basic, {charged} charged");
             inner.odyle_energy = Some((basic, charged));
         }
     }
+
+    /// The game's entry counts, without the energy or times (see
+    /// `set_entry_list`).
+    pub fn set_content_counts(&self, counts: crate::capture::stream_processor::ContentCounts, whole_list: bool) {
+        let entries = crate::capture::stream_processor::ContentEntries { counts, times: Vec::new() };
+        self.set_entry_list(entries, None, whole_list, now_ms());
+    }
+
+    /// The game's entry counts, its times seen at `now` (unix ms) and the
+    /// Odyle energy among them, at once: the whole list (`whole_list`, at
+    /// login and after a server transfer) or the entries that changed. A
+    /// whole list replaces the last character's counts, times and energy,
+    /// even one that didn't read (no entries, no `energy`). A time sent again
+    /// unchanged keeps when it was first seen. Logged, so the ids not yet
+    /// known can be matched to what the game shows.
+    pub fn set_entry_list(
+        &self,
+        entries: crate::capture::stream_processor::ContentEntries,
+        energy: Option<(u32, u32)>,
+        whole_list: bool,
+        now: i64,
+    ) {
+        let crate::capture::stream_processor::ContentEntries { counts, times } = entries;
+        let mut inner = self.inner.write();
+        own_list(&mut inner, whole_list);
+        if let Some((basic, charged)) = energy.filter(|&e| inner.odyle_energy != Some(e)) {
+            tracing::info!("Odyle energy: {basic} basic, {charged} charged");
+        }
+        if whole_list || energy.is_some() {
+            inner.odyle_energy = energy;
+        }
+        if whole_list {
+            inner.content_counts.clear();
+            // Each character has its own Daily Duty board, sent right after
+            // the list when it is sent at all (not at Nully's logins,
+            // 2026-10-24): the last character's isn't theirs. The limit is
+            // the server's, the sum of each character's today: a plugin
+            // keeping each character's adds them up.
+            inner.daily_duty = None;
+            // The shop's limits and the crafts are the character's too
+            // (a server-wide recipe's count is the same on each).
+            inner.shop_limits.clear();
+            inner.craft_counts.clear();
+            // Kinah and Abyss Points too: the new character's come with the
+            // login (held until its self record, `login_kinah`).
+            inner.kinah_today = None;
+            inner.abyss_points = None;
+            inner.content_times.clear();
+            let list: Vec<String> = counts.iter().map(|(id, v)| format!("{id}={}+{}", v[0], v[1])).collect();
+            tracing::debug!("Content counts: {}", list.join(" "));
+        }
+        for (id, v) in counts {
+            inner.content_times.remove(&id);
+            if !whole_list && inner.content_counts.get(&id) != Some(&v) {
+                tracing::debug!("Content count {id}: {} (+{})", v[0], v[1]);
+            }
+            inner.content_counts.insert(id, v);
+        }
+        for (id, time) in times {
+            inner.content_counts.remove(&id);
+            match inner.content_times.get(&id) {
+                Some(&(t, _)) if t == time => {}
+                _ => {
+                    tracing::info!("Content time {id}: {time}");
+                    inner.content_times.insert(id, (time, now));
+                }
+            }
+        }
+    }
+
+    /// The entry list's times by id: `(time, seen at unix ms)`.
+    pub fn content_times(&self) -> std::collections::BTreeMap<u32, (u64, i64)> {
+        self.inner.read().content_times.clone()
+    }
+
+    /// The entry counts, and Daily Duty as id 0 (no entry of the game's):
+    /// `[completed, taken]` today, both 0 once its reset has passed.
+    pub fn content_counts(&self) -> std::collections::BTreeMap<u32, [u32; 2]> {
+        content_counts_of(&self.inner.read(), now_ms())
+    }
+
+    /// The entry list as plugins see it, read at one moment: whose it is,
+    /// the Odyle energy, the counts and the times.
+    pub fn entry_list(&self) -> EntryList {
+        let inner = self.inner.read();
+        let now = now_ms();
+        EntryList {
+            owner: inner.odyle_owner.clone(),
+            odyle_energy: inner.odyle_energy,
+            counts: content_counts_of(&inner, now),
+            shop_limits: shop_limits_of(&inner, now),
+            crafts: inner.craft_counts.clone(),
+            kinah_today: kinah_today_of(&inner, now),
+            abyss_points: abyss_points_of(&inner, now),
+            times: inner.content_times.clone(),
+        }
+    }
+
+    /// Shop purchase limits: `(item id, bought, next reset unix ms)`, the
+    /// whole list (`whole`, replacing the last) or the ones that changed.
+    /// One shop's list seen (seven items, the same at each opening): if other
+    /// shops send their own, each whole list would replace the other's.
+    pub fn set_shop_limits(&self, limits: &[(u32, u32, i64)], whole: bool) {
+        let mut inner = self.inner.write();
+        own_list(&mut inner, false);
+        if whole {
+            inner.shop_limits.retain(|id, _| limits.iter().any(|l| l.0 == *id));
+        }
+        for &(id, bought, reset_ms) in limits {
+            if inner.shop_limits.insert(id, (bought, reset_ms)) != Some((bought, reset_ms)) {
+                tracing::info!("Shop limit {id}: {bought} bought (resets {reset_ms})");
+            }
+        }
+    }
+
+    /// The shop's purchase limits by item id, `(bought, next reset unix ms)`.
+    /// Once its reset has passed, 0 bought and the next reset unknown (`None`)
+    /// until the shop opens again: the game doesn't say how often each resets.
+    pub fn shop_limits_at(&self, now: i64) -> std::collections::BTreeMap<u32, (u32, Option<i64>)> {
+        shop_limits_of(&self.inner.read(), now)
+    }
+
+    /// Crafts made by recipe: the crafting window's whole list (`whole`) or
+    /// one recipe after a craft.
+    pub fn set_craft_counts(&self, counts: &[(u32, u32)], whole: bool) {
+        let mut inner = self.inner.write();
+        own_list(&mut inner, false);
+        if whole {
+            inner.craft_counts.clear();
+        }
+        for &(recipe, n) in counts {
+            if !whole && inner.craft_counts.get(&recipe) != Some(&n) {
+                tracing::info!("Craft count {recipe}: {n}");
+            }
+            inner.craft_counts.insert(recipe, n);
+        }
+    }
+
+    pub fn craft_counts(&self) -> std::collections::BTreeMap<u32, u32> {
+        self.inner.read().craft_counts.clone()
+    }
+
+    /// Kinah gained today as of `at` (the game's unix ms): at a login
+    /// (`login`, held for the self record) or a gain.
+    pub fn set_kinah_today(&self, kinah: u64, at: i64, login: bool) {
+        let mut inner = self.inner.write();
+        tracing::debug!("Kinah today: {kinah}{}", if login { " (login)" } else { "" });
+        if login {
+            inner.login_kinah = Some((kinah, at));
+        } else {
+            own_list(&mut inner, false);
+            // Newer than a login's still held.
+            inner.login_kinah = None;
+            inner.kinah_today = Some((kinah, at));
+        }
+    }
+
+    /// Kinah gained today at `now` (unix ms): 0 once a daily reset has
+    /// passed since the game said it.
+    pub fn kinah_today_at(&self, now: i64) -> Option<u64> {
+        kinah_today_of(&self.inner.read(), now)
+    }
+
+    /// The week's Abyss Points and limit, seen at `at` (unix ms). Sent at
+    /// logins and transfers only, so held for the self record.
+    pub fn set_abyss_points(&self, points: u64, limit: u64, at: i64) {
+        let mut inner = self.inner.write();
+        tracing::debug!("Abyss Points: {points} of {limit}");
+        inner.login_abyss_points = Some((points, limit, at));
+    }
+
+    /// The week's Abyss Points and limit at `now` (unix ms): 0 points once a
+    /// weekly reset has passed since seen.
+    pub fn abyss_points_at(&self, now: i64) -> Option<(u64, u64)> {
+        abyss_points_of(&self.inner.read(), now)
+    }
+
+    /// Daily Duty at `now` (unix ms): `(completed, taken)`, taken counting
+    /// the completed too (the game's n/5 is taken). 0 once the board's reset
+    /// has passed, until an offer is taken (`daily_duty_taken`); None before
+    /// a board was seen. Completed is state 04 (a
+    /// turn-in, 2026-10-24; 03 would be ready to hand in, not counted).
+    pub fn daily_duty_at(&self, now: i64) -> Option<(u32, u32)> {
+        daily_duty_of(&self.inner.read(), now)
+    }
+
+    pub fn set_daily_duty_board(&self, offers: Vec<DutyOffer>, reset_ms: i64) {
+        let taken = offers.iter().filter(|o| o.state != 1).count();
+        let states: Vec<String> = offers.iter().filter(|o| o.state != 1).map(|o| format!("{}={:02x}", o.offer, o.state)).collect();
+        tracing::info!("Daily Duty: {taken} of {} offers taken ({})", offers.len(), states.join(" "));
+        let mut inner = self.inner.write();
+        own_list(&mut inner, false);
+        inner.daily_duty = Some(DutyBoard { offers, reset_ms, sent_reset_ms: reset_ms });
+    }
+
+    /// A quest taken at `now` (unix ms) (`20 8d 01`, which may not be only
+    /// Daily Duty's): it counts when it is an offer of the board, and is
+    /// known by the quest number from then. Past the board's reset the board
+    /// is the day before's, and the game sends the new one only at the next
+    /// login, transfer or turn-in: the new day starts with none taken (the
+    /// old day's go, handed in or not), and a quest taken counts when it
+    /// looks like a duty offer (`looks_like_duty`).
+    pub fn daily_duty_taken(&self, offer: u32, quest: u32, number: u32, now: i64) {
+        const DAY_MS: i64 = 24 * 60 * 60 * 1000;
+        let mut inner = self.inner.write();
+        let Some(board) = inner.daily_duty.as_mut() else { return };
+        let duty = DutyOffer { offer, quest, number, state: 2 };
+        let new_day = now >= board.reset_ms;
+        if new_day && !looks_like_duty(&board.offers, &duty) {
+            return;
+        }
+        if new_day {
+            for o in board.offers.iter_mut() {
+                o.number = 0;
+                o.state = 1;
+            }
+            board.reset_ms += ((now - board.reset_ms) / DAY_MS + 1) * DAY_MS;
+        }
+        // The board is the day before's until the game sends the new one.
+        let stale = board.reset_ms != board.sent_reset_ms;
+        let like = looks_like_duty(&board.offers, &duty);
+        match board.offers.iter_mut().find(|o| o.offer == offer && o.quest == quest) {
+            Some(o) => *o = duty,
+            None if stale && like => {
+                // Counted by the rule alone: logged, to check it against
+                // the board the game sends next.
+                tracing::info!("Daily Duty: quest {quest} counted as like the board's, before the new board");
+                board.offers.push(duty);
+            }
+            None => return,
+        }
+        own_list(&mut inner, false);
+        tracing::info!("Daily Duty: offer {offer} taken (quest {quest}, number {number})");
+    }
+
+    /// A quest given up: if one of the board's, it is open again.
+    pub fn daily_duty_given_up(&self, number: u32) {
+        let mut inner = self.inner.write();
+        if let Some(o) = inner.daily_duty.as_mut().and_then(|b| b.offers.iter_mut().find(|o| o.number == number && o.state != 1)) {
+            o.number = 0;
+            o.state = 1;
+            tracing::info!("Daily Duty: offer {} given up", o.offer);
+        }
+    }
+
 
     pub fn odyle_energy(&self) -> Option<(u32, u32)> {
         self.inner.read().odyle_energy
@@ -1413,6 +1902,8 @@ impl DataStorage {
                 if let Some(actor_data) = fight_of(&mut inner, resolved_target, Some(actor_id)) {
                     actor_data.damage_received += dmg;
                     actor_data.hits_received += 1;
+                    actor_data.received.note(pdp.specials());
+                    self.damage_generation.fetch_add(1, Ordering::Relaxed);
                 }
             }
             return;
@@ -1428,6 +1919,17 @@ impl DataStorage {
             && inner.known_player_ids.insert(actor_id)
         {
             purge_friendly_damage(&mut inner, actor_id);
+        }
+
+        // Another player's hit on you, for a death recap.
+        if let Some(me) = inner.local_player_id.and_then(|id| i32::try_from(id).ok()) {
+            let attacker = summon_resolver::resolve(actor_id, &inner.summon_storage);
+            if summon_resolver::resolve(target_id, &inner.summon_storage) == me
+                && attacker != me
+                && inner.known_player_ids.contains(&attacker)
+            {
+                self.death_recaps.lock().note_hit(attacker, pdp.timestamp(), pdp.total_damage() as i64, skill_code);
+            }
         }
 
         // Party healing: player-on-player damage is actually healing/buffs
@@ -1630,6 +2132,7 @@ impl DataStorage {
         }
         inner.boss_hp_now.remove(&entity_id);
         inner.boss_hp_sent.remove(&entity_id);
+        self.stagger.lock().note_gone(entity_id, now_ms(), true);
         inner.dead_entity_ids.insert(entity_id);
         inner.hp_floored_ids.remove(&entity_id);
         inner.death_log.push_back((entity_id, now_ms(), None));
@@ -1681,6 +2184,28 @@ impl DataStorage {
         inner.boss_map_seq += 1;
     }
 
+    /// What another player's record says of them, kept for a death recap.
+    pub fn note_player_profile(&self, id: i32, profile: death_recap::Profile) {
+        self.death_recaps.lock().note_profile(id, profile);
+    }
+
+    /// You were killed: the recap, unless this death was already told. It is
+    /// kept only once handed back to `push_death_recap`.
+    pub fn died(&self, killer: death_recap::Killer, at_ms: i64) -> Option<death_recap::DeathRecap> {
+        let party: Vec<String> = self.get_party_members().into_keys().collect();
+        self.death_recaps.lock().died(killer, at_ms, &party)
+    }
+
+    pub fn push_death_recap(&self, recap: death_recap::DeathRecap) {
+        self.death_recaps.lock().push(recap);
+    }
+
+    /// The death recaps made since `seq` was read, and the count to ask with
+    /// next time; None when there are none.
+    pub fn death_recaps_since(&self, seq: u64) -> Option<(u64, Vec<death_recap::DeathRecap>)> {
+        self.death_recaps.lock().since(seq)
+    }
+
     /// The maps opened since `seq` was read (all of them, newest last), and
     /// the count to ask with next time; None when nothing is new.
     pub fn boss_maps_since(&self, seq: u64) -> Option<(u64, Vec<crate::capture::boss_map::BossMap>)> {
@@ -1720,15 +2245,29 @@ impl DataStorage {
         self.inner.read().instance_started_ms
     }
 
+    /// The Supply Requests boards the game just sent (at login).
+    pub fn note_supply_requests(&self, boards: Vec<crate::capture::supply_requests::Board>) {
+        let mut inner = self.inner.write();
+        inner.supply_requests = boards;
+        inner.supply_requests_seq += 1;
+    }
+
+    /// The boards, when told since `seq`: (the new seq, the boards).
+    pub fn supply_requests_since(&self, seq: u64) -> Option<(u64, Vec<crate::capture::supply_requests::Board>)> {
+        let inner = self.inner.read();
+        (inner.supply_requests_seq != seq).then(|| (inner.supply_requests_seq, inner.supply_requests.clone()))
+    }
+
     pub fn deaths_between(&self, from: i64, to: i64) -> Vec<(i32, i64, Option<i64>)> {
         self.inner.read().death_log.iter().filter(|d| d.1 >= from && d.1 <= to).copied().collect()
     }
 
     /// `id` left the world. Only a linked summon is marked: see
-    /// `Inner::despawned_summon_ids`.
+    /// `Inner::despawned_summon_ids`. A stagger window open on it is missed.
     pub fn note_despawn(&self, id: i32) {
         #[cfg(feature = "desktop")]
         crate::a2d_radar::note_gone(id);
+        self.stagger.lock().note_gone(id, now_ms(), false);
         let mut inner = self.inner.write();
         if inner.summon_storage.contains_key(&id) {
             inner.despawned_summon_ids.insert(id);
@@ -1826,10 +2365,43 @@ impl DataStorage {
     /// record this parser trips over costs that member a refresh rather than
     /// costing the whole party their combat power.
     pub fn set_party_roster(&self, members: Vec<(String, PartyMember)>, complete: bool) {
+        self.set_party_roster_of(None, members, complete);
+    }
+
+    /// Is this roster another party's? A whole roster without you, of a party
+    /// that is not yours: the finder sends the rosters of other parties too,
+    /// and a leader who re-forms a party sends one per party key, the same
+    /// title and leader on each. Taken as yours, one of them said you had
+    /// left, and the party's end cleared the fight in progress: 38 logs a
+    /// re-derive at 2.0.76.4 could not update (2026-10-23). A roster stopped
+    /// at a member visiting another world hid it until 0272d47 read them.
+    /// When it is your own party's key, it is you who left. Until a roster
+    /// with you in it has given your party's key, every roster is taken as
+    /// before: in a slice your name and your roster entry can be blinded
+    /// apart, and the only roster then has no "you" in it (2026-10-24).
+    pub fn is_other_party(&self, key: u32, members: &[(String, PartyMember)], complete: bool) -> bool {
+        let inner = self.inner.read();
+        let Some(local) = inner.local_character_name.as_deref().map(str::trim).filter(|n| !n.is_empty()) else {
+            return false;
+        };
+        complete
+            && inner.own_party_key.is_some_and(|own| own != key)
+            && !members.iter().any(|(name, _)| name.trim() == local)
+    }
+
+    /// `set_party_roster` for a roster of party `key`, as `0x9702` gives it.
+    pub fn set_party_roster_of(&self, key: Option<u32>, members: Vec<(String, PartyMember)>, complete: bool) {
         if members.is_empty() {
             return;
         }
         let mut inner = self.inner.write();
+        let local = inner.local_character_name.as_deref().map(str::trim).unwrap_or_default().to_string();
+        if !local.is_empty() && members.iter().any(|(name, _)| name.trim() == local) {
+            inner.self_in_roster = true;
+            if key.is_some() {
+                inner.own_party_key = key;
+            }
+        }
         inner.party_roster_at_ms = now_ms();
         inner.party_placeholders_hidden = false;
         // The meter's rows name the party: someone joining between fights
@@ -1844,7 +2416,11 @@ impl DataStorage {
         let was_in_party = inner.party_members.len() >= 2;
         let now_alone = complete && members.len() <= 1;
         let local_name = inner.local_character_name.clone();
+        // Not when no roster has had you yet: in a slice your name and your
+        // roster entry can be blinded apart, and each whole roster then
+        // ended the party, and the fight with it (2026-10-24).
         let dropped_self = complete
+            && inner.self_in_roster
             && local_name.as_ref().is_some_and(|n| {
                 !n.trim().is_empty() && !members.iter().any(|(name, _)| name.trim() == n.trim())
             });
@@ -1892,6 +2468,8 @@ impl DataStorage {
         inner.former_party_members.extend(members);
         inner.party_generation += 1;
         inner.party_ended_at_ms = now_ms();
+        inner.own_party_key = None;
+        inner.self_in_roster = false;
         inner.roster_dungeon_id = 0;
         inner.current_dungeon_id = dungeon_of_map(0, inner.current_map_id);
         drop(inner);
@@ -2318,6 +2896,7 @@ impl DataStorage {
     /// reset would otherwise stay unlinked for good. Ids that are reused get
     /// their links dropped by the new spawn (see `note_summon_spawn`).
     pub fn flush(&self) {
+        self.stagger.lock().forget_pending();
         let mut inner = self.inner.write();
         inner.target_combat.clear();
         inner.held_dot_ticks.clear();
@@ -2341,6 +2920,7 @@ impl DataStorage {
     /// Used on a zone-change / in-instance-teleport reset so the meter starts on
     /// clean numbers without dropping who your party and you are.
     pub fn flush_combat_only(&self) {
+        self.stagger.lock().forget_pending();
         let mut inner = self.inner.write();
         inner.target_combat.clear();
         inner.held_dot_ticks.clear();
@@ -2358,8 +2938,10 @@ impl DataStorage {
     /// Drop every summon link, for a capture from another session (a replay),
     /// whose entity ids mean something else.
     pub fn forget_summon_links(&self) {
-        // The buffs those ids had on are as foreign as the links.
+        // The buffs those ids had on are as foreign as the links, and so
+        // are their stagger gauges.
         self.forget_abnormals();
+        self.stagger.lock().clear();
         let mut inner = self.inner.write();
         inner.summon_storage.clear();
         inner.confirmed_summon_ids.clear();
@@ -2649,12 +3231,108 @@ fn forget_entity(inner: &mut Inner, id: i32) {
     }
 }
 
+/// The entry counts with Daily Duty (`DataStorage::content_counts`).
+fn content_counts_of(inner: &Inner, now: i64) -> std::collections::BTreeMap<u32, [u32; 2]> {
+    let mut counts = inner.content_counts.clone();
+    if let Some((done, taken)) = daily_duty_of(inner, now) {
+        counts.insert(DAILY_DUTY_ID, [done, taken]);
+    }
+    counts
+}
+
+/// Daily Duty at `now` (`DataStorage::daily_duty_at`).
+fn daily_duty_of(inner: &Inner, now: i64) -> Option<(u32, u32)> {
+    let board = inner.daily_duty.as_ref()?;
+    if now >= board.reset_ms {
+        return Some((0, 0));
+    }
+    let count = |f: fn(u8) -> bool| board.offers.iter().filter(|o| f(o.state)).count() as u32;
+    Some((count(|s| s >= 4), count(|s| s != 1)))
+}
+
+/// The entry list at one moment (`DataStorage::entry_list`).
+#[derive(Debug, Clone, Default)]
+pub struct EntryList {
+    pub owner: Option<String>,
+    pub odyle_energy: Option<(u32, u32)>,
+    pub counts: std::collections::BTreeMap<u32, [u32; 2]>,
+    /// `(bought, next reset)` by item id (`DataStorage::shop_limits_at`).
+    pub shop_limits: std::collections::BTreeMap<u32, (u32, Option<i64>)>,
+    pub crafts: std::collections::BTreeMap<u32, u32>,
+    /// As `DataStorage::kinah_today_at` and `abyss_points_at`.
+    pub kinah_today: Option<u64>,
+    pub abyss_points: Option<(u64, u64)>,
+    /// `(time, seen at unix ms)` by id.
+    pub times: std::collections::BTreeMap<u32, (u64, i64)>,
+}
+
+/// The shop's limits at `now` (`DataStorage::shop_limits_at`).
+fn shop_limits_of(inner: &Inner, now: i64) -> std::collections::BTreeMap<u32, (u32, Option<i64>)> {
+    inner
+        .shop_limits
+        .iter()
+        .map(|(&id, &(bought, reset_ms))| (id, if now >= reset_ms { (0, None) } else { (bought, Some(reset_ms)) }))
+        .collect()
+}
+
+const DAY_MS: i64 = 24 * 60 * 60 * 1000;
+const WEEK_MS: i64 = 7 * DAY_MS;
+/// The daily reset, 07:00 UTC, and the weekly, Wednesday 07:00 UTC (the
+/// Daily Duty board's, the Supply Requests', the shop's weekly limits'), as
+/// offsets from the epoch (a Thursday).
+const DAILY_RESET_MS: i64 = 7 * 60 * 60 * 1000;
+const WEEKLY_RESET_MS: i64 = 6 * DAY_MS + DAILY_RESET_MS;
+
+/// The last reset at or before `now`, of a reset every `period` from
+/// `offset` (all unix ms).
+fn last_reset(now: i64, period: i64, offset: i64) -> i64 {
+    (now - offset).div_euclid(period) * period + offset
+}
+
+/// Kinah gained today at `now` (`DataStorage::kinah_today_at`).
+fn kinah_today_of(inner: &Inner, now: i64) -> Option<u64> {
+    let (kinah, at) = inner.kinah_today?;
+    Some(if last_reset(now, DAY_MS, DAILY_RESET_MS) > at { 0 } else { kinah })
+}
+
+/// The week's Abyss Points at `now` (`DataStorage::abyss_points_at`).
+fn abyss_points_of(inner: &Inner, now: i64) -> Option<(u64, u64)> {
+    let (points, limit, at) = inner.abyss_points?;
+    Some((if last_reset(now, WEEK_MS, WEEKLY_RESET_MS) > at { 0 } else { points }, limit))
+}
+
+/// Whether a quest taken that isn't on the board looks like a new day's duty
+/// offer: a quest from the same thousand as one of the board's. Every board
+/// quest seen was 2302xxx in decimal (49 quests, 2302010 to 2302172, on the
+/// boards of 2026-10-24 and -25).
+fn looks_like_duty(offers: &[DutyOffer], taken: &DutyOffer) -> bool {
+    offers.iter().any(|o| o.quest / 1000 == taken.quest / 1000)
+}
+
+/// Who the entry-count list is (`odyle_owner`): a whole list waits for the
+/// next self record; anything else, in a session the game has named
+/// already (a meter started mid-session), is theirs.
+fn own_list(inner: &mut Inner, whole_list: bool) {
+    if whole_list {
+        inner.odyle_owner = None;
+        inner.odyle_awaits_self_record = true;
+    } else if inner.odyle_owner.is_none() && !inner.odyle_awaits_self_record && inner.local_identity_from_game {
+        inner.odyle_owner = inner.local_character_name.clone();
+    }
+}
+
 fn set_game_identity(inner: &mut Inner, id: i64, name: Option<String>) {
     inner.loot_identity.local_from_scope = false;
     inner.loot_identity.local_from_stats = false;
     inner.loot_identity.stats_streak = None;
     inner.local_identity_from_game = true;
     inner.local_player_id = Some(id);
+    // Another character: the last one's self record is not this one's.
+    let named = name.as_deref().map(str::trim).filter(|n| !n.is_empty());
+    if named.is_some() && inner.self_server_owner.as_deref().is_some_and(|o| Some(o) != named) {
+        inner.self_server = 0;
+        inner.self_server_owner = None;
+    }
     inner.local_character_name = name;
 }
 
@@ -3135,6 +3813,26 @@ mod tests {
         assert_eq!(s.fight_server_id(), 1305, "the game's own word wins");
     }
 
+    /// Another party's roster (the finder's, or the leader's next party) is
+    /// not word that you left yours: it changes nothing. Your own party's
+    /// roster without you still ends it (2026-10-23).
+    #[test]
+    fn another_partys_roster_leaves_yours_alone() {
+        let s = DataStorage::new();
+        s.set_local_character_name(Some("Me".into()));
+        let ours = || vec![("Lead".into(), member(1)), ("Me".into(), member(2)), ("Tank".into(), member(3))];
+        let theirs = vec![("Lead".into(), member(1)), ("Other".into(), member(2))];
+        assert!(!s.is_other_party(8, &theirs, true), "no party of yours known yet: as before");
+        assert!(!s.is_other_party(7, &ours(), true));
+        s.set_party_roster_of(Some(7), ours(), true);
+        assert!(s.is_other_party(8, &theirs, true), "a whole roster without you, of another key");
+        assert!(!s.is_other_party(8, &theirs, false), "a partial one may have stopped before you");
+        let gone = vec![("Lead".into(), member(1)), ("Tank".into(), member(3))];
+        assert!(!s.is_other_party(7, &gone, true), "your own party without you");
+        s.set_party_roster_of(Some(7), gone, true);
+        assert!(s.get_party_members().is_empty(), "you left it");
+    }
+
     /// Members leaving after the boss falls (Vakron, 2026-10-17) keep their
     /// combat power in the fight's later saves, but are no longer the party.
     #[test]
@@ -3463,8 +4161,10 @@ mod tests {
             s.append_damage(hit(200, t, 1_000 + i as i64, 500, false));
         }
         let taken = |s: &DataStorage, t: i32| s.get_combat_snapshot_light()[&t].actors[&100].damage_received;
+        let before_hit = s.damage_generation();
         s.append_damage(with_skill(hit(810, 100, 3_000, 300, false), 1_200_001));
         assert_eq!(taken(&s, 810), 300, "on the fight with the mob that hit you");
+        assert!(s.damage_generation() > before_hit, "incoming damage refreshes the live meter");
 
         // A mob you never hit: the fight you were in last.
         s.append_mob(900, 1);
@@ -3876,4 +4576,42 @@ mod tests {
         s.note_party_left();
         assert!(s.take_combat_reset_requested(), "an open-world party: someone else on the meter");
     }
+    #[test]
+    fn a_moved_character_is_filed_under_the_server_its_records_state() {
+        // An Israphel player whose id was made on Nemon (#128).
+        let s = DataStorage::new();
+        s.set_local_identity_from_game(7, Some("Arid".into()));
+        // No self record yet: you are on no known server, not a guessed one.
+        s.note_player_server("Arid", 2109);
+        assert_eq!(s.stated_server("Arid"), Some(0));
+        assert_eq!(s.self_record_server(), 0);
+        s.note_self_server(2101);
+        // A later loot record must not move you back.
+        s.note_player_server("Arid", 2109);
+        assert_eq!(s.stated_server("Arid"), Some(2101));
+        assert_eq!(s.self_record_server(), 2101);
+        // Someone else: what a loot record stated, else nothing (the roster's).
+        s.note_player_server("Other", 1102);
+        assert_eq!(s.stated_server("Other"), Some(1102));
+        assert_eq!(s.stated_server("Nobody"), None);
+        // Live profiles and reports too, not only saved fights.
+        assert_eq!(s.own_server(), 2101);
+    }
+
+    #[test]
+    fn a_switch_named_by_loot_does_not_inherit_the_last_server() {
+        let s = DataStorage::new();
+        s.set_local_identity_from_game(7, Some("Arid".into()));
+        s.note_self_server(2101);
+        // A zone move drops the name; the same character keeps its server.
+        s.set_local_identity_from_game(8, Some("Arid".into()));
+        assert_eq!(s.self_record_server(), 2101);
+        // Another character, named by loot before its own self record.
+        s.set_local_identity_from_game(9, Some("Alt".into()));
+        assert_eq!(s.self_record_server(), 0);
+        assert_eq!(s.stated_server("Alt"), Some(0));
+        s.note_self_server(1102);
+        assert_eq!(s.own_server(), 1102);
+    }
+
 }

@@ -2,10 +2,11 @@
 //! a2tools.app, which checks it, combines it with other players' and
 //! publishes each server's timers for everyone's Event Timers.
 //!
-//! On by default (`dpsMeter.shareBossTimers`, "false" turns it off). What is
-//! sent: the server, the map, and each field boss on it: up (since when) or
-//! dead (back when). Nothing about the player; the site counts reporters by a
-//! hash of their address that changes daily, and keeps no address.
+//! On by default, with the Supply Requests: Settings' "Sync useful data to
+//! A2Tools" (`shares_data`, "false" turns it off). What is sent: the server,
+//! the map, and each field boss on it: up (since when) or dead (back when).
+//! Nothing about the player; the site counts reporters by a hash of their
+//! address that changes daily, and keeps no address.
 //!
 //! A map is sent when it says something new for that server: a boss up or
 //! down, a new appearance or respawn time, a boss added or gone. The same map
@@ -45,7 +46,25 @@ use crate::capture::boss_map::BossMap;
 use crate::combat::data_storage::{BossEvent, BossEventKind, BossHp};
 
 // Aion2DpsMeter : partage des timers de boss désactivé sauf activation explicite.
-pub const SETTING_KEY: &str = "dpsMeter.shareBossTimers";
+/// Settings' "Sync useful data to A2Tools": field boss timers and Supply
+/// Requests. Aion2DpsMeter : désactivé sauf activation explicite.
+pub const SHARE_DATA_KEY: &str = "dpsMeter.shareData";
+/// The two switches it replaced (2.0.78): either turned off keeps it off,
+/// until the player sets the new one.
+const OLD_KEYS: [&str; 2] = ["dpsMeter.shareBossTimers", "dpsMeter.shareSupplyRequests"];
+
+/// Whether the meter shares field boss timers and Supply Requests with
+/// a2tools.app, `get` reading a setting.
+pub fn shares_data(get: impl Fn(&str) -> Option<String>) -> bool {
+    match get(SHARE_DATA_KEY).as_deref() {
+        Some(v) => v == "true",
+        None => OLD_KEYS.iter().any(|k| get(k).as_deref() == Some("true")),
+    }
+}
+
+fn sharing(state: &AppState) -> bool {
+    shares_data(|k| state.settings.get(k))
+}
 const CHECK: Duration = Duration::from_secs(2);
 /// The same map, unchanged, is sent again after this long at the earliest.
 const RESEND_SAME_MS: i64 = 5 * 60_000;
@@ -214,7 +233,13 @@ pub fn hp_request(server_id: u16, bosses: &[BossHp]) -> Option<serde_json::Value
 /// Learnt only from the game's own word (`own_server`), never from a guess.
 /// What it finds also goes to the fight records (`note_host_server`), so a
 /// fight then is saved, and its log filed, under that server too.
-fn report_server(state: &AppState) -> u16 {
+pub(crate) fn report_server(state: &AppState) -> u16 {
+    let server = guess_report_server(state);
+    // Never a server that doesn't exist: nothing is sent until one is known.
+    if crate::capture::servers::exists(server) { server } else { 0 }
+}
+
+fn guess_report_server(state: &AppState) -> u16 {
     let own = state.data_storage.own_server();
     // Only a real game server's address names a server. Through a ping
     // reducer (ExitLag and the like) the game talks to a tunnel on this PC
@@ -260,7 +285,7 @@ fn spawn_events(app: tauri::AppHandle) {
                 last_hp = std::time::Instant::now();
                 let changed = state.data_storage.take_boss_hp(now);
                 let server = report_server(&state);
-                let off = state.settings.get(SETTING_KEY).as_deref() != Some("true");
+                let off = !sharing(&state);
                 let requests = [("/api/boss-timers/hp", hp_request(server, &changed)),
                                 ("/api/boss-timers/cores", cores_hp_request(server, &changed, now))];
                 for (path, body) in requests {
@@ -271,8 +296,16 @@ fn spawn_events(app: tauri::AppHandle) {
                         .header(reqwest::header::CONTENT_TYPE, "application/json")
                         .body(body.to_string())
                         .timeout(Duration::from_secs(10));
-                    if let Err(e) = request.send().await {
-                        tracing::debug!("Boss timers: could not send HP ({path}): {e}");
+                    match request.send().await {
+                        // Refused: said, as nothing else would show it (an HP
+                        // bar that stayed full on Blooming Korin, 2026-10-22).
+                        Ok(res) if !res.status().is_success() => {
+                            let status = res.status();
+                            let why = res.text().await.unwrap_or_default();
+                            tracing::info!("Boss timers: HP refused ({path}, {status}): {}", why.chars().take(200).collect::<String>());
+                        }
+                        Ok(_) => {}
+                        Err(e) => tracing::debug!("Boss timers: could not send HP ({path}): {e}"),
                     }
                 }
             }
@@ -287,7 +320,7 @@ fn spawn_events(app: tauri::AppHandle) {
             waiting.extend(events.into_iter().map(|e| (now, e)));
             // Orb kills no holder came for in time: "unknown".
             let expired = orb_killers().lock().unwrap_or_else(|p| p.into_inner()).expired(now);
-            if !expired.is_empty() && state.settings.get(SETTING_KEY).as_deref() == Some("true") {
+            if !expired.is_empty() && sharing(&state) {
                 let server = report_server(&state);
                 if server != 0 {
                     send_orb_killers(&state, server, expired).await;
@@ -296,7 +329,7 @@ fn spawn_events(app: tauri::AppHandle) {
             if waiting.is_empty() {
                 continue;
             }
-            if state.settings.get(SETTING_KEY).as_deref() != Some("true") {
+            if !sharing(&state) {
                 waiting.clear();
                 continue;
             }
@@ -336,7 +369,7 @@ pub fn spawn(app: tauri::AppHandle) {
             let Some(state) = app.try_state::<AppState>() else { continue };
             send_artifacts(&state, &mut artifacts_seq, &mut artifacts_sent).await;
             let Some((next, maps)) = state.data_storage.boss_maps_since(seq) else { continue };
-            if state.settings.get(SETTING_KEY).as_deref() != Some("true") {
+            if !sharing(&state) {
                 seq = next;
                 continue;
             }
@@ -380,7 +413,7 @@ pub fn spawn(app: tauri::AppHandle) {
 /// `seq` that wasn't sent for this server lately.
 async fn send_artifacts(state: &AppState, seq: &mut u64, sent: &mut HashMap<u16, (i64, String)>) {
     let Some((next, artifacts, seen_ms)) = state.data_storage.abyss_artifacts_since(*seq) else { return };
-    if state.settings.get(SETTING_KEY).as_deref() != Some("true") {
+    if !sharing(&state) {
         *seq = next;
         return;
     }
@@ -420,6 +453,19 @@ async fn send_artifacts(state: &AppState, seq: &mut u64, sent: &mut HashMap<u16,
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn sharing_is_off_unless_turned_on() {
+        use std::collections::HashMap;
+        let with = |pairs: &[(&str, &str)]| {
+            let m: HashMap<String, String> = pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect();
+            super::shares_data(move |k| m.get(k).cloned())
+        };
+        assert!(!with(&[]), "off by default (Aion2DpsMeter)");
+        assert!(with(&[("dpsMeter.shareBossTimers", "true")]), "turned on before: on");
+        assert!(with(&[("dpsMeter.shareData", "true")]));
+        assert!(!with(&[("dpsMeter.shareBossTimers", "true"), ("dpsMeter.shareData", "false")]), "the new switch decides once set");
+    }
+
     use super::*;
     use crate::capture::boss_map::BossOnMap;
 

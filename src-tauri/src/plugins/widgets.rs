@@ -59,7 +59,8 @@ fn widget_of(window: &tauri::WebviewWindow) -> Result<(String, String), String> 
 }
 
 /// The widgets of plugin `id` now open, by label.
-fn open_widgets(app: &tauri::AppHandle, id: &str) -> Vec<tauri::WebviewWindow> {
+/// Plugin `id`'s widget windows, the ones its plugin has closed included.
+fn all_widgets(app: &tauri::AppHandle, id: &str) -> Vec<tauri::WebviewWindow> {
     app.webview_windows()
         .into_iter()
         .filter(|(label, _)| parse_label(label).is_some_and(|(owner, _)| owner == id))
@@ -67,11 +68,61 @@ fn open_widgets(app: &tauri::AppHandle, id: &str) -> Vec<tauri::WebviewWindow> {
         .collect()
 }
 
-/// The part of each widget that takes the mouse, as its page reported it
-/// (`a2.widget.area`): CSS px and the page's scale. Unlocked, clicks
-/// elsewhere in its window go through (Linux, by an input region), so icons
-/// set close together don't catch each other's drags.
-type Area = (f64, f64, f64, f64, f64);
+/// Plugin `id`'s open widgets: not the ones it closed.
+fn open_widgets(app: &tauri::AppHandle, id: &str) -> Vec<tauri::WebviewWindow> {
+    all_widgets(app, id).into_iter().filter(|w| !is_closed(w.label())).collect()
+}
+
+/// The widgets their plugin closed, by label. A closed widget's window is
+/// hidden and kept, so opening it again shows it at once: a new window and
+/// page took half a second or more (Ping's display, toggled, 2026-10-23).
+/// Nothing that brings hidden windows back shows one of these.
+fn closed() -> &'static Mutex<std::collections::HashSet<String>> {
+    static CLOSED: std::sync::OnceLock<Mutex<std::collections::HashSet<String>>> = std::sync::OnceLock::new();
+    CLOSED.get_or_init(Mutex::default)
+}
+
+/// Whether the widget window `label` is one its plugin closed.
+pub fn is_closed(label: &str) -> bool {
+    closed().lock().unwrap_or_else(|p| p.into_inner()).contains(label)
+}
+
+/// The parts of each widget that take the mouse, as its page reported them
+/// (`a2.widget.area`, `a2.widget.areas`): rectangles in CSS px, and the
+/// page's scale. Unlocked, clicks elsewhere in its window go through (by an
+/// input region on Linux, a window region on Windows), so icons set close
+/// together don't catch each other's drags, and the room a widget keeps for
+/// more icons doesn't catch the game's clicks.
+type Area = (Vec<(f64, f64, f64, f64)>, f64);
+
+/// Most rectangles one widget may report.
+const MAX_AREA_RECTS: usize = 64;
+
+/// One rectangle of a widget's area, as its page sends it.
+#[derive(serde::Deserialize)]
+pub struct AreaRect {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
+/// A widget's reported area, checked: every rectangle within the window's
+/// possible size, at most `MAX_AREA_RECTS`, and a sane scale.
+fn checked_area(rects: &[AreaRect], scale: f64) -> Result<Area, String> {
+    let ok = |v: f64| v.is_finite() && (0.0..=4000.0).contains(&v);
+    if rects.len() > MAX_AREA_RECTS || !(scale.is_finite() && scale > 0.0 && scale <= 8.0) {
+        return Err("not an area".into());
+    }
+    let mut out = Vec::with_capacity(rects.len());
+    for r in rects {
+        if !(ok(r.x) && ok(r.y) && ok(r.width) && ok(r.height)) {
+            return Err("not an area".into());
+        }
+        out.push((r.x, r.y, r.width, r.height));
+    }
+    Ok((out, scale))
+}
 fn areas() -> &'static Mutex<HashMap<String, Area>> {
     static AREAS: std::sync::OnceLock<Mutex<HashMap<String, Area>>> = std::sync::OnceLock::new();
     AREAS.get_or_init(Mutex::default)
@@ -85,11 +136,11 @@ fn areas() -> &'static Mutex<HashMap<String, Area>> {
 fn apply_lock(window: &tauri::WebviewWindow, locked: bool) {
     // A screenshot tool in front: clicks go through, whatever the lock.
     let locked = locked || crate::app::screenshot_tool_in_front();
-    let area = areas().lock().unwrap_or_else(|p| p.into_inner()).get(window.label()).copied();
-    let applied = match (locked, area) {
-        (true, _) => crate::platform::window::click_through_except(window, true, None),
-        (false, Some(area)) => crate::platform::window::click_through_except(window, true, Some(area)),
-        (false, None) => crate::platform::window::click_through_except(window, false, None),
+    let area = areas().lock().unwrap_or_else(|p| p.into_inner()).get(window.label()).cloned();
+    let applied = match (locked, &area) {
+        (true, _) => crate::platform::window::widget_click_through(window, true, None),
+        (false, Some((rects, scale))) => crate::platform::window::widget_click_through(window, true, Some((rects, *scale))),
+        (false, None) => crate::platform::window::widget_click_through(window, false, None),
     };
     if !applied && !cfg!(target_os = "linux") {
         let _ = window.set_ignore_cursor_events(locked);
@@ -131,19 +182,34 @@ pub fn saved_place(app: &tauri::AppHandle, id: &str, name: &str) -> Option<(i32,
 pub async fn plugin_widget_open(
     app: tauri::AppHandle,
     window: tauri::WebviewWindow,
+    plugin: Option<String>,
     name: String,
     width: f64,
     height: f64,
 ) -> Result<(), String> {
-    let id = window_plugin(&window)?;
+    let id = window_plugin(&window, plugin.as_deref())?;
     require(&app, &id, "widgets")?;
+    // A plugin turned off opens none: its page can still be finishing an
+    // update when it goes.
+    if super::disabled(&app).contains(&id) {
+        return Err("that plugin is turned off".into());
+    }
+    tracing::debug!("Widgets: {id} opens {name:?} (from {})", window.label());
     if !valid_name(&name) {
         return Err("a widget name is 1 to 32 lowercase letters, digits and '-'".into());
     }
     let size = |v: f64| if v.is_finite() { v.clamp(24.0, 800.0) } else { 64.0 };
     let (width, height) = (size(width), size(height));
     if let Some(widget) = app.get_webview_window(&label(&id, &name)) {
+        closed().lock().unwrap_or_else(|p| p.into_inner()).remove(widget.label());
         crate::platform::window::set_size(&widget, tauri::LogicalSize::new(width, height).into());
+        // Grown past the screen's edge, or the screen it was on gone.
+        if let Ok(at) = widget.outer_position() {
+            let (x, y) = keep_on_screen(&app, &widget, (at.x, at.y));
+            if (x, y) != (at.x, at.y) {
+                let _ = widget.set_position(tauri::PhysicalPosition::new(x, y));
+            }
+        }
         if super::game_hides(&app, &id) {
             super::hold_for_game(&widget);
         } else if !crate::platform::window::reveal_in_place(&widget) {
@@ -152,8 +218,14 @@ pub async fn plugin_widget_open(
         apply_lock(&widget, is_locked(&app, &id));
         return Ok(());
     }
-    if open_widgets(&app, &id).len() >= MAX_WIDGETS {
-        return Err(format!("at most {MAX_WIDGETS} widgets"));
+    if all_widgets(&app, &id).len() >= MAX_WIDGETS {
+        // Room made by a closed one going for good, if there is one.
+        let Some(spare) = all_widgets(&app, &id).into_iter().find(|w| is_closed(w.label())) else {
+            return Err(format!("at most {MAX_WIDGETS} widgets"));
+        };
+        closed().lock().unwrap_or_else(|p| p.into_inner()).remove(spare.label());
+        areas().lock().unwrap_or_else(|p| p.into_inner()).remove(spare.label());
+        let _ = spare.destroy();
     }
     let plugin_name = host(&app)?.with(&id, |l| l.manifest.name.clone()).ok_or("no such plugin")?;
     let script = format!(
@@ -164,7 +236,10 @@ pub async fn plugin_widget_open(
     let title = format!("{plugin_name} · {name}");
     crate::app::note_window_title(&title, &label(&id, &name));
     let front = crate::platform::window::front_window();
-    let widget = tauri::WebviewWindowBuilder::new(&app, label(&id, &name), tauri::WebviewUrl::App("plugin-widget.html".into()))
+    let widget = crate::platform::window::share_process(
+        tauri::WebviewWindowBuilder::new(&app, label(&id, &name), tauri::WebviewUrl::App("plugin-widget.html".into())),
+        crate::platform::ProcessGroup::Plugins,
+    )
         .initialization_script(script)
         // Its own title, so KWin can keep it where it was left (#76).
         .title(title)
@@ -191,6 +266,7 @@ pub async fn plugin_widget_open(
         .focusable(false)
         .build()
         .map_err(|e| e.to_string())?;
+    crate::platform::window::joined(&widget, crate::platform::ProcessGroup::Plugins);
     // Never in front of the game: an alert icon appearing must not tab the
     // player out of it.
     crate::platform::window::never_activate(&widget, front);
@@ -207,7 +283,8 @@ pub async fn plugin_widget_open(
             Some((at.x, at.y, size.width as i32, size.height as i32))
         }))
     }).or_else(|| beside_left(&app, &id));
-    if let Some((x, y)) = place {
+    if let Some(at) = place {
+        let (x, y) = keep_on_screen(&app, &widget, at);
         let _ = widget.set_position(tauri::PhysicalPosition::new(x, y));
     }
     // AION2 closed and the plugin set to hide then: shown when it opens.
@@ -228,16 +305,7 @@ fn beside_left(app: &tauri::AppHandle, id: &str) -> Option<(i32, i32)> {
         let (x, y) = value.split_once(',')?;
         Some((x.trim().parse().ok()?, y.trim().parse().ok()?))
     }).collect();
-    let screens: Vec<(i32, i32, u32, u32)> = app
-        .available_monitors()
-        .unwrap_or_default()
-        .iter()
-        .map(|m| {
-            let a = m.work_area();
-            (a.position.x, a.position.y, a.size.width, a.size.height)
-        })
-        .collect();
-    beside_cluster(&places, &screens)
+    beside_cluster(&places, &screens(app))
 }
 
 /// The width of an icon left somewhere is not kept; an Event Timers icon is
@@ -266,6 +334,69 @@ fn beside_cluster(places: &[(i32, i32)], screens: &[(i32, i32, u32, u32)]) -> Op
     }
 }
 
+/// How much of a widget must be on a screen for it to count as shown there:
+/// enough to see it and grab it.
+const ON_SCREEN: i64 = 48;
+
+/// `rect` (x, y, width, height, physical px) as it is when enough of it is on
+/// one of `screens` (their work areas), else moved onto the nearest one, all
+/// of it when it fits. A widget left where no screen is any more (a monitor
+/// unplugged or rearranged, its scale changed) opened there, out of sight,
+/// and its plugin could not tell (#108: Event Timers' anchor, left on a
+/// second monitor, never showed again).
+fn on_screen(rect: (i32, i32, i32, i32), screens: &[(i32, i32, u32, u32)]) -> (i32, i32) {
+    let (x, y, w, h) = (rect.0 as i64, rect.1 as i64, rect.2.max(1) as i64, rect.3.max(1) as i64);
+    let need = |side: i64| side.min(ON_SCREEN);
+    let shown = screens.iter().any(|&(sx, sy, sw, sh)| {
+        let (sx, sy, sw, sh) = (sx as i64, sy as i64, sw as i64, sh as i64);
+        let across = (x + w).min(sx + sw) - x.max(sx);
+        let down = (y + h).min(sy + sh) - y.max(sy);
+        across >= need(w) && down >= need(h)
+    });
+    if shown || screens.is_empty() {
+        return (rect.0, rect.1);
+    }
+    // The nearest: the least distance from the widget's middle to the screen.
+    let (cx, cy) = (x + w / 2, y + h / 2);
+    let gap = |&&(sx, sy, sw, sh): &&(i32, i32, u32, u32)| {
+        let (sx, sy, sw, sh) = (sx as i64, sy as i64, sw as i64, sh as i64);
+        let dx = (sx - cx).max(cx - (sx + sw)).max(0);
+        let dy = (sy - cy).max(cy - (sy + sh)).max(0);
+        dx * dx + dy * dy
+    };
+    let &(sx, sy, sw, sh) = screens.iter().min_by_key(gap).expect("screens is not empty");
+    let (sx, sy, sw, sh) = (sx as i64, sy as i64, sw as i64, sh as i64);
+    let nx = x.clamp(sx, (sx + sw - w).max(sx));
+    let ny = y.clamp(sy, (sy + sh - h).max(sy));
+    (nx as i32, ny as i32)
+}
+
+/// The work areas of the screens connected now.
+fn screens(app: &tauri::AppHandle) -> Vec<(i32, i32, u32, u32)> {
+    app.available_monitors()
+        .unwrap_or_default()
+        .iter()
+        .map(|m| {
+            let a = m.work_area();
+            (a.position.x, a.position.y, a.size.width, a.size.height)
+        })
+        .collect()
+}
+
+/// Puts `widget` back on a screen when it is off all of them (see on_screen),
+/// remembering the new place. `at` is where it is or is about to be.
+fn keep_on_screen(app: &tauri::AppHandle, widget: &tauri::WebviewWindow, at: (i32, i32)) -> (i32, i32) {
+    let size = widget.outer_size().map(|s| (s.width as i32, s.height as i32)).unwrap_or((64, 64));
+    let place = on_screen((at.0, at.1, size.0, size.1), &screens(app));
+    if place != at {
+        tracing::info!("Widgets: {} was off every screen at {},{}: moved to {},{}", widget.label(), at.0, at.1, place.0, place.1);
+        if let (Some((id, name)), Some(state)) = (parse_label(widget.label()), app.try_state::<AppState>()) {
+            state.settings.set(&place_key(&id, &name), &format!("{},{}", place.0, place.1));
+        }
+    }
+    place
+}
+
 /// Just right of the rightmost of these places, on its row, with a gap.
 pub fn beside(places: impl Iterator<Item = (i32, i32, i32, i32)>) -> Option<(i32, i32)> {
     places.max_by_key(|&(x, _, w, _)| x + w).map(|(x, y, w, _)| (x + w + 6, y))
@@ -280,16 +411,30 @@ pub fn place_beside_others(app: &tauri::AppHandle, label: &str, place_of: impl F
         .or_else(|| beside_left(app, &id))
 }
 
-/// The part of the calling widget that takes the mouse while unlocked (CSS
-/// px from its top left, and the page's scale), from `a2.widget.area`.
+/// The parts of the calling widget that take the mouse while unlocked (CSS
+/// px from its top left, and the page's scale): `rects`, from
+/// `a2.widget.areas` (meter 2.0.77 on), or one rectangle as `x`, `y`,
+/// `width`, `height`, from `a2.widget.area`.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
-pub fn plugin_widget_area(app: tauri::AppHandle, window: tauri::WebviewWindow, x: f64, y: f64, width: f64, height: f64, scale: f64) -> Result<(), String> {
+pub fn plugin_widget_area(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+    rects: Option<Vec<AreaRect>>,
+    x: Option<f64>,
+    y: Option<f64>,
+    width: Option<f64>,
+    height: Option<f64>,
+    scale: f64,
+) -> Result<(), String> {
     let (id, _) = widget_of(&window)?;
-    let ok = |v: f64| v.is_finite() && (0.0..=4000.0).contains(&v);
-    if !(ok(x) && ok(y) && ok(width) && ok(height) && scale.is_finite() && scale > 0.0 && scale <= 8.0) {
-        return Err("not an area".into());
-    }
-    areas().lock().unwrap_or_else(|p| p.into_inner()).insert(window.label().to_string(), (x, y, width, height, scale));
+    let rects = match (rects, x, y, width, height) {
+        (Some(rects), ..) => rects,
+        (None, Some(x), Some(y), Some(width), Some(height)) => vec![AreaRect { x, y, width, height }],
+        _ => return Err("not an area".into()),
+    };
+    let area = checked_area(&rects, scale)?;
+    areas().lock().unwrap_or_else(|p| p.into_inner()).insert(window.label().to_string(), area);
     apply_lock(&window, is_locked(&app, &id));
     Ok(())
 }
@@ -298,8 +443,8 @@ pub fn plugin_widget_area(app: tauri::AppHandle, window: tauri::WebviewWindow, x
 /// in physical screen pixels, and the work area of the screen it is on
 /// (`screen`, the same), or null when it is not open.
 #[tauri::command]
-pub fn plugin_widget_where(app: tauri::AppHandle, window: tauri::WebviewWindow, name: String) -> Result<Value, String> {
-    let id = window_plugin(&window)?;
+pub fn plugin_widget_where(app: tauri::AppHandle, window: tauri::WebviewWindow, plugin: Option<String>, name: String) -> Result<Value, String> {
+    let id = window_plugin(&window, plugin.as_deref())?;
     require(&app, &id, "widgets")?;
     let Some(widget) = app.get_webview_window(&label(&id, &name)) else { return Ok(Value::Null) };
     let at = widget.outer_position().map_err(|e| e.to_string())?;
@@ -320,8 +465,8 @@ pub fn plugin_widget_where(app: tauri::AppHandle, window: tauri::WebviewWindow, 
 /// and lets no app move one after: an icon placed only once open stayed
 /// mid-screen there, Hirai 2026-10-19).
 #[tauri::command]
-pub fn plugin_widget_place(app: tauri::AppHandle, window: tauri::WebviewWindow, name: String, x: i32, y: i32) -> Result<(), String> {
-    let id = window_plugin(&window)?;
+pub fn plugin_widget_place(app: tauri::AppHandle, window: tauri::WebviewWindow, plugin: Option<String>, name: String, x: i32, y: i32) -> Result<(), String> {
+    let id = window_plugin(&window, plugin.as_deref())?;
     require(&app, &id, "widgets")?;
     if !valid_name(&name) {
         return Err("a widget name is 1 to 32 lowercase letters, digits and '-'".into());
@@ -331,32 +476,39 @@ pub fn plugin_widget_place(app: tauri::AppHandle, window: tauri::WebviewWindow, 
         return Err("not a place on a screen".into());
     }
     let widget_label = label(&id, &name);
+    // A plugin laying its widgets out keeps them on a screen too (one open
+    // has its size; one not open yet, an icon's).
+    let open = app.get_webview_window(&widget_label);
+    let size = open.as_ref().and_then(|w| w.outer_size().ok()).map(|s| (s.width as i32, s.height as i32)).unwrap_or((64, 64));
+    let (x, y) = on_screen((x, y, size.0, size.1), &screens(&app));
     if let Some(state) = app.try_state::<AppState>() {
         state.settings.set(&place_key(&id, &name), &format!("{x},{y}"));
         state.settings.set(&format!("window.{widget_label}.placed"), &format!("{x},{y},0,0"));
     }
-    match app.get_webview_window(&widget_label) {
+    match open {
         Some(widget) => widget.set_position(tauri::PhysicalPosition::new(x, y)).map_err(|e| e.to_string()),
         None => Ok(()),
     }
 }
 
-/// Close widget `name` of the calling plugin.
+/// Close widget `name` of the calling plugin: hidden and kept (`closed`),
+/// its page and place as they are, for opening it again at once.
 #[tauri::command]
-pub fn plugin_widget_close(app: tauri::AppHandle, window: tauri::WebviewWindow, name: String) -> Result<(), String> {
-    let id = window_plugin(&window)?;
+pub fn plugin_widget_close(app: tauri::AppHandle, window: tauri::WebviewWindow, plugin: Option<String>, name: String) -> Result<(), String> {
+    let id = window_plugin(&window, plugin.as_deref())?;
     require(&app, &id, "widgets")?;
     if let Some(widget) = app.get_webview_window(&label(&id, &name)) {
-        areas().lock().unwrap_or_else(|p| p.into_inner()).remove(widget.label());
-        let _ = widget.close();
+        tracing::debug!("Widgets: {id} closes {name:?} (from {})", window.label());
+        closed().lock().unwrap_or_else(|p| p.into_inner()).insert(widget.label().to_string());
+        crate::platform::window::hide_in_place(&widget);
     }
     Ok(())
 }
 
 /// Hand widget `name` data from its plugin: it hears it as a "widget" event.
 #[tauri::command]
-pub fn plugin_widget_send(app: tauri::AppHandle, window: tauri::WebviewWindow, name: String, data: Value) -> Result<(), String> {
-    let id = window_plugin(&window)?;
+pub fn plugin_widget_send(app: tauri::AppHandle, window: tauri::WebviewWindow, plugin: Option<String>, name: String, data: Value) -> Result<(), String> {
+    let id = window_plugin(&window, plugin.as_deref())?;
     require(&app, &id, "widgets")?;
     if data.to_string().len() > MAX_MESSAGE {
         return Err("message too large".into());
@@ -368,8 +520,8 @@ pub fn plugin_widget_send(app: tauri::AppHandle, window: tauri::WebviewWindow, n
 /// Lock (clicks go through, no moving) or unlock all the calling plugin's
 /// widgets. Kept across restarts.
 #[tauri::command]
-pub fn plugin_widgets_lock(app: tauri::AppHandle, window: tauri::WebviewWindow, locked: bool) -> Result<(), String> {
-    let id = window_plugin(&window)?;
+pub fn plugin_widgets_lock(app: tauri::AppHandle, window: tauri::WebviewWindow, plugin: Option<String>, locked: bool) -> Result<(), String> {
+    let id = window_plugin(&window, plugin.as_deref())?;
     require(&app, &id, "widgets")?;
     if let Some(state) = app.try_state::<AppState>() {
         state.settings.set(&locked_key(&id), if locked { "true" } else { "false" });
@@ -384,8 +536,8 @@ pub fn plugin_widgets_lock(app: tauri::AppHandle, window: tauri::WebviewWindow, 
 
 /// Whether the calling plugin's widgets are locked.
 #[tauri::command]
-pub fn plugin_widgets_locked(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<bool, String> {
-    let id = window_plugin(&window)?;
+pub fn plugin_widgets_locked(app: tauri::AppHandle, window: tauri::WebviewWindow, plugin: Option<String>) -> Result<bool, String> {
+    let id = window_plugin(&window, plugin.as_deref())?;
     require(&app, &id, "widgets")?;
     Ok(is_locked(&app, &id))
 }
@@ -413,7 +565,8 @@ pub fn plugin_widget_post(app: tauri::AppHandle, window: tauri::WebviewWindow, d
         return Err("message too large".into());
     }
     let event = serde_json::json!({ "plugin": id, "event": "widget-message", "data": { "name": name, "data": data } });
-    app.emit_to(format!("plugin-{id}"), "plugin-event", event).map_err(|e| e.to_string())
+    super::emit_plugin(&app, &id, event);
+    Ok(())
 }
 
 /// Move the widget with the pointer, unless its plugin's widgets are locked.
@@ -438,7 +591,9 @@ pub fn any_unlocked_widget_shown(app: &tauri::AppHandle) -> bool {
 
 /// Close every widget of plugin `id`: its main window has gone.
 pub fn close_all(app: &tauri::AppHandle, id: &str) {
-    for widget in open_widgets(app, id) {
+    tracing::debug!("Widgets: {id}'s all closed (its window went)");
+    for widget in all_widgets(app, id) {
+        closed().lock().unwrap_or_else(|p| p.into_inner()).remove(widget.label());
         areas().lock().unwrap_or_else(|p| p.into_inner()).remove(widget.label());
         let _ = widget.close();
     }
@@ -464,12 +619,32 @@ pub fn note_moved(app: &tauri::AppHandle, label: &str, at: tauri::PhysicalPositi
             state.settings.set(&key, &format!("{x},{y}"));
         }
         let event = serde_json::json!({ "plugin": id, "event": "widget-moved", "data": { "name": name, "x": x, "y": y } });
-        let _ = app.emit_to(format!("plugin-{id}"), "plugin-event", event);
+        super::emit_plugin(&app, &id, event);
     });
 }
 
 #[cfg(test)]
 mod tests {
+    use super::{checked_area, AreaRect, MAX_AREA_RECTS};
+
+    fn rect(x: f64, y: f64, width: f64, height: f64) -> AreaRect {
+        AreaRect { x, y, width, height }
+    }
+
+    #[test]
+    fn a_widget_area_is_its_rectangles_each_checked() {
+        let (rects, scale) = checked_area(&[rect(0.0, 0.0, 40.0, 40.0), rect(48.0, 0.0, 40.0, 40.0)], 1.5).unwrap();
+        assert_eq!(rects, vec![(0.0, 0.0, 40.0, 40.0), (48.0, 0.0, 40.0, 40.0)]);
+        assert_eq!(scale, 1.5);
+        assert!(checked_area(&[], 1.0).unwrap().0.is_empty(), "nothing drawn: no rectangle");
+        assert!(checked_area(&[rect(0.0, 0.0, f64::NAN, 4.0)], 1.0).is_err());
+        assert!(checked_area(&[rect(-1.0, 0.0, 4.0, 4.0)], 1.0).is_err());
+        assert!(checked_area(&[rect(0.0, 0.0, 5000.0, 4.0)], 1.0).is_err());
+        assert!(checked_area(&[rect(0.0, 0.0, 4.0, 4.0)], 0.0).is_err());
+        let many: Vec<_> = (0..=MAX_AREA_RECTS).map(|i| rect(i as f64, 0.0, 1.0, 1.0)).collect();
+        assert!(checked_area(&many, 1.0).is_err());
+    }
+
     use super::*;
 
     #[test]
@@ -494,6 +669,23 @@ mod tests {
         // At a screen's right edge it goes to the left instead.
         assert_eq!(beside_cluster(&[(2500, 100)], &screens), Some((2398, 100)));
         assert_eq!(beside_cluster(&[], &screens), None);
+    }
+
+    #[test]
+    fn a_widget_off_every_screen_comes_back_onto_the_nearest() {
+        // A main screen, and a second one to its left (taskbar 48 px).
+        let screens = [(0, 0, 2560, 1392), (-1920, 0, 1920, 1032)];
+        // On a screen, or enough of it: left where it is.
+        assert_eq!(on_screen((100, 100, 400, 370), &screens), (100, 100));
+        assert_eq!(on_screen((-1900, 900, 400, 370), &screens), (-1900, 900), "partly past the bottom, still to see");
+        // Where the second screen was before it moved, or went: onto the nearest.
+        assert_eq!(on_screen((-3000, 800, 400, 370), &screens), (-1920, 662));
+        assert_eq!(on_screen((-1900, 1100, 400, 370), &screens), (-1900, 662), "below the second screen's work area");
+        assert_eq!(on_screen((5000, -900, 120, 40), &screens), (2440, 0));
+        // Wider than the screen: its left edge on it.
+        assert_eq!(on_screen((9000, 10, 3000, 100), &screens), (0, 10));
+        // No screens known (a headless test, a Wayland quirk): left alone.
+        assert_eq!(on_screen((-5000, -5000, 64, 64), &[]), (-5000, -5000));
     }
 
     #[test]

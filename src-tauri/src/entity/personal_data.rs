@@ -45,13 +45,6 @@ pub struct PersonalData {
     /// Aion2DpsMeter : taux de coups critiques (en %, coups directs hors DoT).
     #[serde(default)]
     pub crit_rate: f64,
-    /// Aion2DpsMeter : dégâts reçus des cibles du combat.
-    #[serde(default)]
-    pub damage_received: f64,
-    /// Aion2DpsMeter : morts, depuis l'entrée dans le donjon (ou pendant le
-    /// combat hors donjon).
-    #[serde(default)]
-    pub deaths: i32,
     /// Aion2DpsMeter : `deaths` compte le donjon entier (affiché à côté du nom).
     #[serde(default)]
     pub deaths_in_dungeon: bool,
@@ -59,6 +52,26 @@ pub struct PersonalData {
     pub crit_hits: i64,
     #[serde(skip)]
     pub direct_hits: i64,
+    /// Damage received during the shown fight, for the meter's Damage taken mode.
+    #[serde(default)]
+    pub damage_received: i64,
+    /// Stagger taken off the shown targets' gauges in the fight
+    /// (`combat::stagger`), for the meter's Stagger mode.
+    #[serde(default)]
+    pub stagger: i64,
+    /// That stagger by skill, under the codes skills are shown by
+    /// (`normalize_skill_id`), for the row's tooltip in Stagger mode. Left
+    /// out when there is none.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub stagger_skills: HashMap<i32, i64>,
+    /// Times this player died in the fight, a badge after the name when
+    /// above 0. Left out when 0, as nearly every row is.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub deaths: i32,
+}
+
+fn is_zero(n: &i32) -> bool {
+    *n == 0
 }
 
 impl PersonalData {
@@ -78,11 +91,13 @@ impl PersonalData {
             hps: 0.0,
             heal_amount: 0.0,
             crit_rate: 0.0,
-            damage_received: 0.0,
-            deaths: 0,
             deaths_in_dungeon: false,
             crit_hits: 0,
             direct_hits: 0,
+            damage_received: 0,
+            stagger: 0,
+            stagger_skills: HashMap::new(),
+            deaths: 0,
         }
     }
 
@@ -102,11 +117,13 @@ impl PersonalData {
             hps: 0.0,
             heal_amount: 0.0,
             crit_rate: 0.0,
-            damage_received: 0.0,
-            deaths: 0,
             deaths_in_dungeon: false,
             crit_hits: 0,
             direct_hits: 0,
+            damage_received: 0,
+            stagger: 0,
+            stagger_skills: HashMap::new(),
+            deaths: 0,
         }
     }
 
@@ -123,9 +140,12 @@ impl PersonalData {
         self.amount += other.amount;
         self.heal_amount += other.heal_amount;
         self.damage_received += other.damage_received;
-        self.deaths += other.deaths;
         self.crit_hits += other.crit_hits;
         self.direct_hits += other.direct_hits;
+        self.stagger += other.stagger;
+        for (&skill, &value) in &other.stagger_skills {
+            *self.stagger_skills.entry(skill).or_default() += value;
+        }
         for (skill_code, other_skill) in &other.analyzed_data {
             let existing = self.analyzed_data.entry(*skill_code).or_insert_with(|| {
                 AnalyzedSkill::new(*skill_code, other_skill.skill_name.clone())

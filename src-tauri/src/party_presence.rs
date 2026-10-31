@@ -1,7 +1,7 @@
 //! Which party members also run A2Tools: a small mark beside their names.
 //!
-//! On unless turned off (`dpsMeter.partyPresence`, asked once with a popup,
-//! ticked by default). While the player is in a party, the meter registers
+//! Off unless turned on (`dpsMeter.partyPresence`, asked once with a popup,
+//! unticked; #131: it tells party members you use a meter). While the player is in a party, the meter registers
 //! its own character with a2tools.app and asks about its party members: the
 //! ones not asked about yet, as the party fills (a dungeon's matchmaking, an
 //! invite), and every 10 minutes the ones that weren't using it, in case they

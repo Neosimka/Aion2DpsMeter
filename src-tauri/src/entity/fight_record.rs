@@ -49,6 +49,27 @@ pub struct FightRecord {
     /// log service's output change.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub buffs: Option<Vec<crate::combat::fight_buffs::BuffTrack>>,
+    /// The stagger windows of the fight: each gauge that took a deduction in
+    /// it, who took what off it, and whether it broke (`combat::stagger`).
+    /// `None` in a fight saved before the meter recorded them, so neither the
+    /// files of older fights nor the log service's output change.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stagger: Option<Vec<crate::combat::stagger::StaggerWindow>>,
+    /// The actor that was you, for History's "your DPS" and personal bests.
+    /// `None` in fights saved before 2.0.87 (History then takes the one name
+    /// kept unmasked: `obscure_nickname` masks everyone else's) and in
+    /// derived ones.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub local_actor_id: Option<i32>,
+    /// Whether the boss died in the fight, as the log service's kill check
+    /// sees it (`rederive`'s `killed`). `None` before 2.0.87.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub killed: Option<bool>,
+    /// Whether `details.max_hp` is the spawn record's. Without it, it is the
+    /// highest live reading, which stops at 100 million (#70), so a big boss
+    /// can read short of its real HP. `None` before 2.0.87.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_hp_from_spawn: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,6 +100,34 @@ pub struct FightSummary {
     /// for two Clerics where `jobs` has one.
     #[serde(default)]
     pub member_jobs: Vec<String>,
+    /// You in the fight (`history::summary`): your name, as kept unmasked,
+    /// class, home server and damage. Empty, 0 when it can't tell.
+    #[serde(default)]
+    pub my_name: String,
+    #[serde(default)]
+    pub my_job: String,
+    #[serde(default)]
+    pub my_server: u16,
+    #[serde(default)]
+    pub my_damage: i64,
+    /// Whether `my_name` is surely you: the fight recorded you (2.0.87 on),
+    /// or it was in a dungeon, where only your party can be. In the open
+    /// world an older fight's one unmasked name can be a stranger's fight
+    /// your meter saw.
+    #[serde(default)]
+    pub my_certain: bool,
+    /// "kill", "wipe" or "unconfirmed" (`history::summary::outcome`).
+    #[serde(default)]
+    pub outcome: String,
+    /// The dungeon's last boss (the game's Grade 2), and a raid's fight:
+    /// what History leads a dungeon with, and where every boss counts.
+    #[serde(default)]
+    pub final_boss: bool,
+    #[serde(default)]
+    pub raid: bool,
+    /// The game's tier for a party dungeon (1-6), 0 for none.
+    #[serde(default)]
+    pub dungeon_tier: u8,
 }
 
 impl FightRecord {
@@ -109,8 +158,9 @@ impl FightRecord {
 /// The local player's name is NOT obscured.
 pub fn obscure_nickname(name: &str) -> String {
     let chars: Vec<char> = name.chars().collect();
+    // One character would be the name itself (#131).
     if chars.len() <= 1 {
-        return name.to_string();
+        return if chars.is_empty() { String::new() } else { "*".to_string() };
     }
     if chars.len() == 2 {
         return format!("{}*", chars[0]);
@@ -128,6 +178,12 @@ pub fn obscure_nickname(name: &str) -> String {
 mod tests {
     use super::*;
 
+    #[test]
+    fn a_one_character_name_is_masked() {
+        assert_eq!(obscure_nickname("劍"), "*");
+        assert_eq!(obscure_nickname(""), "");
+    }
+
     fn old_record() -> serde_json::Value {
         serde_json::json!({
             "id": "auto_1_2", "bossName": "Some Boss", "targetId": 1, "startTimeMs": 1_700_000_000_000i64,
@@ -142,6 +198,7 @@ mod tests {
     fn a_fight_saved_before_buffs_loads_and_saves_unchanged() {
         let record: FightRecord = serde_json::from_value(old_record()).unwrap();
         assert!(record.buffs.is_none());
+        assert!(record.stagger.is_none());
         assert_eq!(serde_json::to_value(&record).unwrap(), old_record());
     }
 

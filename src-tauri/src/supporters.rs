@@ -431,6 +431,7 @@ mod tests {
                     regen: 0,
                     damage_received: 0,
                     hits_received: 0,
+                    received: None,
                     dbid,
                     server_id: 0,
                     // Deliberately wrong, so the tests show it being recomputed
@@ -447,6 +448,10 @@ mod tests {
             dungeon_id: 0,
             server_id: 0,
             buffs: None,
+            stagger: None,
+            local_actor_id: None,
+            killed: None,
+            max_hp_from_spawn: None,
         }
     }
 

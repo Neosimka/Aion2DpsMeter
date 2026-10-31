@@ -48,6 +48,10 @@ const isBrightColor = (value) => {
   return bright;
 };
 
+// The smallest change of a bar's length (share of the row) that glides;
+// smaller ones jump there (see renderRows).
+const GLIDE_MIN_JUMP = 0.03;
+
 const createMeterUI = ({
   elList,
   dpsFormatter,
@@ -142,6 +146,12 @@ const createMeterUI = ({
 
     // Party combat power, shown beside the name. Hidden unless the party roster
     // packet supplied a value for this player.
+    // Deaths in the fight, a small badge after the name and its figure (shown
+    // once above 0): its own element, so a long name's ellipsis never hides it.
+    const deathCountEl = document.createElement("span");
+    deathCountEl.className = "deathCount";
+    deathCountEl.style.display = "none";
+
     const combatPowerEl = document.createElement("span");
     combatPowerEl.className = "combatPower";
     combatPowerEl.style.display = "none";
@@ -156,6 +166,10 @@ const createMeterUI = ({
     dpsContainer.className = "dps";
     const dpsContribution = document.createElement("p");
     dpsContribution.className = "dpsContribution";
+    // The extra metrics ticked in the metric menu, after the main figure.
+    const dpsExtra = document.createElement("p");
+    dpsExtra.className = "dpsExtra";
+    dpsExtra.style.display = "none";
 
     // Aion2DpsMeter : taux de critique global, entre le DPS et la part.
     const critRateEl = document.createElement("p");
@@ -164,6 +178,7 @@ const createMeterUI = ({
 
     dpsContainer.appendChild(dpsNumber);
     dpsContainer.appendChild(critRateEl);
+    dpsContainer.appendChild(dpsExtra);
     dpsContainer.appendChild(dpsContribution);
 
     contentEl.appendChild(rankEl);
@@ -173,6 +188,7 @@ const createMeterUI = ({
     contentEl.appendChild(a2toolsBadgeEl);
     contentEl.appendChild(deathsEl);
     contentEl.appendChild(combatPowerEl);
+    contentEl.appendChild(deathCountEl);
     contentEl.appendChild(dpsContainer);
     rowEl.appendChild(fillTrackEl);
     rowEl.appendChild(contentEl);
@@ -192,6 +208,7 @@ const createMeterUI = ({
       classIconEl,
       classIconImg,
       dpsNumber,
+      dpsExtra,
       dpsContribution,
       critRateEl,
       lastCritText: null,
@@ -201,9 +218,12 @@ const createMeterUI = ({
       isVisible: false,
       lastNameText: "",
       lastCombatPowerText: "",
+      deathCountEl,
+      lastDeaths: 0,
       lastIsCjk: false,
       lastIsSupporter: false,
       lastMetricText: "",
+      lastExtraText: "",
       lastContributionText: "",
       lastRankText: "",
       lastFillRatio: -1,
@@ -308,6 +328,9 @@ const createMeterUI = ({
   };
 
   let lastOrderKey = "";
+  // Each metric's widest figure on the rows, in characters, so the same
+  // metric lines up down the rows (styles.css --mw-<metric>).
+  const columnWidths = new Map();
 
   const renderRows = (rows, rankById) => {
     const now = nowMs();
@@ -339,6 +362,10 @@ const createMeterUI = ({
 
     const needsReorder = orderKey !== lastOrderKey;
     lastOrderKey = orderKey;
+    const widest = new Map();
+    const widen = (mode, text) => {
+      if (mode) widest.set(mode, Math.max(widest.get(mode) || 0, String(text).length));
+    };
 
     for (const [pos, { row, id }] of validRows.entries()) {
       nextVisibleIds.add(id);
@@ -412,18 +439,22 @@ const createMeterUI = ({
 
       // Beside the name: combat power or gear score, as Settings → Meter
       // Settings says (partyStatText, above).
-      const deathsText = row.deathsInDungeon && Number(row.deaths) > 0 ? `💀${Number(row.deaths)}` : "";
-      if (view.lastDeathsText !== deathsText) {
-        view.deathsEl.textContent = deathsText;
-        view.deathsEl.hidden = !deathsText;
-        view.deathsEl.title = deathsText ? `${row.deaths} mort${row.deaths > 1 ? "s" : ""} dans ce donjon` : "";
-        view.lastDeathsText = deathsText;
-      }
+      // (Aion2DpsMeter : le compteur de morts est maintenant celui d'A2Tools, deathCount.)
       const combatPowerText = partyStatText(row, getPartyStat?.());
       if (view.lastCombatPowerText !== combatPowerText) {
         view.combatPowerEl.textContent = combatPowerText;
         view.combatPowerEl.style.display = combatPowerText ? "" : "none";
         view.lastCombatPowerText = combatPowerText;
+      }
+      const deaths = Math.max(0, Number(row.deaths) || 0);
+      if (view.lastDeaths !== deaths) {
+        view.deathCountEl.textContent = deaths ? String(deaths) : "";
+        view.deathCountEl.style.display = deaths ? "" : "none";
+        view.deathCountEl.title = deaths
+          ? window.i18n?.format?.("meter.deaths", { count: deaths }, `Died ${deaths} times in this fight`) ??
+            `Died ${deaths} times in this fight`
+          : "";
+        view.lastDeaths = deaths;
       }
 
       // "Unknown" is a row whose class is not known yet: no icon, rather than
@@ -495,6 +526,25 @@ const createMeterUI = ({
         view.dpsNumber.textContent = metricText;
         view.lastMetricText = metricText;
       }
+      // Each metric in its own colour (data-metric, styles.css).
+      const metricMode = metric.mode || "";
+      widen(metricMode, metricText);
+      if (view.dpsNumber.dataset.metric !== metricMode) view.dpsNumber.dataset.metric = metricMode;
+      const extras = Array.isArray(metric.extras) ? metric.extras : [];
+      for (const e of extras) widen(e.mode, e.text);
+      const extraText = extras.map((e) => `${e.mode}:${e.text}`).join("|");
+      if (view.lastExtraText !== extraText) {
+        view.dpsExtra.replaceChildren(
+          ...extras.map((e) => {
+            const span = document.createElement("span");
+            span.dataset.metric = e.mode;
+            span.textContent = e.text;
+            return span;
+          }),
+        );
+        view.dpsExtra.style.display = extraText ? "" : "none";
+        view.lastExtraText = extraText;
+      }
 
       const contributionText = `${damageContribution.toFixed(1)}%`;
       if (view.lastContributionText !== contributionText) {
@@ -525,6 +575,12 @@ const createMeterUI = ({
         // 2px child, and a scaled parent would squash it (and its glow) by
         // the fill ratio. Six absolutely-positioned rows, rAF-throttled, so
         // the layout cost is not measurable.
+        // It glides only when the change shows: each glide step re-lays and
+        // repaints the bar (its texture too), and in a steady fight most
+        // updates move it by a hair, so gliding them all kept every bar
+        // animating, about half the meter's drawing (2026-10-29).
+        const jump = Math.abs(ratio - (view.lastFillRatio ?? 0));
+        view.fillEl.classList.toggle("noGlide", jump < GLIDE_MIN_JUMP);
         view.fillEl.style.width = `${(ratio * 100).toFixed(2)}%`;
         view.lastFillRatio = ratio;
       }
@@ -545,6 +601,13 @@ const createMeterUI = ({
     }
 
     lastVisibleIds = nextVisibleIds;
+
+    // Set only when a column's widest figure changed length.
+    for (const [mode, chars] of widest) {
+      if (columnWidths.get(mode) === chars) continue;
+      columnWidths.set(mode, chars);
+      elList.style.setProperty(`--mw-${mode}`, `${chars}ch`);
+    }
 
     pruneCache(nextVisibleIds);
   };

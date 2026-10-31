@@ -11,6 +11,17 @@
     return text;
   };
 
+  // Update plugins automatically (src-tauri/src/plugins AUTO_UPDATE_KEY):
+  // off unless turned on; the meter reads it when it starts.
+  const AUTO_UPDATE_KEY = "dpsMeter.pluginAutoUpdate";
+  const autoUpdate = document.querySelector(".pluginAutoUpdateCheckbox");
+  if (autoUpdate) {
+    autoUpdate.checked = window.javaBridge?.getSetting?.(AUTO_UPDATE_KEY) === "true";
+    autoUpdate.addEventListener("change", () => {
+      window.javaBridge?.setSetting?.(AUTO_UPDATE_KEY, autoUpdate.checked ? "true" : "false");
+    });
+  }
+
   const start = () => {
     const toggle = document.querySelector(".pluginDevModeCheckbox");
     const devRow = document.querySelector(".pluginDevRow");
@@ -35,8 +46,69 @@
     // Plugins the last update changed, by id → the version before; marked
     // green until Settings closes.
     const updatedFrom = new Map();
-    // Newer reviewed versions, by id → { to, newPermissions }.
+    // Newer reviewed versions, by id → { to, newPermissions, changes }.
     const available = new Map();
+
+    // What's new. Each plugin's version when Settings last showed it, kept
+    // in settings: a plugin updated since (automatically, or from the
+    // title's button) is marked, its notes shown, until Settings has been
+    // opened once. The first time, the versions are only noted down.
+    const SEEN_KEY = "dpsMeter.pluginsSeen";
+    let seen = null;
+    try {
+      seen = JSON.parse(window.javaBridge?.getSetting?.(SEEN_KEY) || "null");
+    } catch {
+      seen = null;
+    }
+    const firstLook = !seen || typeof seen !== "object";
+    if (firstLook) seen = {};
+    // By id → the version Settings last showed (this window's).
+    const updatedSince = new Map();
+    const noteSeen = (plugins) => {
+      let changed = false;
+      for (const p of plugins) {
+        if (!p.reviewed || p.error) continue;
+        const was = seen[p.id];
+        if (!firstLook && was && newerVersion(p.version, was) && !updatedSince.has(p.id)) updatedSince.set(p.id, was);
+        if (was !== p.version) {
+          seen[p.id] = p.version;
+          changed = true;
+        }
+      }
+      if (changed) window.javaBridge?.setSetting?.(SEEN_KEY, JSON.stringify(seen));
+    };
+    // "1.2.10" after "1.2.9".
+    function newerVersion(a, b) {
+      const parts = (v) => String(v || "").split(".").map((n) => parseInt(n, 10) || 0);
+      const x = parts(a);
+      const y = parts(b);
+      for (let i = 0; i < Math.max(x.length, y.length); i++) {
+        if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+      }
+      return false;
+    }
+    // The notes of a plugin's versions after `from`, up to `to`, newest first,
+    // from the signed catalog (or an update's own).
+    const notesOf = (id, from, to, own) => {
+      const all = own || (catalog || []).find((e) => e.id === id)?.changes || [];
+      return all.filter((c) => newerVersion(c.version, from) && !newerVersion(c.version, to));
+    };
+    const noteText = (c) => c[window.i18n?.getLanguage?.() || "en"] || c.en || "";
+    // "What's new in 1.4.2", and each version's note.
+    const whatsNew = (notes, version) => {
+      const box = el("div", "pluginWhatsNew");
+      box.append(el("div", "pluginWhatsNewTitle", t("settings.plugins.whatsNew", "What's new in {version}", { version })));
+      const items = el("ul", "pluginWhatsNewList");
+      for (const c of notes) {
+        const text = noteText(c);
+        if (!text) continue;
+        const li = el("li", null, text);
+        if (notes.length > 1) li.prepend(el("span", "pluginWhatsNewVersion", c.version));
+        items.append(li);
+      }
+      box.append(items);
+      return box;
+    };
 
     // A permission, in plain words.
     const describe = (permission) => {
@@ -54,8 +126,17 @@
       if (permission === "feed:boss-timers") {
         return t("settings.plugins.permBossTimers", "Read the field boss timers players share through a2tools.app");
       }
+      if (permission === "fps") {
+        return t("settings.plugins.permFps", "Show the game's frame rate (on Windows, the meter asks to run as administrator for it)");
+      }
+      if (permission === "screenshot") {
+        return t("settings.plugins.permScreenshot", "Take screenshots of its own window, to the clipboard and your screenshot folder");
+      }
+      if (permission === "events:death-recap") {
+        return t("settings.plugins.permDeathRecap", "After a player kills you: who they were and the damage they did to you");
+      }
       if (permission.startsWith("decoder:")) {
-        return t("settings.plugins.permDecoder", "Read your own game data: {name}", { name: permission.slice(8) });
+        return t("settings.plugins.permDecoder", "Read selected game fields (may include other players): {name}", { name: permission.slice(8) });
       }
       return permission;
     };
@@ -114,29 +195,15 @@
       return i;
     };
 
-    // The reviewed plugins' icons (Lucide) and colours (a hue), by id. Any
-    // other plugin shows its first letter.
-    const OFFICIAL_ICONS = {
-      "pet-souls": ["paw-print", 25],
-      "event-timers": ["alarm-clock", 45],
-      ping: ["activity", 140],
-      cooldowns: ["hourglass", 265],
-      checklist: ["list-checks", 185],
-      "heal-alert": ["heart-pulse", 350],
-      "mantra-watch": ["orbit", 215],
-      "hidden-cubes": ["box", 300],
-    };
-
     // A square with the plugin's icon or first letter, in its colour (from
     // its id when it has none), so a long list scans by shape and colour
     // before reading.
+    // (The icons: pluginIcons.js.)
     const mark = (id, name) => {
-      let hash = 0;
-      for (const ch of String(id)) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-      const [glyph, hue] = OFFICIAL_ICONS[id] || [];
-      const m = el("span", "pluginMark", glyph ? null : (String(name || id).trim()[0] || "?").toUpperCase());
+      const { glyph, hue, letter } = window.A2_PLUGIN_ICON(id, name);
+      const m = el("span", "pluginMark", glyph ? null : letter);
       if (glyph) m.append(icon(glyph));
-      m.style.setProperty("--mark-hue", String(hue ?? hash % 360));
+      m.style.setProperty("--mark-hue", String(hue));
       m.setAttribute("aria-hidden", "true");
       return m;
     };
@@ -314,9 +381,13 @@
         return;
       }
       if (!catalog) return refreshBar();
+      // Reviewed plugins, then the test plugins under their own heading:
+      // early versions, signed the same way, there for anyone to try.
       const offered = catalog.filter((e) => !e.installed);
-      for (const entry of offered) {
-        if (!matches(entry.name, entry.description, entry.id, entry.author)) continue;
+      const reviewed = offered.filter((e) => !e.test);
+      const tests = offered.filter((e) => e.test);
+      const rowFor = (entry) => {
+        if (!matches(entry.name, entry.description, entry.id, entry.author)) return;
         const details = [el("p", "pluginDescFull", entry.description || "")];
         if (entry.author) details.push(el("div", "pluginAuthor", t("settings.plugins.by", "by {author}", { author: entry.author })));
         details.push(permissionList(entry.permissions || []));
@@ -330,6 +401,21 @@
             details,
           }),
         );
+        if (entry.test) catalogList.lastElementChild?.classList.add("pluginTest");
+      };
+      reviewed.forEach(rowFor);
+      const shownBefore = catalogList.childElementCount;
+      if (tests.length) {
+        const head = el("div", "pluginTestHead");
+        head.append(
+          el("div", "pluginTestTitle", t("settings.plugins.testTitle", "Test plugins")),
+          el("div", "settingsHint", t("settings.plugins.testHint",
+            "Early versions for anyone to try, signed like the others. They may change or have rough edges: tell us what you find.")),
+        );
+        catalogList.append(head);
+        tests.forEach(rowFor);
+        // The heading only with a test plugin under it (a search can hide them all).
+        if (catalogList.childElementCount === shownBefore + 1) head.remove();
       }
       catalogStatus.textContent = offered.length ? "" : t("settings.plugins.catalogEmpty", "Every reviewed plugin is installed.");
       window.lucide?.createIcons?.({ root: catalogList });
@@ -341,6 +427,8 @@
       if (!catalog) catalogStatus.textContent = t("settings.plugins.catalogLoading", "Loading the plugin list…");
       try {
         catalog = await invoke("plugin_catalog");
+        // The installed list again, with each one's notes.
+        render();
       } catch (e) {
         catalog = null;
         catalogList.replaceChildren();
@@ -388,12 +476,19 @@
       toggle.checked = !!view.devMode;
       devRow.hidden = !view.devMode;
       list.replaceChildren();
+      noteSeen(view.plugins || []);
+      // The first plugin updated since Settings was last open shows its
+      // notes without a click.
+      if (openId == null) {
+        const first = (view.plugins || []).find((p) => updatedSince.has(p.id) && notesOf(p.id, updatedSince.get(p.id), p.version).length);
+        if (first) openId = first.id;
+      }
       for (const p of view.plugins || []) {
         if (!matches(p.name, p.description, p.id)) continue;
         const tags = [];
-        const wasUpdated = !p.error && updatedFrom.has(p.id);
+        const wasUpdated = !p.error && (updatedFrom.has(p.id) || updatedSince.has(p.id));
         if (wasUpdated) {
-          const from = updatedFrom.get(p.id);
+          const from = updatedFrom.has(p.id) ? updatedFrom.get(p.id) : updatedSince.get(p.id);
           const badge = icon("circle-arrow-up");
           badge.className = "pluginUpdatedIcon";
           badge.setAttribute("role", "img");
@@ -428,6 +523,14 @@
         // Its details: the whole description, when it hides, what it may
         // do, and Remove.
         const details = [];
+        // What's new: in the update waiting, or in the one just installed.
+        if (!p.error && p.reviewed) {
+          const from = updatedFrom.has(p.id) ? updatedFrom.get(p.id) : updatedSince.get(p.id);
+          const notes = newer
+            ? notesOf(p.id, p.version, newer.to, newer.changes)
+            : from != null ? notesOf(p.id, from, p.version) : [];
+          if (notes.length) details.push(whatsNew(notes, newer ? newer.to : p.version));
+        }
         if (p.error) details.push(el("p", "pluginDescFull pluginError", p.error));
         else if (p.description) details.push(el("p", "pluginDescFull", p.description));
         if (!p.reviewed && p.path) details.push(el("div", "pluginAuthor", p.path));
@@ -441,6 +544,12 @@
           ]) {
             options.append(option(t(key, text), (ids || []).includes(p.id), (hide) => run(invoke("plugin_set_hide", { id: p.id, when, hide }))));
           }
+          // In the plugin dock with the others, or a window of its own.
+          options.append(option(
+            t("settings.plugins.inDock", "In the plugin dock (off: its own window)"),
+            !(view.ownWindow || []).includes(p.id),
+            (docked) => run(invoke("plugin_set_docked", { id: p.id, docked }).then(() => invoke("plugin_list"))),
+          ));
           details.push(options, permissionList(p.permissions || [], true));
         }
         const actions = el("div", "pluginDetailActions");

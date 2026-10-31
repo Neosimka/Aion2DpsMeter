@@ -45,8 +45,14 @@ mod a2d_events;
 // Aion2DpsMeter : envoi des combats au site de La Chevrerie.
 #[cfg(feature = "online")]
 mod chevrerie;
+#[cfg(feature = "desktop")]
+mod tray;
 #[cfg(feature = "online")]
 mod boss_report;
+#[cfg(feature = "online")]
+mod update_check;
+#[cfg(feature = "online")]
+mod supply_report;
 #[cfg(feature = "online")]
 mod party_presence;
 #[cfg(feature = "online")]

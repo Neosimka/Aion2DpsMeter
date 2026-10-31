@@ -17,6 +17,8 @@
     else queue.push(msg);
   };
 
+  const rectOf = (r) => ({ x: Number(r?.x), y: Number(r?.y), width: Number(r?.width), height: Number(r?.height) });
+
   const calls = {
     ready: () => {
       ready = true;
@@ -26,7 +28,12 @@
     "widget.drag": () => invoke("plugin_widget_drag"),
     // The frame fills the window, so its CSS px are the window's.
     "widget.area": ([r]) => invoke("plugin_widget_area", {
-      x: Number(r?.x), y: Number(r?.y), width: Number(r?.width), height: Number(r?.height),
+      rects: [rectOf(r)],
+      scale: window.devicePixelRatio || 1,
+    }),
+    // Several parts: the gaps between them let clicks through too.
+    "widget.areas": ([rs]) => invoke("plugin_widget_area", {
+      rects: (Array.isArray(rs) ? rs : []).slice(0, 64).map(rectOf),
       scale: window.devicePixelRatio || 1,
     }),
     "widget.post": ([data]) => invoke("plugin_widget_post", { data: data ?? null }),
@@ -61,6 +68,9 @@
     deliver("locked", !!hello.locked);
     frame = document.createElement("iframe");
     frame.setAttribute("sandbox", "allow-scripts");
+    // Copying text on a click (Event Timers' double right-click on an icon);
+    // the browser allows it only during one, so no widget fills it unasked.
+    frame.setAttribute("allow", "clipboard-write");
     frame.setAttribute("referrerpolicy", "no-referrer");
     frame.setAttribute("allowtransparency", "true");
     const base = convertFileSrc("", "a2plugin").replace(/\/*$/, "/");
