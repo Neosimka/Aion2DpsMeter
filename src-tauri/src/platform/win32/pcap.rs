@@ -65,21 +65,22 @@ fn system32() -> Option<std::path::PathBuf> {
 /// Load the capture library `name` by its full path: from `System32\Npcap`,
 /// else System32 itself (Npcap's WinPcap-compatible mode), never by the
 /// usual search, which goes on into PATH when Npcap isn't installed, and
-/// PATH has folders the user can write (audit L1). Its own dependency
-/// (Packet.dll) is looked for next to it first.
+/// PATH has folders the user can write (audit L1). Its dependencies
+/// (Packet.dll) come only from its own folder or System32; and with no
+/// System32 named by Windows it isn't loaded at all, rather than looked for
+/// the usual way (talyaseen, #136). `prepare`'s DLL folder stays for what
+/// wpcap.dll loads itself later, which these flags don't reach.
 ///
 /// # Safety
 /// Loading a library runs its initialisation, as `libloading::Library::new`.
 pub unsafe fn load(name: &str) -> Result<libloading::Library, libloading::Error> {
-    use libloading::os::windows::{Library, LOAD_WITH_ALTERED_SEARCH_PATH};
+    use libloading::os::windows::{Library, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR, LOAD_LIBRARY_SEARCH_SYSTEM32};
     prepare();
-    let Some(system) = system32() else {
-        return unsafe { Library::load_with_flags(name, LOAD_WITH_ALTERED_SEARCH_PATH) }.map(Into::into);
-    };
-    let npcap = system.join("Npcap").join(name);
-    match unsafe { Library::load_with_flags(&npcap, LOAD_WITH_ALTERED_SEARCH_PATH) } {
+    let system = system32().ok_or(libloading::Error::LoadLibraryExWUnknown)?;
+    let flags = LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32;
+    match unsafe { Library::load_with_flags(system.join("Npcap").join(name), flags) } {
         Ok(lib) => Ok(lib.into()),
-        Err(_) => unsafe { Library::load_with_flags(system.join(name), LOAD_WITH_ALTERED_SEARCH_PATH) }.map(Into::into),
+        Err(_) => unsafe { Library::load_with_flags(system.join(name), flags) }.map(Into::into),
     }
 }
 
