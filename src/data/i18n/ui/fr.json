@@ -4,8 +4,10 @@
     "display": {
       "dps": "DPS",
       "total": "DGT",
+      "damageReceived": "SUBI",
       "ariaDps": "Affiche les DPS",
       "ariaDamage": "Affiche les dégâts totaux",
+      "ariaDamageReceived": "Affiche les dégâts subis",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "ÉTOUR",
@@ -15,6 +17,7 @@
       "names": {
         "dps": "Dégâts par seconde",
         "totalDamage": "Dégâts totaux",
+        "damageReceived": "Dégâts subis",
         "hps": "Soins par seconde",
         "totalHeal": "Soins totaux",
         "stagger": "Étourdissement",

@@ -4,8 +4,10 @@
     "display": {
       "dps": "DPS",
       "total": "ダメージ",
+      "damageReceived": "被ダメ",
       "ariaDps": "DPSを表示中",
       "ariaDamage": "総ダメージを表示中",
+      "ariaDamageReceived": "被ダメージを表示中",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "スタン",
@@ -15,6 +17,7 @@
       "names": {
         "dps": "秒間ダメージ",
         "totalDamage": "総ダメージ",
+        "damageReceived": "被ダメージ",
         "hps": "秒間回復量",
         "totalHeal": "総回復量",
         "stagger": "スタン",

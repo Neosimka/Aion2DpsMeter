@@ -4,8 +4,10 @@
     "display": {
       "dps": "DPS",
       "total": "DMG",
+      "damageReceived": "承傷",
       "ariaDps": "顯示 DPS",
       "ariaDamage": "顯示總傷害",
+      "ariaDamageReceived": "顯示承受傷害",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "破防",
@@ -15,6 +17,7 @@
       "names": {
         "dps": "每秒傷害",
         "totalDamage": "總傷害",
+        "damageReceived": "承受傷害",
         "hps": "每秒治療",
         "totalHeal": "總治療",
         "stagger": "破防",

@@ -4,8 +4,10 @@
     "display": {
       "dps": "DPS",
       "total": "DÑO",
+      "damageReceived": "RECIB",
       "ariaDps": "Mostrando DPS",
       "ariaDamage": "Mostrando daño total",
+      "ariaDamageReceived": "Mostrando daño recibido",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "ATUR",
@@ -15,6 +17,7 @@
       "names": {
         "dps": "Daño por segundo",
         "totalDamage": "Daño total",
+        "damageReceived": "Daño recibido",
         "hps": "Curación por segundo",
         "totalHeal": "Curación total",
         "stagger": "Aturdimiento",

@@ -4,8 +4,10 @@
     "display": {
       "dps": "DPS",
       "total": "УРН",
+      "damageReceived": "ПОЛУЧ",
       "ariaDps": "Показан DPS",
       "ariaDamage": "Показан общий урон",
+      "ariaDamageReceived": "Показан полученный урон",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "ОГЛ",
@@ -15,6 +17,7 @@
       "names": {
         "dps": "Урон в секунду",
         "totalDamage": "Общий урон",
+        "damageReceived": "Полученный урон",
         "hps": "Исцеление в секунду",
         "totalHeal": "Общее исцеление",
         "stagger": "Оглушение",

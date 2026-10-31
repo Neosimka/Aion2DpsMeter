@@ -4,8 +4,10 @@
     "display": {
       "dps": "DPS",
       "total": "DMG",
+      "damageReceived": "피격",
       "ariaDps": "DPS 표시 중",
       "ariaDamage": "총 피해 표시 중",
+      "ariaDamageReceived": "받은 피해 표시 중",
       "hps": "HPS",
       "totalHeal": "HEAL",
       "stagger": "무력화",
@@ -15,6 +17,7 @@
       "names": {
         "dps": "초당 피해량",
         "totalDamage": "총 피해량",
+        "damageReceived": "받은 피해량",
         "hps": "초당 치유량",
         "totalHeal": "총 치유량",
         "stagger": "무력화",
