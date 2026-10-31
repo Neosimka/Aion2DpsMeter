@@ -1226,6 +1226,8 @@ impl StreamProcessor {
             return;
         };
         let profile = death_recap::Profile { name: Some(sanitized.clone()), ..death_recap::profile(&data[field.end..]) };
+        // Aion2DpsMeter : un joueur de plus autour de toi.
+        crate::a2d_nearby::spawn(actor_id, profile.server_id);
         self.data_storage.note_player_profile(actor_id, profile);
         // 45/44 36 player spawn is an authoritative id↔name source.
         self.data_storage.note_low_id_entity(actor_id);

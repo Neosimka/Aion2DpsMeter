@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.5",
+      "date": "2026-10-31",
+      "notes": {
+        "fr": "- En bas du meter, le nombre de joueurs autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte.",
+        "en": "- En bas du meter, le nombre de joueurs autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte."
+      }
+    },
+    {
       "version": "2.1.4",
       "date": "2026-10-31",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "- Plus d'ombre floue autour du meter.",
         "en": "- Plus d'ombre floue autour du meter."
-      }
-    },
-    {
-      "version": "2.0.99",
-      "date": "2026-10-25",
-      "notes": {
-        "fr": "- Les panneaux Événements, Boss et Familiers s'ouvrent sous les DPS, qui restent affichés.",
-        "en": "- Les panneaux Événements, Boss et Familiers s'ouvrent sous les DPS, qui restent affichés."
       }
     }
   ]

@@ -4515,6 +4515,7 @@ pub fn run() {
             crate::plugins::plugin_storage_get,
             crate::plugins::plugin_boss_timers,
             crate::a2d_events::a2d_character,
+            crate::a2d_nearby::a2d_nearby_players,
             crate::a2d_radar::a2d_radar_state,
             crate::a2d_capture::a2d_capture_start,
             crate::a2d_capture::a2d_capture_stop,

@@ -2267,6 +2267,7 @@ impl DataStorage {
     pub fn note_despawn(&self, id: i32) {
         #[cfg(feature = "desktop")]
         crate::a2d_radar::note_gone(id);
+        crate::a2d_nearby::gone(id);
         self.stagger.lock().note_gone(id, now_ms(), false);
         let mut inner = self.inner.write();
         if inner.summon_storage.contains_key(&id) {
@@ -2507,6 +2508,7 @@ impl DataStorage {
     /// A zone load named the map it loads (`21 36`). The map, once known, is
     /// what says where the player is; see `dungeon_of_map`.
     pub fn note_map_load(&self, map_id: i32) {
+        crate::a2d_nearby::clear();
         let mut inner = self.inner.write();
         // A load hands out new entity ids: counts of the old ones would name
         // an entity that is gone.

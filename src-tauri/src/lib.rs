@@ -39,6 +39,8 @@ pub mod plugins;
 mod a2d_radar;
 #[cfg(feature = "desktop")]
 mod a2d_capture;
+// Aion2DpsMeter : joueurs autour de toi (alliés / ennemis).
+mod a2d_nearby;
 // Aion2DpsMeter : panneau Événements.
 #[cfg(feature = "desktop")]
 mod a2d_events;
