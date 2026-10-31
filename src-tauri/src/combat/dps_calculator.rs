@@ -594,38 +594,15 @@ impl DpsCalculator {
             entry.hps = heal as f64 / bt as f64 * 1000.0;
         }
 
-        // Aion2DpsMeter : morts. En donjon, depuis l'entrée dans l'instance ;
-        // ailleurs, pendant le combat.
-        {
-            let in_dungeon = self.data_storage.current_dungeon_id() > 0;
-            let since = self.data_storage.instance_started_ms();
-            let (from, to) = if in_dungeon && since > 0 {
-                (since, i64::MAX)
-            } else {
-                (fight_start, if fight_end > 0 { fight_end + 30_000 } else { i64::MAX })
-            };
-            if from > 0 {
-                for (entity, _, _) in self.data_storage.deaths_between(from, to) {
-                    let nickname = resolve_nickname(entity, &nickname_data, &summon_data);
-                    let uid = *canonical.get(&nickname).unwrap_or(&entity);
-                    if let Some(entry) = dps_data.map.get_mut(&uid) {
-                        entry.deaths += 1;
-                    }
-                }
-            }
-            for entry in dps_data.map.values_mut() {
-                entry.deaths_in_dungeon = in_dungeon;
-            }
-        }
-
         // Filter and compute DPS
         let party_members = self.data_storage.get_party_members();
         let local_cp = self.data_storage.local_profile().combat_power.unwrap_or(0);
         let fight_deaths = if fight_start <= fight_end { self.data_storage.deaths_between(fight_start, fight_end) } else { Vec::new() };
         let mut to_remove = Vec::new();
         for (&uid, data) in &mut dps_data.map {
-            // Aion2DpsMeter : en donjon, les morts depuis l'entrée (plus haut).
-            if let Some(ids) = row_players.get(&uid).filter(|_| !data.deaths_in_dungeon) {
+            // Morts pendant ce combat seulement : le compteur repart à zéro à
+            // chaque boss (et donc à chaque donjon).
+            if let Some(ids) = row_players.get(&uid) {
                 data.deaths = fight_deaths.iter().filter(|(entity, _, _)| ids.contains(entity)).count() as i32;
             }
             // Combat power joins on the character name: the roster carries an
