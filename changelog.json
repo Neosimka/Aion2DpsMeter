@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.7",
+      "date": "2026-11-02",
+      "notes": {
+        "fr": "- Nouvelle métrique **Nombre de coups** dans le menu des métriques (clic sur DPS en bas) : trier par coups portés, ou les afficher à côté du DPS. Ce sont les coups directs du combat, sans les dégâts sur la durée.",
+        "en": "- Nouvelle métrique **Nombre de coups** dans le menu des métriques (clic sur DPS en bas) : trier par coups portés, ou les afficher à côté du DPS. Ce sont les coups directs du combat, sans les dégâts sur la durée."
+      }
+    },
+    {
       "version": "2.1.6",
       "date": "2026-10-31",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "- Boss : le téléporteur le plus proche de chaque boss pour ta faction (numéro, nom, distance).",
         "en": "- Boss : le téléporteur le plus proche de chaque boss pour ta faction (numéro, nom, distance)."
-      }
-    },
-    {
-      "version": "2.1.1",
-      "date": "2026-10-27",
-      "notes": {
-        "fr": "- Meter transparent hors combat : il s'efface quelques secondes après ton dernier coup et revient au premier coup ou au survol. Réglable dans Apparence › Opacité.",
-        "en": "- Meter transparent hors combat : il s'efface quelques secondes après ton dernier coup et revient au premier coup ou au survol. Réglable dans Apparence › Opacité."
       }
     }
   ]

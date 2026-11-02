@@ -25,14 +25,17 @@
         "stagger": "Étourdissement",
         "bossStagger": "Étourdissement du boss %",
         "statColours": "Couleurs des stats",
-        "deaths": "Nombre de morts"
+        "deaths": "Nombre de morts",
+        "hits": "Nombre de coups"
       },
       "sortBy": "Trier par ceci",
       "menuTip": "Choisissez ce qu'affichent les lignes. Molette ou clic droit : métrique suivante",
       "bossStaggerTip": "L'usure de la jauge d'étourdissement du boss, sur sa barre de PV",
       "sortCol": "Tri",
       "showCol": "Afficher",
-      "statColoursTip": "Chaque stat dans sa couleur, sur les lignes, le menu et le bouton"
+      "statColoursTip": "Chaque stat dans sa couleur, sur les lignes, le menu et le bouton",
+      "hits": "COUPS",
+      "ariaHits": "Affiche le nombre de coups"
     },
     "updates": {
       "meter": "Aion2DpsMeter {version} est disponible",

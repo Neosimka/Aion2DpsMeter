@@ -10148,3 +10148,9 @@ html.a2-offline .historyUploadBtn {
 .meterFooter .a2dNearby { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 5px; margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; color: rgba(255,255,255,.8); text-shadow: var(--text-shadow); }
 .meterFooter .a2dNearby[hidden] { display: none; }
 .meterFooter .a2dNearby .a2dNbEnemies { color: #ff8a7a; font-weight: 600; }
+/* Aion2DpsMeter : métrique « Nombre de coups ». */
+:root { --metric-hits: #c9a7ff; }
+.list .item .dps [data-metric="hits"] { min-width: var(--mw-hits, 0); }
+body:not(.noStatColours) .list .item .dps [data-metric="hits"] { color: var(--metric-hits); }
+body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { color: var(--metric-hits); }
+.metricMenuItem[data-metric="hits"] { --m: var(--metric-hits); }

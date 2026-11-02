@@ -1789,6 +1789,8 @@ class DpsApp {
       const damageReceived = Math.trunc(Number(isObj ? value.damageReceived : 0)) || 0;
       const deaths = Math.trunc(Number(isObj ? value.deaths : 0)) || 0;
       const deathsInDungeon = !!(isObj && value.deathsInDungeon);
+      // Aion2DpsMeter : nombre de coups portés.
+      const hits = Math.trunc(Number(isObj ? value.hits : 0)) || 0;
       // Aion2DpsMeter : taux de critique global du joueur (en %).
       const critRaw = isObj ? Number(value.critRate) : NaN;
       const critRate = Number.isFinite(critRaw) ? critRaw : NaN;
@@ -1831,6 +1833,7 @@ class DpsApp {
         combatPower,
         gearScore,
         deathsInDungeon,
+        hits,
         isUser: !isOthers && ((!!name && name === this.USER_NAME) || (hasLocalId && numericId === localId)),
         isOthers,
         isIdentifying,
@@ -5733,7 +5736,7 @@ class DpsApp {
 
   /** The display modes after DPS, in the menu's order. */
   displayModes() {
-    return ["totalDamage", "damageReceived", "hps", "totalHeal", "stagger"];
+    return ["totalDamage", "damageReceived", "hps", "totalHeal", "stagger", "hits"];
   }
 
   setDisplayMode(mode, { persist = false } = {}) {
@@ -5760,6 +5763,7 @@ class DpsApp {
       damageReceived: ["header.display.damageReceived", "TAKEN", "header.display.ariaDamageReceived", "Showing damage taken", "header.display.names.damageReceived", "Damage taken"],
       hps: ["header.display.hps", "HPS", "header.display.ariaHps", "Showing healing per second", "header.display.names.hps", "Healing per second"],
       totalHeal: ["header.display.totalHeal", "HEAL", "header.display.ariaHeal", "Showing total healing", "header.display.names.totalHeal", "Total healing"],
+      hits: ["header.display.hits", "COUPS", "header.display.ariaHits", "Nombre de coups", "header.display.names.hits", "Nombre de coups"],
       stagger: ["header.display.stagger", "STAG", "header.display.ariaStagger", "Showing stagger dealt", "header.display.names.stagger", "Stagger"],
       dps: ["header.display.dps", "DPS", "header.display.ariaDps", "Showing DPS", "header.display.names.dps", "Damage per second"],
     }[mode];
@@ -6612,6 +6616,10 @@ class DpsApp {
     if (mode === "totalHeal") {
       const healAmount = Number(row?.healAmount) || 0;
       return { value: healAmount, text: this.formatAbbreviatedNumber(healAmount) };
+    }
+    if (mode === "hits") {
+      const hits = Number(row?.hits) || 0;
+      return { value: hits, text: hits.toLocaleString("fr-FR") };
     }
     if (mode === "stagger") {
       // Gauge points, small whole numbers (a Story boss's gauge is 40).

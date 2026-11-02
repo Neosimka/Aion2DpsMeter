@@ -627,6 +627,7 @@ impl DpsCalculator {
                 }
             }
             data.dps = data.amount / bt as f64 * 1000.0;
+            data.hits = data.direct_hits;
             data.crit_rate = if data.direct_hits > 0 {
                 data.crit_hits as f64 / data.direct_hits as f64 * 100.0
             } else {

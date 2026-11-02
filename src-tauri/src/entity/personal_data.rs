@@ -52,6 +52,10 @@ pub struct PersonalData {
     pub crit_hits: i64,
     #[serde(skip)]
     pub direct_hits: i64,
+    /// Aion2DpsMeter : nombre de coups portés dans le combat (coups directs,
+    /// hors dégâts sur la durée), pour la métrique « Coups ».
+    #[serde(default)]
+    pub hits: i64,
     /// Damage received during the shown fight, for the meter's Damage taken mode.
     #[serde(default)]
     pub damage_received: i64,
@@ -94,6 +98,7 @@ impl PersonalData {
             deaths_in_dungeon: false,
             crit_hits: 0,
             direct_hits: 0,
+            hits: 0,
             damage_received: 0,
             stagger: 0,
             stagger_skills: HashMap::new(),
@@ -120,6 +125,7 @@ impl PersonalData {
             deaths_in_dungeon: false,
             crit_hits: 0,
             direct_hits: 0,
+            hits: 0,
             damage_received: 0,
             stagger: 0,
             stagger_skills: HashMap::new(),
