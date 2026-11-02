@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.8",
+      "date": "2026-11-02",
+      "notes": {
+        "fr": "- Nombre de coups : les coups par seconde entre parenthèses, par exemple « 955 (5,3/s) ».",
+        "en": "- Nombre de coups : les coups par seconde entre parenthèses, par exemple « 955 (5,3/s) »."
+      }
+    },
+    {
       "version": "2.1.7",
       "date": "2026-11-02",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Records et historique**\n- Ton record sur le boss que tu tapes, sous sa barre de PV : ton meilleur DPS sur ce boss et où tu en es (+12 % / −38 %), et le kill le plus rapide.\n- Historique des combats revu : DPS du groupe et le tien, filtres (personnage, classe, difficulté, période, kills seulement), tri, et un onglet **Records personnels** par boss de donjon.\n- **Quoi de neuf** dans les réglages, ouvert tout seul après chaque mise à jour.\n\n**Repris d'A2Tools 2.0.86**\n- Menu des métriques (clic sur DPS en haut) : choisir ce qu'affichent les lignes et en afficher plusieurs à la fois.\n- Étourdissement (stagger) : % de la jauge du boss sur sa barre de PV, et vue Étourdissement.\n- Nombre de morts à côté du pseudo (en donjon : depuis l'entrée), réglable dans le menu des métriques.\n- Corrections de sécurité de la capture et des téléchargements, mises à jour vérifiées par leur empreinte.",
         "en": "**Records et historique**\n- Ton record sur le boss que tu tapes, sous sa barre de PV : ton meilleur DPS sur ce boss et où tu en es (+12 % / −38 %), et le kill le plus rapide.\n- Historique des combats revu : DPS du groupe et le tien, filtres (personnage, classe, difficulté, période, kills seulement), tri, et un onglet **Records personnels** par boss de donjon.\n- **Quoi de neuf** dans les réglages, ouvert tout seul après chaque mise à jour.\n\n**Repris d'A2Tools 2.0.86**\n- Menu des métriques (clic sur DPS en haut) : choisir ce qu'affichent les lignes et en afficher plusieurs à la fois.\n- Étourdissement (stagger) : % de la jauge du boss sur sa barre de PV, et vue Étourdissement.\n- Nombre de morts à côté du pseudo (en donjon : depuis l'entrée), réglable dans le menu des métriques.\n- Corrections de sécurité de la capture et des téléchargements, mises à jour vérifiées par leur empreinte."
-      }
-    },
-    {
-      "version": "2.1.2",
-      "date": "2026-10-27",
-      "notes": {
-        "fr": "- Boss : le téléporteur le plus proche de chaque boss pour ta faction (numéro, nom, distance).",
-        "en": "- Boss : le téléporteur le plus proche de chaque boss pour ta faction (numéro, nom, distance)."
       }
     }
   ]

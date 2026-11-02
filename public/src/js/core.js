@@ -6619,7 +6619,12 @@ class DpsApp {
     }
     if (mode === "hits") {
       const hits = Number(row?.hits) || 0;
-      return { value: hits, text: hits.toLocaleString("fr-FR") };
+      // Coups par seconde : sur la durée du combat de ce joueur (dégâts / DPS).
+      const dps = Number(row?.dps) || 0;
+      const secs = dps > 0 ? (Number(row?.totalDamage) || 0) / dps : 0;
+      const rate = secs >= 1 ? hits / secs : 0;
+      const rateText = rate > 0 ? ` (${rate.toLocaleString("fr-FR", { maximumFractionDigits: 1, minimumFractionDigits: 1 })}/s)` : "";
+      return { value: hits, text: `${hits.toLocaleString("fr-FR")}${rateText}` };
     }
     if (mode === "stagger") {
       // Gauge points, small whole numbers (a Story boss's gauge is 40).
