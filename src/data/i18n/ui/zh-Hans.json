@@ -306,7 +306,7 @@
     "sort": "排序",
     "sortNewest": "最新",
     "sortFastest": "最快击杀",
-    "sortPartyDps": "队伍 DPS",
+    "sortTotalDps": "总 DPS",
     "sortMyDps": "你的 DPS",
     "sortRecent": "最新",
     "sortTier": "副本阶级",
@@ -315,6 +315,7 @@
     "pb": "最佳",
     "pbTip": "你的个人最佳之一",
     "party": "队伍",
+    "allPlayers": "所有玩家",
     "you": "你",
     "totalDamage": "总伤害",
     "finalBoss": "最终首领",
@@ -385,6 +386,7 @@
     "showDpsSuffix": "DPS 后显示 /s",
     "autoHideMeter": "AION2 不在前台时隐藏",
     "hideWhenGameClosed": "AION2 关闭时隐藏",
+    "closeWithGame": "AION2 关闭时一并关闭计量器",
     "hideWhenSolo": "仅在队伍中显示",
     "hideOutOfCombat": {
       "label": "脱离战斗时隐藏",
@@ -666,6 +668,7 @@
       "showMeter": "关闭：只显示插件。统计仍在后台记录战斗并上传。可在此处、用显示/隐藏快捷键，或插件窗口上的统计按钮重新显示。",
       "clearOnZone": "切换区域后，何时从统计中清除上一场战斗。所有战斗都会保留在历史记录中。",
       "hideWhenGameClosed": "游戏未运行时隐藏计量器，游戏启动后再次显示。",
+      "closeWithGame": "AION2 关闭约 10 秒后，计量器会自动关闭。若比游戏先启动，会等待游戏开启。",
       "hideWhenSolo": "不在队伍中时隐藏计量器，加入队伍后再次显示。显示/隐藏快捷键仍可随时打开它。",
       "hideOutOfCombat": "脱离战斗达到该时长后隐藏计量器，下一次命中时再次显示。设置、历史记录或详情窗口打开时，或鼠标停在计量器上时不会隐藏。",
       "runAsAdmin": "显示游戏帧率需要此项。每次启动计量器时 Windows 都会询问。",
@@ -709,6 +712,7 @@
       "install": "安装",
       "update": "更新",
       "updateTo": "更新到 {version}",
+      "downloading": "正在下载…",
       "installing": "正在安装…",
       "installDone": "{name} {version} 已安装。",
       "updatesAvailable": "有可用更新：{list}",
@@ -739,6 +743,7 @@
       "permsTitle": "可以:",
       "permFps": "显示游戏帧率（在 Windows 上，计量器会为此请求以管理员身份运行）",
       "permDeathRecap": "被玩家击杀后：对方是谁，以及对你造成的伤害",
+      "permLootRolls": "查看掷骰分配的战利品：物品、谁掷出多少点，以及谁获得了它",
       "permScreenshot": "截取自身窗口的截图，到剪贴板和你的截图文件夹",
       "testHint": "任何人都可以试用的早期版本，和其他插件一样经过签名。它们可能会变化或还不完善：发现问题请告诉我们。",
       "testTitle": "测试插件",
@@ -971,6 +976,7 @@
     "ttk": "预计击杀时间",
     "partyTotal": "队伍总计",
     "odyle": "奥德能量",
-    "ping": "延迟"
+    "ping": "延迟",
+    "jitter": "抖动：{ms} 毫秒"
   }
 }

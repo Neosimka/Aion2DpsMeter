@@ -2417,6 +2417,12 @@ body:not(.noStatColours) .metricMenu:not(.targetMenu) .metricMenuItem.isShown .m
 }
 .settingsPanel .settingsDropdownBtn:focus-visible,
 .settingsPanel .keybindBtn:focus-visible,
+/* A plugin downloading or installing: its button says so, greyed and not
+   clickable until it's done. */
+.settingsPanel .settingsAction.pluginBusy:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
 .settingsPanel .settingsAction:focus-visible,
 .settingsPanel .settingsRange:focus-visible {
   outline: 2px solid var(--settings-accent, var(--isUser-fill));
@@ -10154,3 +10160,7 @@ html.a2-offline .historyUploadBtn {
 body:not(.noStatColours) .list .item .dps [data-metric="hits"] { color: var(--metric-hits); }
 body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { color: var(--metric-hits); }
 .metricMenuItem[data-metric="hits"] { --m: var(--metric-hits); }
+/* Aion2DpsMeter : 🌐 fiche du membre sur le site de la légion */
+.list .item .a2dSheet { flex: 0 0 auto; margin-left: 2px; font-size: 10px; line-height: 1; cursor: pointer; opacity: .55; filter: grayscale(.3); }
+.list .item .a2dSheet:hover, .list .item .a2dSheet:focus-visible { opacity: 1; filter: none; }
+.list .item .a2dSheet[hidden] { display: none; }

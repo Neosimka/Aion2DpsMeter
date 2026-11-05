@@ -301,7 +301,7 @@
     "sort": "Ordenar",
     "sortNewest": "Mais recentes",
     "sortFastest": "Vitória mais rápida",
-    "sortPartyDps": "DPS do grupo",
+    "sortTotalDps": "DPS total",
     "sortMyDps": "Seu DPS",
     "sortRecent": "Mais recentes",
     "sortTier": "Nível da masmorra",
@@ -310,6 +310,7 @@
     "pb": "Recorde",
     "pbTip": "Um dos seus recordes pessoais",
     "party": "Grupo",
+    "allPlayers": "Todos os jogadores",
     "you": "Você",
     "totalDamage": "Dano total",
     "finalBoss": "Chefe final",
@@ -385,6 +386,7 @@
     "showDpsSuffix": "Adicionar /s ao DPS",
     "autoHideMeter": "Ocultar quando o AION2 não estiver em foco",
     "hideWhenGameClosed": "Ocultar enquanto o AION2 estiver fechado",
+    "closeWithGame": "Fechar o medidor quando o AION2 fechar",
     "hideWhenSolo": "Mostrar só em grupo",
     "hideOutOfCombat": {
       "label": "Ocultar fora de combate",
@@ -666,6 +668,7 @@
       "showMeter": "Desligado: só os seus plugins aparecem. O medidor continua registrando combates e enviando em segundo plano. Mostre-o de novo aqui, com o atalho de mostrar/ocultar ou com o botão do medidor numa janela de plugin.",
       "clearOnZone": "Quando o último combate sai do medidor após a mudança de zona. Todo combate fica no Histórico de qualquer forma.",
       "hideWhenGameClosed": "O medidor se oculta enquanto o jogo não está aberto e volta quando ele inicia.",
+      "closeWithGame": "O medidor fecha sozinho cerca de 10 segundos depois que o AION2 fecha. Aberto antes do jogo, ele espera o jogo.",
       "hideWhenSolo": "O medidor se oculta enquanto você não está em um grupo e volta quando você entra em um. O atalho de mostrar/ocultar ainda o exibe.",
       "hideOutOfCombat": "O medidor se oculta após esse tempo fora de combate e volta no próximo golpe. Ele continua visível enquanto Configurações, Histórico ou Detalhes estiverem abertos, ou com o mouse sobre ele.",
       "runAsAdmin": "Necessário para mostrar o FPS do jogo. O Windows pergunta toda vez que o medidor inicia.",
@@ -709,6 +712,7 @@
       "install": "Instalar",
       "update": "Atualizar",
       "updateTo": "Atualizar para {version}",
+      "downloading": "Baixando…",
       "installing": "Instalando…",
       "installDone": "{name} {version} está instalado.",
       "updatesAvailable": "Atualizações disponíveis: {list}",
@@ -739,6 +743,7 @@
       "permsTitle": "Ele pode:",
       "permFps": "Mostrar o FPS do jogo (no Windows, o medidor pede para ser executado como administrador para isso)",
       "permDeathRecap": "Depois que um jogador te mata: quem era e o dano que te causou",
+      "permLootRolls": "Ver o saque por dados: o item, quem tirou quanto e quem ganhou",
       "permScreenshot": "Tirar capturas da própria janela, para a área de transferência e sua pasta de capturas",
       "testHint": "Versões iniciais para qualquer um experimentar, assinadas como as outras. Podem mudar ou ter arestas: conte o que encontrar.",
       "testTitle": "Plugins de teste",
@@ -971,6 +976,7 @@
     "ttk": "Tempo estimado para matar",
     "partyTotal": "Total do grupo",
     "odyle": "Energia de Odyle",
-    "ping": "Ping"
+    "ping": "Ping",
+    "jitter": "Variação: {ms} ms"
   }
 }

@@ -301,7 +301,7 @@
     "sort": "並べ替え",
     "sortNewest": "新しい順",
     "sortFastest": "最速討伐",
-    "sortPartyDps": "パーティーDPS",
+    "sortTotalDps": "合計DPS",
     "sortMyDps": "自分のDPS",
     "sortRecent": "新しい順",
     "sortTier": "ダンジョン階層順",
@@ -310,6 +310,7 @@
     "pb": "ベスト",
     "pbTip": "自己ベストのひとつ",
     "party": "パーティー",
+    "allPlayers": "全プレイヤー",
     "you": "自分",
     "totalDamage": "総ダメージ",
     "finalBoss": "最終ボス",
@@ -385,6 +386,7 @@
     "showDpsSuffix": "DPSに /s を付ける",
     "autoHideMeter": "AION2が非アクティブのとき隠す",
     "hideWhenGameClosed": "AION2が閉じているときは隠す",
+    "closeWithGame": "AION2を閉じたらメーターも閉じる",
     "hideWhenSolo": "パーティー中のみ表示",
     "hideOutOfCombat": {
       "label": "戦闘外で隠す",
@@ -666,6 +668,7 @@
       "showMeter": "オフ：プラグインだけが表示されます。メーターはバックグラウンドで戦闘の記録とアップロードを続けます。ここ、表示/非表示のホットキー、またはプラグインウィンドウのメーターボタンで元に戻せます。",
       "clearOnZone": "ゾーンが変わったあと、最後の戦闘をメーターから消すタイミング。どの戦闘も履歴には残ります。",
       "hideWhenGameClosed": "ゲームが起動していない間はメーターを隠し、起動すると再び表示します。",
+      "closeWithGame": "AION2を閉じてから約10秒後にメーターも自動で閉じます。ゲームより先に起動した場合は、ゲームの起動を待ちます。",
       "hideWhenSolo": "パーティーに入っていない間はメーターを隠し、パーティーに参加すると再び表示します。表示/非表示のキー設定でいつでも表示できます。",
       "hideOutOfCombat": "戦闘が終わってこの時間が経つとメーターを隠し、次の攻撃で再び表示します。設定・履歴・詳細ウィンドウが開いている間や、マウスがメーターの上にある間は隠しません。",
       "runAsAdmin": "ゲームのフレームレートを表示するのに必要です。メーターを起動するたびにWindowsが確認します。",
@@ -709,6 +712,7 @@
       "install": "インストール",
       "update": "更新",
       "updateTo": "{version} に更新",
+      "downloading": "ダウンロード中…",
       "installing": "インストール中…",
       "installDone": "{name} {version} をインストールしました。",
       "updatesAvailable": "アップデートがあります: {list}",
@@ -739,6 +743,7 @@
       "permsTitle": "できること:",
       "permFps": "ゲームのフレームレートを表示する（Windowsでは、そのためにメーターが管理者としての実行を求めます）",
       "permDeathRecap": "プレイヤーに倒された後：相手が誰か、あなたに与えたダメージ",
+      "permLootRolls": "ダイスロールの戦利品を表示：アイテム、誰が何を出したか、誰が獲得したか",
       "permScreenshot": "自分のウィンドウのスクリーンショットを撮る（クリップボードとスクリーンショットのフォルダーへ）",
       "testHint": "誰でも試せる初期版で、ほかと同じく署名されています。変更されたり、粗い部分があったりするかもしれません。気づいたことを教えてください。",
       "testTitle": "テスト用プラグイン",
@@ -971,6 +976,7 @@
     "ttk": "撃破時間の予測",
     "partyTotal": "パーティ合計",
     "odyle": "オードエネルギー",
-    "ping": "ping"
+    "ping": "ping",
+    "jitter": "ジッター: {ms} ms"
   }
 }

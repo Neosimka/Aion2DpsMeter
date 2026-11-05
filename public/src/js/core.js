@@ -148,6 +148,7 @@ class DpsApp {
       font: "dpsMeter.font",
       autoHideMeter: "dpsMeter.autoHideMeter",
       hideWhenGameClosed: "dpsMeter.hideWhenGameClosed",
+      closeWithGame: "dpsMeter.closeWithGame",
       hideWhenSolo: "dpsMeter.hideWhenSolo",
       hideOutOfCombat: "dpsMeter.hideOutOfCombat",
       globalHotkeys: "dpsMeter.globalHotkeys",
@@ -1146,6 +1147,15 @@ class DpsApp {
       </div>
       <div class="hoverDetailsTooltipSkills">${skillsHtml || `<div class="hoverDetailsTooltipSkill muted">${stateText}</div>`}</div>
     `;
+    // This hover card cannot itself be hovered. Name the class alongside its
+    // icon without changing the card's pointer-following/dismissal behavior.
+    const classIcon = this.hoverTooltipEl.querySelector?.(".hoverDetailsTooltipClassIcon");
+    if (classIcon) {
+      const label = document.createElement("span");
+      label.dataset.className = row.job;
+      label.textContent = window.i18n?.setClassTooltip?.(classIcon, row.job) || row.job;
+      classIcon.after(label);
+    }
     // Apply cached skill icons to tooltip img elements
     if (window.skillIcons?.applyIconToImage && skills.length) {
       const iconEls = this.hoverTooltipEl.querySelectorAll(".hoverDetailsTooltipSkill .skillIcon");
@@ -3251,6 +3261,14 @@ class DpsApp {
         this.safeSetSetting(this.storageKeys.hideWhenGameClosed, String(!!event.target?.checked));
       });
     }
+    // Close the meter once AION2 has closed (the same loop).
+    this.closeWithGameCheckbox = document.querySelector(".closeWithGameCheckbox");
+    if (this.closeWithGameCheckbox) {
+      this.closeWithGameCheckbox.checked = this.safeGetSetting(this.storageKeys.closeWithGame) === "true";
+      this.closeWithGameCheckbox.addEventListener("change", (event) => {
+        this.safeSetSetting(this.storageKeys.closeWithGame, String(!!event.target?.checked));
+      });
+    }
     // And while not in a party (the same loop).
     this.hideWhenSoloCheckbox = document.querySelector(".hideWhenSoloCheckbox");
     if (this.hideWhenSoloCheckbox) {
@@ -5352,6 +5370,7 @@ class DpsApp {
       [this.bossLogsCheckbox, "bossLogs", false],
       [this.autoHideMeterCheckbox, "autoHideMeter", false],
       [this.hideWhenGameClosedCheckbox, "hideWhenGameClosed", false],
+      [this.closeWithGameCheckbox, "closeWithGame", false],
       [this.hideWhenSoloCheckbox, "hideWhenSolo", false],
       [this.globalHotkeysCheckbox, "globalHotkeys", !document.documentElement?.classList?.contains?.("linux")],
       [this.saveRawPacketsCheckbox, "saveRawPackets", false],
@@ -7057,6 +7076,15 @@ class DpsApp {
     const names = Object.keys(saved);
     for (const old of names.slice(0, Math.max(0, names.length - 20))) delete saved[old];
     this.safeSetStorage(this.storageKeys.odyleLast, JSON.stringify(saved));
+  }
+
+  // How much the ping moves, in its tooltip: the footer has no room for it
+  // (#164).
+  updateJitter(ms) {
+    if (!this.pingEl) return;
+    this.pingEl.title = typeof ms === "number"
+      ? this.i18n?.format?.("footerMenu.jitter", { ms: ms.toFixed(1) }, `Jitter: ${ms.toFixed(1)} ms`) ?? `Jitter: ${ms.toFixed(1)} ms`
+      : "";
   }
 
   updatePing(pushedMs) {

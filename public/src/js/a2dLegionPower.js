@@ -13,5 +13,10 @@
   }
   load();
   setInterval(load, 30 * 60_000);
-  window.A2dLegionPower = { of: (name) => power[norm(name)] || 0, reload: load };
+  window.A2dLegionPower = {
+    of: (name) => power[norm(name)] || 0,
+    // Membre de La Chevrerie (dans le relevé du site) ?
+    isMember: (name) => !!name && Object.prototype.hasOwnProperty.call(power, norm(name)),
+    reload: load,
+  };
 })();

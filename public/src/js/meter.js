@@ -156,6 +156,22 @@ const createMeterUI = ({
     combatPowerEl.className = "combatPower";
     combatPowerEl.style.display = "none";
 
+    // Aion2DpsMeter : fiche du membre sur le site de la légion (membres de La Chevrerie).
+    const sheetEl = document.createElement("span");
+    sheetEl.className = "a2dSheet";
+    sheetEl.hidden = true;
+    sheetEl.setAttribute("role", "button");
+    sheetEl.tabIndex = 0;
+    sheetEl.textContent = "🌐";
+    const openSheet = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const n = sheetEl.dataset.name;
+      if (n) window.javaBridge?.openBrowser?.(`https://aion2-la-chevrerie.netlify.app/#joueur/${encodeURIComponent(n)}/note`);
+    };
+    sheetEl.addEventListener("click", openSheet);
+    sheetEl.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") openSheet(event); });
+
     // Aion2DpsMeter : morts dans le donjon, à côté du pseudo.
     const deathsEl = document.createElement("span");
     deathsEl.className = "a2dDeaths";
@@ -186,6 +202,7 @@ const createMeterUI = ({
     contentEl.appendChild(nameEl);
     contentEl.appendChild(supporterBadgeEl);
     contentEl.appendChild(a2toolsBadgeEl);
+    contentEl.appendChild(sheetEl);
     contentEl.appendChild(deathsEl);
     contentEl.appendChild(combatPowerEl);
     contentEl.appendChild(deathCountEl);
@@ -202,6 +219,7 @@ const createMeterUI = ({
       a2toolsBadgeEl,
       combatPowerEl,
       deathsEl,
+      sheetEl,
       lastDeathsText: "",
       rankEl,
       dpsContainer,
@@ -412,6 +430,13 @@ const createMeterUI = ({
       if (view.lastNameText !== nameText) {
         view.nameEl.textContent = nameText;
         view.lastNameText = nameText;
+      }
+      // Aion2DpsMeter : 🌐 vers la fiche du membre sur le site de la légion.
+      const sheetName = !row.isIdentifying && window.A2dLegionPower?.isMember?.(row.name) ? row.name : "";
+      if (view.sheetEl && view.sheetEl.dataset.name !== sheetName) {
+        view.sheetEl.dataset.name = sheetName;
+        view.sheetEl.hidden = !sheetName;
+        view.sheetEl.title = sheetName ? `Fiche de ${sheetName} sur le site de La Chevrerie` : "";
       }
 
       const isCjk = cjkRegex.test(nameText);

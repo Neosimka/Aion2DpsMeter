@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.9",
+      "date": "2026-11-05",
+      "notes": {
+        "fr": "**Ludra**\n- Forge abyssale : Ludra reconnue en Normal **et en Difficile** : combats gardés dans l'historique et envoyés au site de la légion, minuteur d'enrage (10 min) aussi en Difficile.\n- 🌐 à côté du pseudo des membres de La Chevrerie : ouvre leur fiche (onglet Note) sur le site de la légion.\n\n**Repris d'A2Tools 2.0.88**\n- Historique : « Groupe » en donjon, « Tous les joueurs » en monde ouvert.\n- Points abyssaux relus depuis la mise à jour du jeu ; Clerc : Tonnerre du jugement bien compté.\n- Option « Fermer le compteur quand AION2 se ferme » ; instabilité du ping dans son infobulle.\n- Le meter repasse au-dessus du jeu quand Windows l'avait mis derrière.",
+        "en": "**Ludra**\n- Forge abyssale : Ludra reconnue en Normal **et en Difficile** : combats gardés dans l'historique et envoyés au site de la légion, minuteur d'enrage (10 min) aussi en Difficile.\n- 🌐 à côté du pseudo des membres de La Chevrerie : ouvre leur fiche (onglet Note) sur le site de la légion.\n\n**Repris d'A2Tools 2.0.88**\n- Historique : « Groupe » en donjon, « Tous les joueurs » en monde ouvert.\n- Points abyssaux relus depuis la mise à jour du jeu ; Clerc : Tonnerre du jugement bien compté.\n- Option « Fermer le compteur quand AION2 se ferme » ; instabilité du ping dans son infobulle.\n- Le meter repasse au-dessus du jeu quand Windows l'avait mis derrière."
+      }
+    },
+    {
       "version": "2.1.8",
       "date": "2026-11-02",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "- Le nombre de morts à côté du pseudo repart à zéro à chaque combat : chaque boss, et donc chaque donjon, a son propre compteur.\n- Une petite tête de mort devant le nombre de morts.",
         "en": "- Le nombre de morts à côté du pseudo repart à zéro à chaque combat : chaque boss, et donc chaque donjon, a son propre compteur.\n- Une petite tête de mort devant le nombre de morts."
-      }
-    },
-    {
-      "version": "2.1.3",
-      "date": "2026-10-31",
-      "notes": {
-        "fr": "**Records et historique**\n- Ton record sur le boss que tu tapes, sous sa barre de PV : ton meilleur DPS sur ce boss et où tu en es (+12 % / −38 %), et le kill le plus rapide.\n- Historique des combats revu : DPS du groupe et le tien, filtres (personnage, classe, difficulté, période, kills seulement), tri, et un onglet **Records personnels** par boss de donjon.\n- **Quoi de neuf** dans les réglages, ouvert tout seul après chaque mise à jour.\n\n**Repris d'A2Tools 2.0.86**\n- Menu des métriques (clic sur DPS en haut) : choisir ce qu'affichent les lignes et en afficher plusieurs à la fois.\n- Étourdissement (stagger) : % de la jauge du boss sur sa barre de PV, et vue Étourdissement.\n- Nombre de morts à côté du pseudo (en donjon : depuis l'entrée), réglable dans le menu des métriques.\n- Corrections de sécurité de la capture et des téléchargements, mises à jour vérifiées par leur empreinte.",
-        "en": "**Records et historique**\n- Ton record sur le boss que tu tapes, sous sa barre de PV : ton meilleur DPS sur ce boss et où tu en es (+12 % / −38 %), et le kill le plus rapide.\n- Historique des combats revu : DPS du groupe et le tien, filtres (personnage, classe, difficulté, période, kills seulement), tri, et un onglet **Records personnels** par boss de donjon.\n- **Quoi de neuf** dans les réglages, ouvert tout seul après chaque mise à jour.\n\n**Repris d'A2Tools 2.0.86**\n- Menu des métriques (clic sur DPS en haut) : choisir ce qu'affichent les lignes et en afficher plusieurs à la fois.\n- Étourdissement (stagger) : % de la jauge du boss sur sa barre de PV, et vue Étourdissement.\n- Nombre de morts à côté du pseudo (en donjon : depuis l'entrée), réglable dans le menu des métriques.\n- Corrections de sécurité de la capture et des téléchargements, mises à jour vérifiées par leur empreinte."
       }
     }
   ]

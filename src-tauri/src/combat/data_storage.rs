@@ -533,6 +533,8 @@ pub struct DataStorage {
     /// Who killed you (see `combat::death_recap`). Its own lock, as
     /// `stagger`.
     death_recaps: Mutex<DeathRecaps>,
+    /// Dice Roll loot as read (`capture::loot_rolls`), for plugins.
+    loot_rolls: Mutex<crate::capture::loot_rolls::LootRolls>,
 }
 
 /// The timeline and when it was last pruned.
@@ -905,6 +907,7 @@ impl DataStorage {
             abnormals: Mutex::new(AbnormalLog { timeline: abnormal::Timeline::default(), pruned_ms: NEVER_MS }),
             stagger: Mutex::new(StaggerLog::default()),
             death_recaps: Mutex::new(DeathRecaps::default()),
+            loot_rolls: Mutex::new(Default::default()),
         }
     }
 
@@ -1761,8 +1764,9 @@ impl DataStorage {
         kinah_today_of(&self.inner.read(), now)
     }
 
-    /// The week's Abyss Points and limit, seen at `at` (unix ms). Sent at
-    /// logins and transfers only, so held for the self record.
+    /// The week's Abyss Points and limit, seen at `at` (unix ms). Held for the
+    /// self record, which follows a login's within a second; one that comes
+    /// alone (a gain) is taken as the character's after `ABYSS_POINTS_HOLD_MS`.
     pub fn set_abyss_points(&self, points: u64, limit: u64, at: i64) {
         let mut inner = self.inner.write();
         tracing::debug!("Abyss Points: {points} of {limit}");
@@ -2213,6 +2217,18 @@ impl DataStorage {
     /// next time; None when there are none.
     pub fn death_recaps_since(&self, seq: u64) -> Option<(u64, Vec<death_recap::DeathRecap>)> {
         self.death_recaps.lock().since(seq)
+    }
+
+    /// A Dice Roll packet read, kept for plugins.
+    pub fn note_loot_roll(&self, roll: crate::capture::loot_rolls::LootRoll) {
+        let at = crate::clock::now_ms();
+        self.loot_rolls.lock().push(crate::capture::loot_rolls::LootRollEvent { at, roll });
+    }
+
+    /// The roll events read since `seq`, and the count to ask with next
+    /// time; None when there are none.
+    pub fn loot_rolls_since(&self, seq: u64) -> Option<(u64, Vec<crate::capture::loot_rolls::LootRollEvent>)> {
+        self.loot_rolls.lock().since(seq)
     }
 
     /// The maps opened since `seq` was read (all of them, newest last), and
@@ -3290,6 +3306,9 @@ fn shop_limits_of(inner: &Inner, now: i64) -> std::collections::BTreeMap<u32, (u
 
 const DAY_MS: i64 = 24 * 60 * 60 * 1000;
 const WEEK_MS: i64 = 7 * DAY_MS;
+/// How long the Abyss Points the game sent wait for a self record before
+/// they count as the current character's.
+const ABYSS_POINTS_HOLD_MS: i64 = 3_000;
 /// The daily reset, 07:00 UTC, and the weekly, Wednesday 07:00 UTC (the
 /// Daily Duty board's, the Supply Requests', the shop's weekly limits'), as
 /// offsets from the epoch (a Thursday).
@@ -3310,7 +3329,8 @@ fn kinah_today_of(inner: &Inner, now: i64) -> Option<u64> {
 
 /// The week's Abyss Points at `now` (`DataStorage::abyss_points_at`).
 fn abyss_points_of(inner: &Inner, now: i64) -> Option<(u64, u64)> {
-    let (points, limit, at) = inner.abyss_points?;
+    let held = inner.login_abyss_points.filter(|(_, _, at)| now - at >= ABYSS_POINTS_HOLD_MS);
+    let (points, limit, at) = held.or(inner.abyss_points)?;
     Some((if last_reset(now, WEEK_MS, WEEKLY_RESET_MS) > at { 0 } else { points }, limit))
 }
 
