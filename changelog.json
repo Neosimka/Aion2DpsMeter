@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.10",
+      "date": "2026-11-05",
+      "notes": {
+        "fr": "- Horaires mis à jour d'après la mise à jour du jeu du 4 novembre :\n  - Siège d'artefact et boss d'artefact (Tamasa, Agro et Kaira exécuteurs) : jeudi et samedi seulement, plus le lundi.\n  - Agro le roi des esprits (Abysses) : deux fois par jour, à 10 h 30 et 22 h 30, avec son téléporteur.\n  - Les boss programmés restent affichés « en cours » 15 min après leur apparition.",
+        "en": "- Horaires mis à jour d'après la mise à jour du jeu du 4 novembre :\n  - Siège d'artefact et boss d'artefact (Tamasa, Agro et Kaira exécuteurs) : jeudi et samedi seulement, plus le lundi.\n  - Agro le roi des esprits (Abysses) : deux fois par jour, à 10 h 30 et 22 h 30, avec son téléporteur.\n  - Les boss programmés restent affichés « en cours » 15 min après leur apparition."
+      }
+    },
+    {
       "version": "2.1.9",
       "date": "2026-11-05",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "- En bas du meter, le nombre de joueurs autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte.",
         "en": "- En bas du meter, le nombre de joueurs autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte."
-      }
-    },
-    {
-      "version": "2.1.4",
-      "date": "2026-10-31",
-      "notes": {
-        "fr": "- Le nombre de morts à côté du pseudo repart à zéro à chaque combat : chaque boss, et donc chaque donjon, a son propre compteur.\n- Une petite tête de mort devant le nombre de morts.",
-        "en": "- Le nombre de morts à côté du pseudo repart à zéro à chaque combat : chaque boss, et donc chaque donjon, a son propre compteur.\n- Une petite tête de mort devant le nombre de morts."
       }
     }
   ]
