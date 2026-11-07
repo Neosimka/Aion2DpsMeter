@@ -59,6 +59,7 @@
             <div class="headerBtn updatesBtn" role="button" hidden><i data-lucide="circle-arrow-down"></i></div>
             <div class="headerBtn suspendBtn" style="display:none"><i data-lucide="power"></i></div>
             <div class="headerBtn a2dEventsBtn" role="button" tabindex="0" aria-label="Événements" title="Événements et boss"><i data-lucide="calendar-clock"></i></div>
+            <div class="headerBtn chatCopyBtn" role="button" tabindex="0" aria-label="Copy your result for the game's chat" title="Copy your result for the game's chat" data-i18n-aria-label="chatCopy.title" data-i18n-title="chatCopy.title"><i data-lucide="message-square-text"></i></div>
             <div class="headerBtn historyBtn" role="button" tabindex="0" aria-label="Fight history" data-i18n-aria-label="history.title"><i data-lucide="scroll-text"></i></div>
             <div class="headerBtn resetBtn"><i data-lucide="rotate-ccw"></i></div>
             <div class="headerBtn settingsBtn"><i data-lucide="settings"></i></div>
@@ -87,6 +88,9 @@
                 <button class="detailsModeBtn" type="button" data-mode="heal" data-i18n="details.mode.heal">HEAL</button>
               </div>
               <div class="detailsScreenshotWrapper">
+                <button class="detailsChatCopyBtn" type="button" aria-label="Copy your result for the game's chat" title="Copy your result for the game's chat" data-i18n-aria-label="chatCopy.title" data-i18n-title="chatCopy.title">
+                  <i data-lucide="message-square-text"></i>
+                </button>
                 <button class="detailsScreenshotBtn" type="button" aria-label="Save screenshot to clipboard">
                   <i data-lucide="camera"></i>
                 </button>
@@ -1279,6 +1283,18 @@
                   </div>
                   <div class="settingsRow settingsRowSelect">
                     <div class="settingsInfo">
+                      <div class="settingsLabel" data-i18n="settings.trainTimeLimit.label" title="In Train mode, hits on training dummies count for this long after your first one. The meter then stops until you press refresh, which starts the time again." data-i18n-title="settings.tips.trainTimeLimit">Train time limit</div>
+                    </div>
+                    <div class="settingsDropdownWrapper trainTimeLimitDropdownWrapper">
+                      <button class="settingsDropdownBtn trainTimeLimitDropdownBtn" type="button">
+                        <span class="settingsDropdownText">-</span>
+                        <span class="settingsDropdownCaret" aria-hidden="true">▾</span>
+                      </button>
+                      <div class="settingsDropdownMenu trainTimeLimitDropdownMenu" role="menu"></div>
+                    </div>
+                  </div>
+                  <div class="settingsRow settingsRowSelect">
+                    <div class="settingsInfo">
                       <div class="settingsLabel" data-i18n="settings.allTargetsWindow.label" title="In All Targets mode, the meter adds up every target hit within this time of the latest hit." data-i18n-title="settings.tips.allTargetsWindow">All Targets time window</div>
                     </div>
                     <div class="settingsDropdownWrapper allTargetsWindowDropdownWrapper">
@@ -1522,6 +1538,9 @@
           <div class="odyleDisplay" role="status" aria-label="Odyle Energy" data-i18n-aria-label="settings.odyleEnergy">
             <img src="/src/assets/odyle.png" class="odyleIcon" alt="" />
             <span class="odyleText"><span class="odyleBasic"></span><span class="odyleCharged"></span></span>
+          </div>
+          <div class="fpTimer" role="status" aria-label="Flight power refill time" data-i18n-aria-label="footerMenu.fpTimer">
+            <span class="fpTimerLabel">FP</span><span class="fpTimerArrow" aria-hidden="true"></span><span class="fpTimerTime"></span>
           </div>
           </div>
           <div class="footerBtns">
@@ -1794,6 +1813,7 @@
     </div>
     <script src="/src/js/tauriBridge.js?v=202b2"></script>
     <script src="/src/js/battleTime.js"></script>
+    <script src="/src/js/fpTime.js"></script>
     <script src="/src/js/ttk.js"></script>
     <script src="/src/js/meter.js"></script>
     <script src="/src/js/skillIcons.js"></script>

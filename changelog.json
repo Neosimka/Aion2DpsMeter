@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.12",
+      "date": "2026-11-08",
+      "notes": {
+        "fr": "**Important depuis la mise à jour du jeu du 4/11**\n- Le jeu emballe maintenant certaines connexions dans un nouveau format : le meter le lit de nouveau. Sans ça, il ne voyait qu'une partie des coups et pouvait enregistrer un kill comme un wipe (correctif d'A2Tools 2.0.89).\n\n**Repris d'A2Tools 2.0.92**\n- Bouton « Copier pour le chat » (bulle en haut du meter et dans les détails) : ton résultat prêt à coller dans le chat du jeu.\n- Minuteur de vol : temps avant d'être plein, ou vol restant pendant que tu voles.\n- Mannequin : limite de temps en mode entraînement (30 s à 5 min).\n- Carte des boss des Abysses de nouveau envoyée.",
+        "en": "**Important depuis la mise à jour du jeu du 4/11**\n- Le jeu emballe maintenant certaines connexions dans un nouveau format : le meter le lit de nouveau. Sans ça, il ne voyait qu'une partie des coups et pouvait enregistrer un kill comme un wipe (correctif d'A2Tools 2.0.89).\n\n**Repris d'A2Tools 2.0.92**\n- Bouton « Copier pour le chat » (bulle en haut du meter et dans les détails) : ton résultat prêt à coller dans le chat du jeu.\n- Minuteur de vol : temps avant d'être plein, ou vol restant pendant que tu voles.\n- Mannequin : limite de temps en mode entraînement (30 s à 5 min).\n- Carte des boss des Abysses de nouveau envoyée."
+      }
+    },
+    {
       "version": "2.1.11",
       "date": "2026-11-08",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "- Nouvelle métrique **Nombre de coups** dans le menu des métriques (clic sur DPS en bas) : trier par coups portés, ou les afficher à côté du DPS. Ce sont les coups directs du combat, sans les dégâts sur la durée.",
         "en": "- Nouvelle métrique **Nombre de coups** dans le menu des métriques (clic sur DPS en bas) : trier par coups portés, ou les afficher à côté du DPS. Ce sont les coups directs du combat, sans les dégâts sur la durée."
-      }
-    },
-    {
-      "version": "2.1.6",
-      "date": "2026-10-31",
-      "notes": {
-        "fr": "- Joueurs autour de toi : les joueurs morts ne comptent plus, ni chez les alliés ni chez les ennemis. Ils reviennent dans le compte dès qu'ils réapparaissent, que leurs PV remontent ou qu'ils agissent.",
-        "en": "- Joueurs autour de toi : les joueurs morts ne comptent plus, ni chez les alliés ni chez les ennemis. Ils reviennent dans le compte dès qu'ils réapparaissent, que leurs PV remontent ou qu'ils agissent."
       }
     }
   ]

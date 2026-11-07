@@ -999,6 +999,9 @@ fn dps_rate_ms(settings: &Settings) -> u64 {
 
 /// The All Targets time range (Settings), in milliseconds.
 const ALL_TARGETS_WINDOW_KEY: &str = "dpsMeter.allTargetsWindowMs";
+/// Train time limit (Settings → Advanced), in ms: hits on training dummies
+/// count for this long after the player's first one, until the refresh. 0: none.
+const TRAIN_TIME_LIMIT_KEY: &str = "dpsMeter.trainTimeLimitMs";
 const METER_ANCHOR_KEY: &str = "dpsMeter.meterAnchor";
 const WINDOW_HEIGHT_KEY: &str = "window.h";
 
@@ -1152,6 +1155,10 @@ fn start_hotkeys(app: &tauri::AppHandle, settings: &Settings) {
         let app = h.clone();
         // Window calls belong on the main thread.
         let _ = h.run_on_main_thread(move || crate::plugins::bring_back_windows(&app));
+        // And those closed this run, opened again: windows are built off the
+        // main thread (on Windows, building one there deadlocks).
+        let app = h.clone();
+        tauri::async_runtime::spawn(async move { crate::plugins::reopen_closed(&app) });
     }));
 
     hotkeys.manager.start(
@@ -1183,6 +1190,12 @@ fn update_settings(
     if state.settings.set(&key, &value) {
         if key == ALL_TARGETS_WINDOW_KEY {
             apply_all_targets_window(&state, &value);
+        }
+        if key == TRAIN_TIME_LIMIT_KEY {
+            state.data_storage.set_train_limit_ms(value.trim().parse().unwrap_or(0));
+        }
+        if key == crate::fp_pin::LOCKED_KEY {
+            crate::fp_pin::apply_lock(&app);
         }
         if key == METER_ANCHOR_KEY {
             platform::window::set_main_anchor(platform::meter_anchor::Anchor::from_setting(Some(&value)));
@@ -1343,6 +1356,7 @@ fn bind_local_nickname(state: tauri::State<'_, AppState>, actor_id: i64, nicknam
 fn reset_combat(app: tauri::AppHandle, state: tauri::State<'_, AppState>) {
     save_fights_before_reset(&app);
     state.dps_calculator.lock().restart_target_selection(true);
+    state.data_storage.restart_train_limit();
     // Don't reset port detector or ping — keep the network connection alive.
     // Clear combat data, and only the names a loose scan guessed: the game
     // does not send the others again until everyone respawns.
@@ -3721,6 +3735,12 @@ pub fn run() {
             {
                 save_window_geometry(window.app_handle(), window.label(), FIGHT_WINDOW_KEY);
             }
+            // The flight power pin opens where it was left.
+            if let tauri::WindowEvent::Moved(at) = event
+                && window.label() == crate::fp_pin::LABEL
+            {
+                crate::fp_pin::note_moved(window.app_handle(), *at);
+            }
             // Plugin widgets (#77) open where they were left, and close with
             // their plugin's window.
             if let tauri::WindowEvent::Moved(at) = event
@@ -3906,6 +3926,9 @@ pub fn run() {
             let _ = new_install;
             if let Some(ms) = settings.get(ALL_TARGETS_WINDOW_KEY).and_then(|v| v.trim().parse::<i64>().ok()) {
                 dps_calculator.set_all_targets_window_ms(ms);
+            }
+            if let Some(ms) = settings.get(TRAIN_TIME_LIMIT_KEY).and_then(|v| v.trim().parse::<i64>().ok()) {
+                data_storage.set_train_limit_ms(ms);
             }
 
             // Load logging settings from saved state
@@ -4217,6 +4240,7 @@ pub fn run() {
                 let mut dock_on_top: Option<bool> = None;
                 let mut others_delay: u32 = 0;
                 let mut last_odyle: Option<((u32, u32), Option<String>)> = None;
+                let mut last_fp: Option<crate::capture::flight_power::FlightPower> = None;
                 loop {
                     interval.tick().await;
                     tick_count += 1;
@@ -4248,6 +4272,19 @@ pub fn run() {
                                     serde_json::json!({ "basic": energy.0, "charged": energy.1, "name": now.1 }),
                                 );
                                 last_odyle = Some(now);
+                            }
+                        }
+
+                        // Flight power, for the footer's FP timer: when it
+                        // changes, and every 2 s for a window opened since.
+                        // With your name, for the window to remember your
+                        // maximum by (the game sends it only at login).
+                        if let Some(fp) = state.data_storage.flight_power() {
+                            if last_fp != Some(fp) || tick_count % 4 == 0 {
+                                let mut payload = serde_json::to_value(fp).unwrap_or_default();
+                                payload["name"] = serde_json::json!(state.data_storage.local_character_name());
+                                let _ = handle.emit("flight-power", payload);
+                                last_fp = Some(fp);
                             }
                         }
 
@@ -4598,6 +4635,8 @@ pub fn run() {
             crate::plugins::widgets::plugin_widget_hello,
             crate::plugins::widgets::plugin_widget_post,
             crate::plugins::widgets::plugin_widget_drag,
+            crate::fp_pin::fp_pin_show,
+            crate::fp_pin::fp_pin_drag,
             crate::plugins::boss_live::plugin_boss_follow,
             crate::plugins::fps::plugin_fps_watch,
             set_run_as_admin,

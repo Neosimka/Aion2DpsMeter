@@ -1,3 +1,7 @@
+// The game's chat box takes a line about this long: the copied result is
+// kept to it (chatLineFor).
+const CHAT_LINE_MAX = 100;
+
 const SETTING_CHOICES = {
   defaultMeterMode: { allowed: ["bossTargets", "lastHitByMe", "allTargets", "trainTargets"], fallback: "bossTargets" },
   allTargetsWindowMs: { allowed: ["30000", "60000", "120000", "180000", "300000"], fallback: "120000" },
@@ -8,6 +12,9 @@ const SETTING_CHOICES = {
   // How often the backend sends DPS (app.rs DPS_RATES_MS).
   updateRateMs: { allowed: ["100", "200", "250", "500"], fallback: "200" },
   trainSelectionMode: { allowed: ["all", "highestDamage"], fallback: "all" },
+  // How long hits on training dummies count after your first (app.rs
+  // TRAIN_TIME_LIMIT_KEY); "0" for no limit. Only the refresh starts it again.
+  trainTimeLimitMs: { allowed: ["0", "30000", "60000", "120000", "180000", "300000"], fallback: "0" },
   // The figure beside each player's name, in the meter and in Details.
   partyStat: { allowed: ["combatPower", "gearScore", "both", "off"], fallback: "combatPower" },
   // When the last fight leaves the screen after the zone changes.
@@ -49,6 +56,8 @@ const FOOTER_DISPLAYS = [
   ["showTtk", "footerMenu.ttk", "Time to kill estimate"],
   ["showTotalDps", "footerMenu.partyTotal", "Party total"],
   ["showOdyle", "footerMenu.odyle", "Odyle energy"],
+  ["showFpTimer", "footerMenu.fpTimer", "Flight power refill time"],
+  ["showFpPin", "footerMenu.fpPin", "Flight power as a pin"],
   ["showPing", "footerMenu.ping", "Ping"],
 ];
 
@@ -102,6 +111,7 @@ class DpsApp {
       allTargetsWindowMs: "dpsMeter.allTargetsWindowMs",
       updateRateMs: "dpsMeter.updateRateMs",
       trainSelectionMode: "dpsMeter.trainSelectionMode",
+      trainTimeLimitMs: "dpsMeter.trainTimeLimitMs",
       partyStat: "dpsMeter.partyStat",
       clearOnZone: "dpsMeter.clearOnZone",
       barTexture: "dpsMeter.barTexture",
@@ -131,6 +141,9 @@ class DpsApp {
       showPing: "dpsMeter.showPing",
       showOdyle: "dpsMeter.showOdyle",
       odyleLast: "dpsMeter.odyleLast",
+      showFpTimer: "dpsMeter.showFpTimer",
+      showFpPin: "dpsMeter.showFpPin",
+      fpMaxLast: "dpsMeter.fpMaxLast",
       showTtk: "dpsMeter.showTtk",
       extraMetrics: "dpsMeter.extraMetrics",
       showBossStagger: "dpsMeter.showBossStagger",
@@ -358,6 +371,7 @@ class DpsApp {
       // Opening settings must not construct or lay out the hidden combat views.
       this.showPing = this.safeGetSetting(this.storageKeys.showPing) !== "false";
       this.showOdyle = this.safeGetSetting(this.storageKeys.showOdyle) === "true";
+      this.showFpTimer = this.safeGetSetting(this.storageKeys.showFpTimer) === "true";
       this.showTtk = this.safeGetSetting(this.storageKeys.showTtk) !== "false";
       this.showTotalDps = this.safeGetSetting(this.storageKeys.showTotalDps) !== "false";
       this.roundDps = this.safeGetSetting(this.storageKeys.roundDps) !== "false";
@@ -515,6 +529,13 @@ class DpsApp {
     this.showOdyle = this.safeGetSetting(this.storageKeys.showOdyle) === "true";
     this.odyleEnergy = null;
     this.updateOdyle();
+    // Flight power: how long until it is full again, off unless turned on.
+    this.fpTimerEl = document.querySelector(".fpTimer");
+    this.showFpTimer = this.safeGetSetting(this.storageKeys.showFpTimer) === "true";
+    // Or as a pin over the game (fp_pin.rs), dragged anywhere.
+    this.showFpPin = this.safeGetSetting(this.storageKeys.showFpPin) === "true";
+    if (this.showFpPin && window.A2_VIEW === "main") window.javaBridge?.setFpPin?.(true);
+    this.flightPower = null;
     // Time to kill beside the battle timer, for bosses; on unless turned off.
     this.showTtk = this.safeGetSetting(this.storageKeys.showTtk) !== "false";
     this.ttk = typeof createTtkEstimator === "function" ? createTtkEstimator() : null;
@@ -579,6 +600,11 @@ class DpsApp {
           .catch(() => { if (!isFightWindow) this.historyUI?.open?.(); })
           .then(() => { if (isFightWindow) window.javaBridge?.closeToolWindow?.(); });
       },
+    });
+    const detailsChatCopyBtn = document.querySelector(".detailsChatCopyBtn");
+    detailsChatCopyBtn?.addEventListener("click", async () => {
+      const copied = await this.copyText(this.chatLineFor(this.detailsUI?.getChatResult?.()));
+      this.flashCopied(detailsChatCopyBtn, copied);
     });
     if (this.detailsScreenshotBtn) {
       let screenshotNoteTimer = null;
@@ -680,6 +706,12 @@ class DpsApp {
     // Each metric in its own colour (styles.css); on unless turned off.
     this.statColours = this.safeGetStorage(this.storageKeys.statColours) !== "false";
     document.body.classList.toggle("noStatColours", !this.statColours);
+    // Turned on or off in the meter: the other windows (Details) follow.
+    window.addEventListener("storage", (event) => {
+      if (event.key !== this.storageKeys.statColours) return;
+      this.statColours = event.newValue !== "false";
+      document.body.classList.toggle("noStatColours", !this.statColours);
+    });
     // The death count badge (meter.js); off unless turned on.
     // Aion2DpsMeter : le nombre de morts à côté du pseudo, affiché par défaut.
     this.showDeaths = this.safeGetStorage(this.storageKeys.showDeaths) !== "false";
@@ -935,6 +967,13 @@ class DpsApp {
     } else {
       this.startPolling();
     }
+  }
+
+  // In Train mode, the Train time limit (ms) the timer stops at; 0 for none.
+  trainTimeCapMs(targetMode = this.lastTargetMode) {
+    if (targetMode !== "trainTargets") return 0;
+    const ms = Number(this.safeGetSetting?.(this.storageKeys.trainTimeLimitMs));
+    return Number.isFinite(ms) && ms > 0 ? ms : 0;
   }
 
   resetAll({ callBackend = true } = {}) {
@@ -1438,7 +1477,7 @@ class DpsApp {
       // As above: a status message keeps the line shown.
       this.battleTime.setVisible(shouldBeVisible || !!this._connectionStatusOverride);
       if (shouldBeVisible) {
-        this.battleTime.update(now, this._lastBattleTimeMs);
+        this.battleTime.update(now, this._lastBattleTimeMs, { capMs: this.trainTimeCapMs() });
       }
 
       this.updateConnectionStatusUi();
@@ -1461,6 +1500,7 @@ class DpsApp {
       targetCurrentHp,
       targetStaggerPct,
       targetIsBoss,
+      trainLimitReached,
       dungeonId,
       targetMobCode,
       partyGeneration,
@@ -1600,7 +1640,10 @@ class DpsApp {
       }
     } else if (!isOutOfCombat) {
       this.lastSnapshot = rows;
-    } else if (this.lastSnapshot) {
+    } else if (this.lastSnapshot?.length) {
+      // An empty one (a refresh's) never hides new rows: shown nothing, the
+      // timer was never updated, so the meter stayed "out of combat" and
+      // showed nothing (a Train fight ended by its time limit, then refresh).
       const updatedSnapshot = this.updateSnapshotNicknameForUser(rows, this.lastSnapshot);
       this.lastSnapshot = updatedSnapshot;
       rowsToRender = updatedSnapshot;
@@ -1632,7 +1675,7 @@ class DpsApp {
     this.battleTime.setVisible(shouldBeVisible);
 
     if (shouldBeVisible) {
-      this.battleTime.update(now, nextBattleTimeMs);
+      this.battleTime.update(now, nextBattleTimeMs, { capMs: this.trainTimeCapMs(targetMode) });
     }
 
     this.updateConnectionStatusUi();
@@ -1654,6 +1697,18 @@ class DpsApp {
       this._barsTargetLabel = nextTargetLabel;
     } else if (rowsToRender.length > 0 && noTarget && this._barsTargetLabel) {
       nextTargetLabel = this._barsTargetLabel;
+    }
+    // Train time limit (Settings → Advanced): the bars stay as they were
+    // when it ran out, until the refresh.
+    if (targetMode === "trainTargets" && trainLimitReached) {
+      nextTargetLabel = this.i18n?.t("target.trainLimitReached", "Time limit reached") ?? "Time limit reached";
+    } else if (targetMode === "trainTargets" && this.trainTimeCapMs(targetMode) > 0) {
+      // While it runs, the title says so: "TRAINING SCARECROW (Timed: 30sec)".
+      const ms = this.trainTimeCapMs(targetMode);
+      const time = ms < 60000
+        ? (this.i18n?.t("target.timedSeconds", "{n}sec") ?? "{n}sec").replace("{n}", String(Math.round(ms / 1000)))
+        : (this.i18n?.t("target.timedMinutes", "{n}min") ?? "{n}min").replace("{n}", String(Math.round(ms / 60000)));
+      nextTargetLabel = `${nextTargetLabel} (${(this.i18n?.t("target.timed", "Timed: {time}") ?? "Timed: {time}").replace("{time}", time)})`;
     }
     if (this.elBossName) {
       if (this.elBossName.textContent !== nextTargetLabel) {
@@ -1737,6 +1792,7 @@ class DpsApp {
       : -1;
     const targetStaggerPct = Number.isFinite(Number(payload?.targetStaggerPct)) ? Number(payload.targetStaggerPct) : -1;
     const targetIsBoss = payload?.targetIsBoss === true;
+    const trainLimitReached = payload?.trainLimitReached === true;
     const targetMobCode = Math.trunc(Number(payload?.targetMobCode)) || 0;
     const partyGeneration = Math.trunc(Number(payload?.partyGeneration)) || 0;
     const zoneGeneration = Math.trunc(Number(payload?.zoneGeneration)) || 0;
@@ -1754,6 +1810,7 @@ class DpsApp {
       targetCurrentHp,
       targetStaggerPct,
       targetIsBoss,
+      trainLimitReached,
       dungeonId,
       targetMobCode,
       partyGeneration,
@@ -2697,6 +2754,123 @@ class DpsApp {
       });
       historyBtn.setAttribute("data-no-drag", "true");
     }
+
+    // Your result as one line for the game's chat box.
+    const chatCopyBtn = document.querySelector(".chatCopyBtn");
+    if (chatCopyBtn) {
+      const copy = async () => {
+        if (this.isWindowDragging) return;
+        const copied = await this.copyText(this.chatLineFor(this.meterChatResult()));
+        this.flashCopied(chatCopyBtn, copied);
+      };
+      chatCopyBtn.addEventListener("click", copy);
+      chatCopyBtn.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          copy();
+        }
+      });
+      chatCopyBtn.setAttribute("data-no-drag", "true");
+    }
+  }
+
+  // Your row in the fight on the meter, for the chat line.
+  meterChatResult() {
+    const rows = (Array.isArray(this.lastSnapshot) ? this.lastSnapshot : [])
+      .filter((row) => !row.isOthers && row.totalDamage > 0)
+      .sort((a, b) => b.totalDamage - a.totalDamage);
+    const index = rows.findIndex((row) => row.isUser);
+    if (index < 0) return null;
+    const total = rows.reduce((sum, row) => sum + row.totalDamage, 0) || 1;
+    return {
+      name: rows[index].name,
+      target: this.getTargetLabel({
+        targetId: this.lastTargetId,
+        targetName: this.lastTargetName,
+        targetMode: this.lastTargetMode,
+        dungeonId: this.lastDungeonId,
+      }),
+      timeMs: Number(this._lastBattleTimeMs) || 0,
+      damage: rows[index].totalDamage,
+      pct: (rows[index].totalDamage / total) * 100,
+      rank: index + 1,
+      count: rows.length,
+    };
+  }
+
+  // The line copied to game chat: your name, the fight and its time, your
+  // DPS, damage, share and place, short enough for one message. A long
+  // target name gives way first.
+  chatLineFor(result) {
+    if (!result) return "";
+    const t = (key, fallback) => this.i18n?.t?.(key, fallback) ?? fallback;
+    const compact = (value) => {
+      const n = Number(value) || 0;
+      if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}m`;
+      if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+      return String(Math.round(n));
+    };
+    const ms = Math.max(0, Number(result.timeMs) || 0);
+    const sec = Math.round(ms / 1000);
+    const time = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+    const dps = ms > 0 ? compact((result.damage / ms) * 1000) : "-";
+    const template = result.count > 1
+      ? t("chatCopy.line", "{name} vs {target} ({time}) | {dps} DPS | {damage} dmg | {pct} | #{rank}/{count}")
+      : t("chatCopy.lineSolo", "{name} vs {target} ({time}) | {dps} DPS | {damage} dmg");
+    const fill = (target) => template
+      .replace("{name}", result.name)
+      .replace("{target}", target)
+      .replace("{time}", time)
+      .replace("{dps}", dps)
+      .replace("{damage}", compact(result.damage))
+      .replace("{pct}", `${(Number(result.pct) || 0).toFixed(1)}%`)
+      .replace("{rank}", String(result.rank))
+      .replace("{count}", String(result.count));
+    let target = String(result.target || "").trim();
+    let line = fill(target);
+    while (line.length > CHAT_LINE_MAX && target.length > 6) {
+      target = target.slice(0, -1);
+      line = fill(`${target.trimEnd()}...`);
+    }
+    return line;
+  }
+
+  async copyText(value) {
+    if (!value) return false;
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        return copied;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  // A moment's tick on a copy button: copied, or nothing to copy.
+  flashCopied(button, copied) {
+    if (!button) return;
+    const t = (key, fallback) => this.i18n?.t?.(key, fallback) ?? fallback;
+    button.classList.remove("isCopied", "isCopyFailed");
+    button.classList.add(copied ? "isCopied" : "isCopyFailed");
+    button.title = copied
+      ? t("chatCopy.copied", "Copied: paste it into the game's chat")
+      : t("chatCopy.nothing", "Nothing to copy: no damage of yours in this fight");
+    window.clearTimeout(button._copyTimer);
+    button._copyTimer = window.setTimeout(() => {
+      button.classList.remove("isCopied", "isCopyFailed");
+      button.title = t("chatCopy.title", "Copy your result for the game's chat");
+    }, 1500);
   }
 
   setAccountState(text) {
@@ -2836,6 +3010,8 @@ class DpsApp {
     this.discordStatDropdownBtn = document.querySelector(".discordStatDropdownBtn");
     this.discordStatDropdownMenu = document.querySelector(".discordStatDropdownMenu");
     this.trainSelectionModeDropdownMenu = document.querySelector(".trainSelectionModeDropdownMenu");
+    this.trainTimeLimitDropdownBtn = document.querySelector(".trainTimeLimitDropdownBtn");
+    this.trainTimeLimitDropdownMenu = document.querySelector(".trainTimeLimitDropdownMenu");
     this.meterAnchorDropdownBtn = document.querySelector(".meterAnchorDropdownBtn");
     this.meterAnchorDropdownMenu = document.querySelector(".meterAnchorDropdownMenu");
     this.meterAnchorRow = this.meterAnchorDropdownBtn?.closest?.(".settingsRow") || null;
@@ -2926,6 +3102,7 @@ class DpsApp {
       defaultMeterMode: "bossTargets",
       allTargetsWindowMs: "120000",
       trainSelectionMode: "all",
+      trainTimeLimitMs: "0",
       meterAnchor: "top",
       partyStat: "combatPower",
       discordStat: "off",
@@ -4149,6 +4326,10 @@ class DpsApp {
         label: this.i18n?.t("settings.trainingMode.options.highestDamage", "Highest Damage"),
       },
     ];
+    const trainTimeLimitOptions = [
+      { value: "0", label: this.i18n?.t("settings.trainTimeLimit.options.off", "No limit") },
+      ...allTargetsWindowOptions,
+    ];
     const meterAnchorOptions = [
       { value: "top", label: this.i18n?.t("settings.meterAnchor.options.top", "Top") },
       { value: "middle", label: this.i18n?.t("settings.meterAnchor.options.middle", "Centre") },
@@ -4395,6 +4576,17 @@ class DpsApp {
         this.safeSetSetting(this.storageKeys.trainSelectionMode, value);
         window.javaBridge?.setTrainSelectionMode?.(value);
         if (!this.isCollapse) this.fetchDps();
+      }
+    );
+    setupDropdown(
+      this.trainTimeLimitDropdownBtn,
+      this.trainTimeLimitDropdownMenu,
+      trainTimeLimitOptions,
+      pickSettingChoice("trainTimeLimitMs", this.safeGetSetting(this.storageKeys.trainTimeLimitMs)),
+      (value) => {
+        if (value == null) return;
+        this.settingsSelections.trainTimeLimitMs = value;
+        this.safeSetSetting(this.storageKeys.trainTimeLimitMs, value);
       }
     );
     setupDropdown(
@@ -5645,7 +5837,10 @@ class DpsApp {
     if (persist) {
       this.safeSetStorage(this.storageKeys.targetSelection, String(this.targetSelection));
     }
-    if (syncBackend) {
+    // Details and History run this too, with the default mode: theirs put
+    // the live meter in it as they opened (a Train fight then went on with no
+    // time limit and everyone's damage). The meter and Settings set it.
+    if (syncBackend && window.A2_VIEW !== "details" && window.A2_VIEW !== "history") {
       window.javaBridge?.setTargetSelection?.(this.targetSelection);
     }
     if (previousSelection !== this.targetSelection) {
@@ -5945,7 +6140,14 @@ class DpsApp {
     this.targetMenuOpen = false;
 
     const choose = (mode) => {
+      const wasTrain = this.targetSelection === "trainTargets";
       this.setTargetSelection(mode, { persist: true, syncBackend: true, reason: "target menu" });
+      // Into Train mode with a time limit: the timed fight starts from 0:00 at
+      // your first hit, so the last mode's rows and timer go (the backend
+      // has cleared the dummies too).
+      if (mode === "trainTargets" && !wasTrain && this.trainTimeCapMs(mode) > 0) {
+        this.resetAll({ callBackend: false });
+      }
       this.renderTargetMenu();
       if (!this.isCollapse) this.fetchDps();
     };
@@ -6059,6 +6261,11 @@ class DpsApp {
       this.safeSetSetting(this.storageKeys[key], String(this[key]));
       if (key === "showTtk" && !this.showTtk) this.battleTime?.setTtk?.(null);
       if (key === "showOdyle") this.updateOdyle();
+      if (key === "showFpTimer") this.renderFpTimer();
+      if (key === "showFpPin") {
+        window.javaBridge?.setFpPin?.(this.showFpPin);
+        this.renderFpTimer();
+      }
       if (key === "showPing") this.updatePing();
       if (key === "showTotalDps") this.renderCurrentRows();
       this.renderFooterMenu();
@@ -6317,6 +6524,11 @@ class DpsApp {
     this.lastSnapshot = [];
     this._lastRenderedRowsSummary = null;
     this._lastRenderedListSignature = "";
+    // The timer starts again too: left "ended", the next fight was taken
+    // for the last one's tail.
+    this._lastBattleTimeMs = null;
+    this._battleTimeVisible = false;
+    this.battleTime?.reset?.();
     this.meterUI?.onResetMeterUi?.();
     this.renderCurrentRows();
 
@@ -6519,6 +6731,7 @@ class DpsApp {
     const choices = {
       defaultMeterMode: "defaultMeterMode",
       trainSelectionMode: "trainSelectionMode",
+      trainTimeLimitMs: "trainTimeLimit",
       allTargetsWindowMs: "allTargetsWindow",
       updateRateMs: "updateRate",
       meterAnchor: "meterAnchor",
@@ -7056,6 +7269,56 @@ class DpsApp {
     el.querySelector(".odyleBasic").textContent = String(shown.basic);
     el.querySelector(".odyleCharged").textContent = shown.charged > 0 ? `(+${shown.charged})` : "";
     el.classList.toggle("isRemembered", !live);
+    el.classList.add("isVisible");
+  }
+
+  // Flight power from the backend (capture/flight_power.rs), in hundredths:
+  // where it was at `atMs`, its maximum and what it refills by each second.
+  // The game sends the maximum only at login, so it is kept by character.
+  updateFlightPower(fp) {
+    if (!fp || typeof fp.current !== "number") return;
+    this.flightPower = fp;
+    const owner = String(fp.name ?? this.USER_NAME ?? "").trim();
+    if (owner && typeof fp.max === "number" && fp.max > 0) {
+      const saved = this.safeParseJSON(this.safeGetStorage(this.storageKeys.fpMaxLast) || "{}", {}) || {};
+      if (saved[owner] !== fp.max) {
+        saved[owner] = fp.max;
+        this.safeSetStorage(this.storageKeys.fpMaxLast, JSON.stringify(saved));
+      }
+    }
+    this.renderFpTimer();
+    // Counted down between readings, which come only once a second.
+    if (!this._fpTimerTick) this._fpTimerTick = setInterval(() => this.renderFpTimer(), 250);
+  }
+
+  // The footer's FP timer: the time until flight power is full, in neon
+  // blue; hidden when full or while its maximum is not known.
+  renderFpTimer() {
+    const el = this.fpTimerEl;
+    if (!el) return;
+    const fp = this.flightPower;
+    const owner = String(fp?.name ?? this.USER_NAME ?? "").trim();
+    const saved = this.safeParseJSON(this.safeGetStorage(this.storageKeys.fpMaxLast) || "{}", {}) || {};
+    const max = Number(fp?.max) > 0 ? Number(fp.max) : Number(saved[owner]) || 0;
+    // In flight, the flight time left; else the time until full (fpTime.js).
+    this._fpSmooth ||= window.fpSmoother?.();
+    const left = this._fpSmooth?.(this.showFpTimer && !this.showFpPin ? window.fpTime?.(fp, max) : null);
+    if (!left) {
+      el.classList.remove("isVisible");
+      return;
+    }
+    const text = window.fpTimeText(left.ms);
+    const timeEl = el.querySelector(".fpTimerTime");
+    if (timeEl && timeEl.textContent !== text) timeEl.textContent = text;
+    el.classList.toggle("isDraining", left.draining);
+    const t = (key, fallback) => this.i18n?.t?.(key, fallback) ?? fallback;
+    el.title = (left.draining
+      ? t("fpTimer.tipFlying", "Flight power: {now} / {max} ({pct}%), {time} of flight left")
+      : t("fpTimer.tip", "Flight power: {now} / {max} ({pct}%), full in {time}"))
+      .replace("{now}", String(Math.floor(left.now / 100)))
+      .replace("{max}", String(Math.floor(max / 100)))
+      .replace("{pct}", String(Math.floor((left.now / max) * 100)))
+      .replace("{time}", text);
     el.classList.add("isVisible");
   }
 
