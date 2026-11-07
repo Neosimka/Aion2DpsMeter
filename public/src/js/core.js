@@ -3549,6 +3549,10 @@ class DpsApp {
         if (window.a2Build?.online === false) return;   // nothing to offer
         // Aion2DpsMeter : pas de fenêtres d'invitation A2Tools (compte, partage,
         // Discord, badge A2) ; seulement « Quoi de neuf » après une mise à jour.
+        // L'onglet Confidentialité est caché : rien n'est partagé avec A2Tools.
+        for (const key of ["dpsMeter.guestUpload", "dpsMeter.partyPresence", "dpsMeter.shareData", "dpsMeter.shareBossTimers", "dpsMeter.shareSupplyRequests"]) {
+          if (this.safeGetSetting(key) === "true") this.safeSetSetting(key, "false");
+        }
         this.maybeShowWhatsNew({ existingInstall: true });
         return;
         // At most one offer per launch: the account one waits for a launch

@@ -9763,6 +9763,12 @@ html.a2-offline .historyUploadBtn {
   display: none !important;
 }
 
+/* Aion2DpsMeter : pas d'onglet Confidentialité (tout partage avec A2Tools est coupé). */
+.settingsPanel .settingsNav #settingsTab-privacy,
+.settingsPanel #settingsSection-privacy {
+  display: none !important;
+}
+
 /* Aion2DpsMeter : pas d'onglet Plugins. */
 .settingsPanel .settingsNav #settingsTab-plugins,
 .settingsPanel #settingsSection-plugins {
