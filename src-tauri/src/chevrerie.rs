@@ -174,6 +174,9 @@ pub struct FightPayload {
     pub duration_ms: i64,
     pub total_damage: i64,
     pub max_hp: i64,
+    /// Aion2DpsMeter : « kill » (boss mort), « wipe » ou « unconfirmed », comme
+    /// l'historique du meter le juge ; le site ne classe que les kills.
+    pub outcome: String,
     pub uploader: String,
     pub players: Vec<PlayerLine>,
 }
@@ -241,6 +244,7 @@ pub fn build_payload(
         duration_ms: record.duration_ms,
         total_damage: total,
         max_hp: record.details.max_hp as i64,
+        outcome: crate::history::summary::outcome(record).to_string(),
         uploader: uploader.to_string(),
         players,
     })

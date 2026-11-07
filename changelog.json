@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.11",
+      "date": "2026-11-08",
+      "notes": {
+        "fr": "- Combats envoyés au site de la légion : le meter dit maintenant si le boss est mort, pour que le site ne classe que les kills.",
+        "en": "- Combats envoyés au site de la légion : le meter dit maintenant si le boss est mort, pour que le site ne classe que les kills."
+      }
+    },
+    {
       "version": "2.1.10",
       "date": "2026-11-05",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "- Joueurs autour de toi : les joueurs morts ne comptent plus, ni chez les alliés ni chez les ennemis. Ils reviennent dans le compte dès qu'ils réapparaissent, que leurs PV remontent ou qu'ils agissent.",
         "en": "- Joueurs autour de toi : les joueurs morts ne comptent plus, ni chez les alliés ni chez les ennemis. Ils reviennent dans le compte dès qu'ils réapparaissent, que leurs PV remontent ou qu'ils agissent."
-      }
-    },
-    {
-      "version": "2.1.5",
-      "date": "2026-10-31",
-      "notes": {
-        "fr": "- En bas du meter, le nombre de joueurs autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte.",
-        "en": "- En bas du meter, le nombre de joueurs autour de toi : 👥 alliés et ⚔ ennemis (en rouge, quand il y en a). Lu sur le réseau, à partir des joueurs que le jeu t'envoie ; le compte repart à zéro à chaque changement de carte."
       }
     }
   ]

@@ -83,7 +83,7 @@ fn you(record: &FightRecord) -> Option<&crate::entity::details_context::DetailsA
 /// all of it, where that HP can be trusted (under `READING_CAP`), is a kill;
 /// under `NEAR` of it a wipe; between, unconfirmed (kills read 96.7% and
 /// 98.9%, a few hits missed: Ultimate Berk, Furious Feruk).
-fn outcome(record: &FightRecord) -> &'static str {
+pub(crate) fn outcome(record: &FightRecord) -> &'static str {
     match record.killed {
         Some(true) => "kill",
         Some(false) => "wipe",
