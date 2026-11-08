@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.14",
+      "date": "2026-11-08",
+      "notes": {
+        "fr": "**Nouveau thème Givre** (remplace Terminal)\n- Fond bleu glacé avec reflets, barres en éclats de glace taillés en biseau, du bleu pâle au bleu profond selon la place.\n- Toi en ambre, bien visible sur le bleu.\n- Comme Sakura, il redessine tout l'overlay, quel que soit le style choisi.\n- Si tu avais choisi Terminal, le meter repasse sur Éther doré : choisis Givre dans Paramètres → Apparence → Thème.",
+        "en": "**Nouveau thème Givre** (remplace Terminal)\n- Fond bleu glacé avec reflets, barres en éclats de glace taillés en biseau, du bleu pâle au bleu profond selon la place.\n- Toi en ambre, bien visible sur le bleu.\n- Comme Sakura, il redessine tout l'overlay, quel que soit le style choisi.\n- Si tu avais choisi Terminal, le meter repasse sur Éther doré : choisis Givre dans Paramètres → Apparence → Thème."
+      }
+    },
+    {
       "version": "2.1.13",
       "date": "2026-11-08",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Ludra**\n- Forge abyssale : Ludra reconnue en Normal **et en Difficile** : combats gardés dans l'historique et envoyés au site de la légion, minuteur d'enrage (10 min) aussi en Difficile.\n- 🌐 à côté du pseudo des membres de La Chevrerie : ouvre leur fiche (onglet Note) sur le site de la légion.\n\n**Repris d'A2Tools 2.0.88**\n- Historique : « Groupe » en donjon, « Tous les joueurs » en monde ouvert.\n- Points abyssaux relus depuis la mise à jour du jeu ; Clerc : Tonnerre du jugement bien compté.\n- Option « Fermer le compteur quand AION2 se ferme » ; instabilité du ping dans son infobulle.\n- Le meter repasse au-dessus du jeu quand Windows l'avait mis derrière.",
         "en": "**Ludra**\n- Forge abyssale : Ludra reconnue en Normal **et en Difficile** : combats gardés dans l'historique et envoyés au site de la légion, minuteur d'enrage (10 min) aussi en Difficile.\n- 🌐 à côté du pseudo des membres de La Chevrerie : ouvre leur fiche (onglet Note) sur le site de la légion.\n\n**Repris d'A2Tools 2.0.88**\n- Historique : « Groupe » en donjon, « Tous les joueurs » en monde ouvert.\n- Points abyssaux relus depuis la mise à jour du jeu ; Clerc : Tonnerre du jugement bien compté.\n- Option « Fermer le compteur quand AION2 se ferme » ; instabilité du ping dans son infobulle.\n- Le meter repasse au-dessus du jeu quand Windows l'avait mis derrière."
-      }
-    },
-    {
-      "version": "2.1.8",
-      "date": "2026-11-02",
-      "notes": {
-        "fr": "- Nombre de coups : les coups par seconde entre parenthèses, par exemple « 955 (5,3/s) ».",
-        "en": "- Nombre de coups : les coups par seconde entre parenthèses, par exemple « 955 (5,3/s) »."
       }
     }
   ]
