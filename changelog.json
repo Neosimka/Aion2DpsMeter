@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.15",
+      "date": "2026-11-08",
+      "notes": {
+        "fr": "**Givre et Sakura deviennent des styles d'overlay**\n- Ils sont maintenant dans Paramètres → Apparence → **Style de l'overlay**, à côté de Blason, Verre et Bannière (ils n'étaient pas à leur place dans les thèmes de couleur).\n- Givre : cristal de glace bleu pâle, barres en éclats taillés, toi en ambre.\n- Sakura : prune et rose pâle, lignes arrondies, une couleur par place, toi en bleu ciel.\n- Ils gardent leurs propres couleurs, quel que soit le thème de couleur choisi.",
+        "en": "**Givre et Sakura deviennent des styles d'overlay**\n- Ils sont maintenant dans Paramètres → Apparence → **Style de l'overlay**, à côté de Blason, Verre et Bannière (ils n'étaient pas à leur place dans les thèmes de couleur).\n- Givre : cristal de glace bleu pâle, barres en éclats taillés, toi en ambre.\n- Sakura : prune et rose pâle, lignes arrondies, une couleur par place, toi en bleu ciel.\n- Ils gardent leurs propres couleurs, quel que soit le thème de couleur choisi."
+      }
+    },
+    {
       "version": "2.1.14",
       "date": "2026-11-08",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "- Horaires mis à jour d'après la mise à jour du jeu du 4 novembre :\n  - Siège d'artefact et boss d'artefact (Tamasa, Agro et Kaira exécuteurs) : jeudi et samedi seulement, plus le lundi.\n  - Agro le roi des esprits (Abysses) : deux fois par jour, à 10 h 30 et 22 h 30, avec son téléporteur.\n  - Les boss programmés restent affichés « en cours » 15 min après leur apparition.",
         "en": "- Horaires mis à jour d'après la mise à jour du jeu du 4 novembre :\n  - Siège d'artefact et boss d'artefact (Tamasa, Agro et Kaira exécuteurs) : jeudi et samedi seulement, plus le lundi.\n  - Agro le roi des esprits (Abysses) : deux fois par jour, à 10 h 30 et 22 h 30, avec son téléporteur.\n  - Les boss programmés restent affichés « en cours » 15 min après leur apparition."
-      }
-    },
-    {
-      "version": "2.1.9",
-      "date": "2026-11-05",
-      "notes": {
-        "fr": "**Ludra**\n- Forge abyssale : Ludra reconnue en Normal **et en Difficile** : combats gardés dans l'historique et envoyés au site de la légion, minuteur d'enrage (10 min) aussi en Difficile.\n- 🌐 à côté du pseudo des membres de La Chevrerie : ouvre leur fiche (onglet Note) sur le site de la légion.\n\n**Repris d'A2Tools 2.0.88**\n- Historique : « Groupe » en donjon, « Tous les joueurs » en monde ouvert.\n- Points abyssaux relus depuis la mise à jour du jeu ; Clerc : Tonnerre du jugement bien compté.\n- Option « Fermer le compteur quand AION2 se ferme » ; instabilité du ping dans son infobulle.\n- Le meter repasse au-dessus du jeu quand Windows l'avait mis derrière.",
-        "en": "**Ludra**\n- Forge abyssale : Ludra reconnue en Normal **et en Difficile** : combats gardés dans l'historique et envoyés au site de la légion, minuteur d'enrage (10 min) aussi en Difficile.\n- 🌐 à côté du pseudo des membres de La Chevrerie : ouvre leur fiche (onglet Note) sur le site de la légion.\n\n**Repris d'A2Tools 2.0.88**\n- Historique : « Groupe » en donjon, « Tous les joueurs » en monde ouvert.\n- Points abyssaux relus depuis la mise à jour du jeu ; Clerc : Tonnerre du jugement bien compté.\n- Option « Fermer le compteur quand AION2 se ferme » ; instabilité du ping dans son infobulle.\n- Le meter repasse au-dessus du jeu quand Windows l'avait mis derrière."
       }
     }
   ]

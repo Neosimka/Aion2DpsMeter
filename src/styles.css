@@ -10250,12 +10250,11 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
 .header .headerBtn.chatCopyBtn.isCopyFailed,
 .detailsPanel .detailsHeader .detailsChatCopyBtn.isCopyFailed { color: #ff6b6b; }
 
-/* ===== Aion2DpsMeter : thèmes à style complet =====
-   Contrairement aux trois premiers (des couleurs), ces deux-là redessinent tout
-   l'overlay et passent par-dessus le style choisi (Blason, Verre, Bannière). */
+/* ===== Aion2DpsMeter : styles d'overlay Givre et Sakura =====
+   Ils apportent leurs propres couleurs : le thème de couleur choisi n'y change rien. */
 
 /* ---------- Givre : cristal de glace, éclats bleu pâle, toi en ambre ---------- */
-:root[data-theme="a2d-givre"] {
+:root[data-a2d-skin="givre"] {
   --hud-bg: 14, 28, 46;
   --row-fill: #9fd8ff;
   --isUser-fill: #ffc857;
@@ -10278,7 +10277,7 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
   --dps-shadow: 0 0 1px rgba(0,0,0,.95), 0 1px 3px rgba(0,10,30,.9), 0 0 12px rgba(160,220,255,.35);
   --player-name-shadow: 0 0 1px rgba(0,0,0,.95), 0 1px 3px rgba(0,10,30,.9);
 }
-:root[data-theme="a2d-givre"] .meter {
+:root[data-a2d-skin="givre"] .meter {
   background:
     radial-gradient(60% 40% at 12% 0%, rgba(255,255,255,.20), transparent 70%),
     radial-gradient(50% 35% at 95% 100%, rgba(140,210,255,.18), transparent 70%),
@@ -10286,21 +10285,21 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
   border: 1px solid rgba(200,235,255,.55); border-radius: 6px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 22px rgba(160,220,255,.10), 0 0 22px rgba(140,200,255,.18), 0 8px 24px rgba(0,0,0,.45);
 }
-:root[data-theme="a2d-givre"] .header { background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0)); border-bottom: 1px solid rgba(200,235,255,.30); }
-:root[data-theme="a2d-givre"] .header::before { display: none; }
-:root[data-theme="a2d-givre"] .bossName {
+:root[data-a2d-skin="givre"] .header { background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0)); border-bottom: 1px solid rgba(200,235,255,.30); }
+:root[data-a2d-skin="givre"] .header::before { display: none; }
+:root[data-a2d-skin="givre"] .bossName {
   font-family: "Segoe UI", "Pretendard", sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .12em;
   text-transform: uppercase; color: #eaf8ff; text-shadow: 0 0 8px rgba(160,220,255,.6), 0 1px 2px rgba(0,0,0,.9);
 }
-:root[data-theme="a2d-givre"] .bossName::before { content: "❄ "; color: #bfe9ff; }
-:root[data-theme="a2d-givre"] .bossHpBar { background: rgba(0,10,25,.45); border: 0; border-top: 1px solid rgba(200,235,255,.2); border-radius: 0; }
-:root[data-theme="a2d-givre"] .bossHpFill { background: linear-gradient(90deg, #4fa8e8, #bfe9ff 80%, #ffffff) !important; box-shadow: 0 0 10px rgba(160,220,255,.55); }
-:root[data-theme="a2d-givre"] .list .item {
+:root[data-a2d-skin="givre"] .bossName::before { content: "❄ "; color: #bfe9ff; }
+:root[data-a2d-skin="givre"] .bossHpBar { background: rgba(0,10,25,.45); border: 0; border-top: 1px solid rgba(200,235,255,.2); border-radius: 0; }
+:root[data-a2d-skin="givre"] .bossHpFill { background: linear-gradient(90deg, #4fa8e8, #bfe9ff 80%, #ffffff) !important; box-shadow: 0 0 10px rgba(160,220,255,.55); }
+:root[data-a2d-skin="givre"] .list .item {
   background: rgba(200,235,255,.06); border-radius: 3px; margin-bottom: 3px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 0 1px rgba(200,235,255,.07);
 }
-:root[data-theme="a2d-givre"] .list .item .fillTrack { inset: 0; height: auto; border-radius: 3px; background: none; }
-:root[data-theme="a2d-givre"] .list .item .fill {
+:root[data-a2d-skin="givre"] .list .item .fillTrack { inset: 0; height: auto; border-radius: 3px; background: none; }
+:root[data-a2d-skin="givre"] .list .item .fill {
   /* un éclat de glace : bout taillé en biseau, du bleu pâle au bleu profond selon la place */
   --bar: hsl(calc(198deg + var(--row-pos, 0) * 7deg) 85% calc(80% - var(--row-pos, 0) * 6%));
   top: 0; bottom: 0; height: auto; border-radius: 3px 0 0 3px; opacity: 1; box-shadow: none;
@@ -10309,18 +10308,18 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
     linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,0) 48%, rgba(0,20,50,.18)),
     linear-gradient(90deg, color-mix(in srgb, var(--bar) 18%, transparent), color-mix(in srgb, var(--bar) 66%, transparent));
 }
-:root[data-theme="a2d-givre"] .list .item .fill::after { display: none; }
-:root[data-theme="a2d-givre"] .list .item.isUser .fill { --bar: var(--isUser-fill); }
-:root[data-theme="a2d-givre"] .list .item.warning .fill { --bar: var(--warning-fill); }
-:root[data-theme="a2d-givre"] .list .item.error .fill { --bar: var(--error-fill); }
-:root[data-theme="a2d-givre"] .list .item.isUser { box-shadow: inset 0 0 0 1px rgba(255,200,87,.65), 0 0 10px rgba(255,200,87,.18); }
-:root[data-theme="a2d-givre"] .list .item.isUser .name { color: #ffe3a3; }
-:root[data-theme="a2d-givre"] .list .item .rank { color: #bfe9ff; font-weight: 700; opacity: .95; }
-:root[data-theme="a2d-givre"] .list .item .dps p:first-child { font-weight: 700; }
-:root[data-theme="a2d-givre"] .meterFooter { background: none; border-top: 1px solid rgba(200,235,255,.22); }
+:root[data-a2d-skin="givre"] .list .item .fill::after { display: none; }
+:root[data-a2d-skin="givre"] .list .item.isUser .fill { --bar: var(--isUser-fill); }
+:root[data-a2d-skin="givre"] .list .item.warning .fill { --bar: var(--warning-fill); }
+:root[data-a2d-skin="givre"] .list .item.error .fill { --bar: var(--error-fill); }
+:root[data-a2d-skin="givre"] .list .item.isUser { box-shadow: inset 0 0 0 1px rgba(255,200,87,.65), 0 0 10px rgba(255,200,87,.18); }
+:root[data-a2d-skin="givre"] .list .item.isUser .name { color: #ffe3a3; }
+:root[data-a2d-skin="givre"] .list .item .rank { color: #bfe9ff; font-weight: 700; opacity: .95; }
+:root[data-a2d-skin="givre"] .list .item .dps p:first-child { font-weight: 700; }
+:root[data-a2d-skin="givre"] .meterFooter { background: none; border-top: 1px solid rgba(200,235,255,.22); }
 
 /* ---------- Sakura : prune et rose pâle, tout en courbes ---------- */
-:root[data-theme="a2d-sakura"] {
+:root[data-a2d-skin="sakura"] {
   --hud-bg: 36, 18, 34;
   --row-fill: #ef8fbd;
   --isUser-fill: #8fe3ff;
@@ -10343,7 +10342,7 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
   --dps-shadow: 0 0 1px rgba(0,0,0,.9), 0 1px 3px rgba(40,10,30,.85), 0 0 12px rgba(255,160,205,.30);
   --player-name-shadow: 0 0 1px rgba(0,0,0,.9), 0 1px 3px rgba(40,10,30,.85);
 }
-:root[data-theme="a2d-sakura"] .meter {
+:root[data-a2d-skin="sakura"] .meter {
   background:
     radial-gradient(140% 70% at 100% 0%, rgba(255,150,200,.22), transparent 60%),
     radial-gradient(120% 80% at 0% 100%, rgba(170,140,255,.20), transparent 60%),
@@ -10351,22 +10350,22 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
   border: 1px solid rgba(255,182,213,.45); border-radius: 18px;
   box-shadow: 0 10px 30px rgba(20,0,20,.45), inset 0 1px 0 rgba(255,225,240,.25);
 }
-:root[data-theme="a2d-sakura"] .header { background: none; border-bottom: 1px solid rgba(255,182,213,.18); }
-:root[data-theme="a2d-sakura"] .header::before { display: none; }
-:root[data-theme="a2d-sakura"] .bossName {
+:root[data-a2d-skin="sakura"] .header { background: none; border-bottom: 1px solid rgba(255,182,213,.18); }
+:root[data-a2d-skin="sakura"] .header::before { display: none; }
+:root[data-a2d-skin="sakura"] .bossName {
   font-family: "Segoe UI", "Pretendard", sans-serif; font-size: 14px; font-weight: 600; font-style: italic;
   letter-spacing: .02em; text-transform: none; color: #ffd9ea; text-shadow: 0 1px 3px rgba(40,10,30,.9);
 }
-:root[data-theme="a2d-sakura"] .bossName::before { content: "✿ "; color: #ff9fcf; font-style: normal; }
-:root[data-theme="a2d-sakura"] .bossHpBar { height: 7px; background: rgba(255,255,255,.08); border: 0; border-radius: 999px; margin: 2px 10px 4px; }
-:root[data-theme="a2d-sakura"] .bossHpFill { background: linear-gradient(90deg, #ff9fcf, #c9a7ff) !important; border-radius: 999px; }
-:root[data-theme="a2d-sakura"] .bossHpBar .bossHpText { display: none; }
-:root[data-theme="a2d-sakura"] .list .item {
+:root[data-a2d-skin="sakura"] .bossName::before { content: "✿ "; color: #ff9fcf; font-style: normal; }
+:root[data-a2d-skin="sakura"] .bossHpBar { height: 7px; background: rgba(255,255,255,.08); border: 0; border-radius: 999px; margin: 2px 10px 4px; }
+:root[data-a2d-skin="sakura"] .bossHpFill { background: linear-gradient(90deg, #ff9fcf, #c9a7ff) !important; border-radius: 999px; }
+:root[data-a2d-skin="sakura"] .bossHpBar .bossHpText { display: none; }
+:root[data-a2d-skin="sakura"] .list .item {
   background: rgba(255,255,255,.055); border-radius: 999px; margin-bottom: 4px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
 }
-:root[data-theme="a2d-sakura"] .list .item .fillTrack { inset: 0; height: auto; border-radius: 999px; background: none; overflow: hidden; }
-:root[data-theme="a2d-sakura"] .list .item .fill {
+:root[data-a2d-skin="sakura"] .list .item .fillTrack { inset: 0; height: auto; border-radius: 999px; background: none; overflow: hidden; }
+:root[data-a2d-skin="sakura"] .list .item .fill {
   /* une couleur par place : rose, puis lilas, puis pervenche */
   --bar: hsl(calc(332deg - var(--row-pos, 0) * 24deg) 85% 74%);
   top: 0; bottom: 0; height: auto; border-radius: 999px; opacity: 1; box-shadow: none;
@@ -10374,19 +10373,19 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
     linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 55%),
     linear-gradient(90deg, color-mix(in srgb, var(--bar) 22%, transparent), color-mix(in srgb, var(--bar) 62%, transparent));
 }
-:root[data-theme="a2d-sakura"] .list .item .fill::after {
+:root[data-a2d-skin="sakura"] .list .item .fill::after {
   display: block; top: 50%; bottom: auto; right: 4px; width: 7px; height: 7px; border-radius: 50%;
   transform: translateY(-50%); background: #fff; box-shadow: 0 0 8px 2px color-mix(in srgb, var(--bar) 80%, transparent);
 }
-:root[data-theme="a2d-sakura"] .list .item.isUser .fill { --bar: var(--isUser-fill); }
-:root[data-theme="a2d-sakura"] .list .item.warning .fill { --bar: var(--warning-fill); }
-:root[data-theme="a2d-sakura"] .list .item.error .fill { --bar: var(--error-fill); }
-:root[data-theme="a2d-sakura"] .list .item.isUser { box-shadow: inset 0 0 0 1px rgba(143,227,255,.75), 0 0 10px rgba(143,227,255,.25); }
-:root[data-theme="a2d-sakura"] .list .item.isUser .name { color: #d9f6ff; }
-:root[data-theme="a2d-sakura"] .list .item .rank { color: #ffb6d5; font-style: italic; opacity: .95; }
-:root[data-theme="a2d-sakura"] .list .item .content { padding: 0 10px; }
-:root[data-theme="a2d-sakura"] .list .item .dps p:first-child { font-weight: 700; }
-:root[data-theme="a2d-sakura"] .meterFooter { background: none; border-top: 1px solid rgba(255,182,213,.18); }
+:root[data-a2d-skin="sakura"] .list .item.isUser .fill { --bar: var(--isUser-fill); }
+:root[data-a2d-skin="sakura"] .list .item.warning .fill { --bar: var(--warning-fill); }
+:root[data-a2d-skin="sakura"] .list .item.error .fill { --bar: var(--error-fill); }
+:root[data-a2d-skin="sakura"] .list .item.isUser { box-shadow: inset 0 0 0 1px rgba(143,227,255,.75), 0 0 10px rgba(143,227,255,.25); }
+:root[data-a2d-skin="sakura"] .list .item.isUser .name { color: #d9f6ff; }
+:root[data-a2d-skin="sakura"] .list .item .rank { color: #ffb6d5; font-style: italic; opacity: .95; }
+:root[data-a2d-skin="sakura"] .list .item .content { padding: 0 10px; }
+:root[data-a2d-skin="sakura"] .list .item .dps p:first-child { font-weight: 700; }
+:root[data-a2d-skin="sakura"] .meterFooter { background: none; border-top: 1px solid rgba(255,182,213,.18); }
 /* Retouches : sous Sakura, les chiffres n'ont pas de bandeau sombre. */
-:root[data-theme="a2d-sakura"] .list .item .dps { background: none; margin-right: 0; padding-left: 8px; }
-:root[data-theme="a2d-sakura"] .list .item .fill::after { width: 3px; height: 60%; border-radius: 3px; right: 3px; }
+:root[data-a2d-skin="sakura"] .list .item .dps { background: none; margin-right: 0; padding-left: 8px; }
+:root[data-a2d-skin="sakura"] .list .item .fill::after { width: 3px; height: 60%; border-radius: 3px; right: 3px; }

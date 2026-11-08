@@ -30,7 +30,7 @@ const SETTING_CHOICES = {
   // The meter's font (styles.css, data-font): "meter" is its own (#98).
   font: { allowed: ["meter", "system", "inter", "exo2", "oxanium", "jetbrains", "atkinson", "lexend", "andika"], fallback: "meter" },
   // Aion2DpsMeter : style de l'overlay (styles.css, data-a2d-skin).
-  a2dSkin: { allowed: ["standard", "blason", "verre", "banniere"], fallback: "blason" },
+  a2dSkin: { allowed: ["standard", "blason", "verre", "banniere", "givre", "sakura"], fallback: "blason" },
   barTexture: { allowed: ["none", "flames", "crystal", "glacier", "feathers", "wing", "storm", "nebula", "galaxy", "aura"], fallback: "none" },
 };
 // Themes whose bars differ from one another show those colours in the theme
@@ -206,8 +206,6 @@ class DpsApp {
       "a2d-ether",
       "a2d-neon",
       "a2d-braise",
-      "a2d-givre",
-      "a2d-sakura",
     ];
     this.supportQrImages = {
       afdian: "./assets/afdian.png",
@@ -4259,8 +4257,6 @@ class DpsApp {
       { value: "a2d-ether", label: this.i18n?.t("settings.theme.options.a2dEther", "Aion2DpsMeter · Éther doré") },
       { value: "a2d-neon", label: this.i18n?.t("settings.theme.options.a2dNeon", "Aion2DpsMeter · Néon") },
       { value: "a2d-braise", label: this.i18n?.t("settings.theme.options.a2dBraise", "Aion2DpsMeter · Braise") },
-      { value: "a2d-givre", label: this.i18n?.t("settings.theme.options.a2dTerminal", "Aion2DpsMeter · Terminal") },
-      { value: "a2d-sakura", label: this.i18n?.t("settings.theme.options.a2dSakura", "Aion2DpsMeter · Sakura") },
       { value: "aion2", label: this.i18n?.t("settings.theme.options.aion2", "AION2") },
       {
         value: "aion2-classes",
@@ -4421,6 +4417,8 @@ class DpsApp {
         { value: "blason", label: "Blason (La Chevrerie)" },
         { value: "verre", label: "Verre (discret)" },
         { value: "banniere", label: "Bannière (arène)" },
+        { value: "givre", label: "Givre (cristal de glace)" },
+        { value: "sakura", label: "Sakura (tout en courbes)" },
         { value: "standard", label: "Standard (A2Tools)" },
       ],
       this.settingsSelections.a2dSkin,
