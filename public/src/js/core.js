@@ -206,6 +206,8 @@ class DpsApp {
       "a2d-ether",
       "a2d-neon",
       "a2d-braise",
+      "a2d-terminal",
+      "a2d-sakura",
     ];
     this.supportQrImages = {
       afdian: "./assets/afdian.png",
@@ -4257,6 +4259,8 @@ class DpsApp {
       { value: "a2d-ether", label: this.i18n?.t("settings.theme.options.a2dEther", "Aion2DpsMeter · Éther doré") },
       { value: "a2d-neon", label: this.i18n?.t("settings.theme.options.a2dNeon", "Aion2DpsMeter · Néon") },
       { value: "a2d-braise", label: this.i18n?.t("settings.theme.options.a2dBraise", "Aion2DpsMeter · Braise") },
+      { value: "a2d-terminal", label: this.i18n?.t("settings.theme.options.a2dTerminal", "Aion2DpsMeter · Terminal") },
+      { value: "a2d-sakura", label: this.i18n?.t("settings.theme.options.a2dSakura", "Aion2DpsMeter · Sakura") },
       { value: "aion2", label: this.i18n?.t("settings.theme.options.aion2", "AION2") },
       {
         value: "aion2-classes",

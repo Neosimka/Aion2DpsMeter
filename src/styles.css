@@ -10249,3 +10249,158 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
 .detailsPanel .detailsHeader .detailsChatCopyBtn.isCopied { color: var(--metric-hps, #7ee2a8); }
 .header .headerBtn.chatCopyBtn.isCopyFailed,
 .detailsPanel .detailsHeader .detailsChatCopyBtn.isCopyFailed { color: #ff6b6b; }
+
+/* ===== Aion2DpsMeter : thèmes à style complet =====
+   Contrairement aux trois premiers (des couleurs), ces deux-là redessinent tout
+   l'overlay et passent par-dessus le style choisi (Blason, Verre, Bannière). */
+
+/* ---------- Terminal : écran phosphore vert, police à chasse fixe ---------- */
+:root[data-theme="a2d-terminal"] {
+  --hud-bg: 2, 9, 4;
+  --row-fill: #22b455;
+  --isUser-fill: #c6ff3d;
+  --dmg-fill-bg: rgba(198, 255, 61, 0.8);
+  --warning-fill: #ffd23f;
+  --error-fill: #ff4d4d;
+  --dps: #d6ffe0;
+  --dps-text: #d6ffe0;
+  --panel-bg: rgba(2, 9, 4, 0.95);
+  --panel-border: rgba(61, 255, 122, 0.40);
+  --title: #8dffb0;
+  --indicator-combat: #3dff7a;
+  --hud-name: #b4ffc8;
+  --hud-num: #e4ffe9;
+  --hud-sub: rgba(140, 255, 170, 0.55);
+  --hud-faint: rgba(140, 255, 170, 0.35);
+  --hud-hairline: rgba(61, 255, 122, 0.18);
+  --hud-tech: "Cascadia Mono", "Consolas", "Lucida Console", "Courier New", monospace;
+  --hud-ident: "Cascadia Mono", "Consolas", "Lucida Console", monospace;
+  --rounded: 2px;
+  --text-shadow: 0 0 1px rgba(0,0,0,.95), 0 0 6px rgba(61,255,122,.45);
+  --dps-shadow: 0 0 1px rgba(0,0,0,.95), 0 0 8px rgba(61,255,122,.55);
+  --player-name-shadow: 0 0 1px rgba(0,0,0,.95), 0 0 6px rgba(61,255,122,.40);
+}
+:root[data-theme="a2d-terminal"] .meter {
+  font-family: var(--hud-tech);
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 90% at 50% 40%, rgba(20,60,32,.55), rgba(2,9,4,.94));
+  border: 1px solid rgba(61,255,122,.45); border-radius: 2px;
+  box-shadow: 0 0 18px rgba(61,255,122,.16), inset 0 0 28px rgba(61,255,122,.07), 0 8px 24px rgba(0,0,0,.5);
+}
+:root[data-theme="a2d-terminal"] .header { background: none; border-bottom: 1px dashed rgba(61,255,122,.38); }
+:root[data-theme="a2d-terminal"] .header::before { display: none; }
+:root[data-theme="a2d-terminal"] .bossName {
+  font-family: var(--hud-tech); font-size: 13px; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: #8dffb0; text-shadow: 0 0 6px rgba(61,255,122,.6);
+}
+:root[data-theme="a2d-terminal"] .bossName::before { content: "> "; color: #3dff7a; }
+:root[data-theme="a2d-terminal"] .bossHpBar { background: rgba(61,255,122,.08); border: 0; border-radius: 0; }
+:root[data-theme="a2d-terminal"] .bossHpFill {
+  background: repeating-linear-gradient(90deg, #3dff7a 0 5px, transparent 5px 7px) !important; border-radius: 0;
+  box-shadow: 0 0 8px rgba(61,255,122,.6);
+}
+:root[data-theme="a2d-terminal"] .bossHpText { font-family: var(--hud-tech); color: #e4ffe9; }
+:root[data-theme="a2d-terminal"] .list .item {
+  background: rgba(61,255,122,.035); border-radius: 0; margin-bottom: 2px;
+  box-shadow: inset 0 -1px 0 rgba(61,255,122,.10);
+}
+:root[data-theme="a2d-terminal"] .list .item .fillTrack { inset: 0; height: auto; border-radius: 0; background: none; }
+:root[data-theme="a2d-terminal"] .list .item .fill {
+  --bar: var(--row-fill);
+  top: 0; bottom: 0; height: auto; border-radius: 0; opacity: .85; box-shadow: none;
+  background: repeating-linear-gradient(90deg,
+      color-mix(in srgb, var(--bar) 55%, transparent) 0 6px, transparent 6px 8px);
+}
+:root[data-theme="a2d-terminal"] .list .item .fill::after {
+  display: block; width: 7px; background: var(--bar);
+  box-shadow: 0 0 10px var(--bar); animation: a2dCursor 1.1s steps(1, end) infinite;
+}
+@keyframes a2dCursor { 50% { opacity: .15; } }
+:root[data-theme="a2d-terminal"] .list .item.isUser .fill { --bar: var(--isUser-fill); }
+:root[data-theme="a2d-terminal"] .list .item.warning .fill { --bar: var(--warning-fill); }
+:root[data-theme="a2d-terminal"] .list .item.error .fill { --bar: var(--error-fill); }
+:root[data-theme="a2d-terminal"] .list .item.isUser { box-shadow: inset 2px 0 0 #c6ff3d; background: rgba(198,255,61,.07); }
+:root[data-theme="a2d-terminal"] .list .item.isUser .name { color: #e6ffa8; }
+:root[data-theme="a2d-terminal"] .list .item .rank { font-family: var(--hud-tech); color: #3dff7a; opacity: .9; }
+:root[data-theme="a2d-terminal"] .list .item .rank::before { content: "["; opacity: .55; }
+:root[data-theme="a2d-terminal"] .list .item .rank::after { content: "]"; opacity: .55; }
+:root[data-theme="a2d-terminal"] .list .item .name,
+:root[data-theme="a2d-terminal"] .list .item .dps p { font-family: var(--hud-tech); }
+:root[data-theme="a2d-terminal"] .list .item .dps p:first-child { font-weight: 700; letter-spacing: 0; }
+:root[data-theme="a2d-terminal"] .meterFooter { background: none; border-top: 1px dashed rgba(61,255,122,.30); opacity: .9; }
+
+/* ---------- Sakura : prune et rose pâle, tout en courbes ---------- */
+:root[data-theme="a2d-sakura"] {
+  --hud-bg: 36, 18, 34;
+  --row-fill: #ef8fbd;
+  --isUser-fill: #8fe3ff;
+  --dmg-fill-bg: rgba(143, 227, 255, 0.8);
+  --warning-fill: #ffd59a;
+  --error-fill: #ff6b8b;
+  --dps: #fff2f8;
+  --dps-text: #fff2f8;
+  --panel-bg: rgba(40, 20, 38, 0.94);
+  --panel-border: rgba(255, 182, 213, 0.40);
+  --title: #ffd9ea;
+  --indicator-combat: #ff9fcf;
+  --hud-name: #fff0f7;
+  --hud-num: #ffffff;
+  --hud-sub: rgba(255, 214, 234, 0.6);
+  --hud-faint: rgba(255, 214, 234, 0.38);
+  --hud-hairline: rgba(255, 182, 213, 0.16);
+  --rounded: 18px;
+  --text-shadow: 0 0 1px rgba(0,0,0,.9), 0 1px 2px rgba(40,10,30,.8), 0 0 10px rgba(255,140,190,.22);
+  --dps-shadow: 0 0 1px rgba(0,0,0,.9), 0 1px 3px rgba(40,10,30,.85), 0 0 12px rgba(255,160,205,.30);
+  --player-name-shadow: 0 0 1px rgba(0,0,0,.9), 0 1px 3px rgba(40,10,30,.85);
+}
+:root[data-theme="a2d-sakura"] .meter {
+  background:
+    radial-gradient(140% 70% at 100% 0%, rgba(255,150,200,.22), transparent 60%),
+    radial-gradient(120% 80% at 0% 100%, rgba(170,140,255,.20), transparent 60%),
+    linear-gradient(160deg, rgba(52,24,48,.93), rgba(28,16,42,.93));
+  border: 1px solid rgba(255,182,213,.45); border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(20,0,20,.45), inset 0 1px 0 rgba(255,225,240,.25);
+}
+:root[data-theme="a2d-sakura"] .header { background: none; border-bottom: 1px solid rgba(255,182,213,.18); }
+:root[data-theme="a2d-sakura"] .header::before { display: none; }
+:root[data-theme="a2d-sakura"] .bossName {
+  font-family: "Segoe UI", "Pretendard", sans-serif; font-size: 14px; font-weight: 600; font-style: italic;
+  letter-spacing: .02em; text-transform: none; color: #ffd9ea; text-shadow: 0 1px 3px rgba(40,10,30,.9);
+}
+:root[data-theme="a2d-sakura"] .bossName::before { content: "✿ "; color: #ff9fcf; font-style: normal; }
+:root[data-theme="a2d-sakura"] .bossHpBar { height: 7px; background: rgba(255,255,255,.08); border: 0; border-radius: 999px; margin: 2px 10px 4px; }
+:root[data-theme="a2d-sakura"] .bossHpFill { background: linear-gradient(90deg, #ff9fcf, #c9a7ff) !important; border-radius: 999px; }
+:root[data-theme="a2d-sakura"] .bossHpBar .bossHpText { display: none; }
+:root[data-theme="a2d-sakura"] .list .item {
+  background: rgba(255,255,255,.055); border-radius: 999px; margin-bottom: 4px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+:root[data-theme="a2d-sakura"] .list .item .fillTrack { inset: 0; height: auto; border-radius: 999px; background: none; overflow: hidden; }
+:root[data-theme="a2d-sakura"] .list .item .fill {
+  /* une couleur par place : rose, puis lilas, puis pervenche */
+  --bar: hsl(calc(332deg - var(--row-pos, 0) * 24deg) 85% 74%);
+  top: 0; bottom: 0; height: auto; border-radius: 999px; opacity: 1; box-shadow: none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 55%),
+    linear-gradient(90deg, color-mix(in srgb, var(--bar) 22%, transparent), color-mix(in srgb, var(--bar) 62%, transparent));
+}
+:root[data-theme="a2d-sakura"] .list .item .fill::after {
+  display: block; top: 50%; bottom: auto; right: 4px; width: 7px; height: 7px; border-radius: 50%;
+  transform: translateY(-50%); background: #fff; box-shadow: 0 0 8px 2px color-mix(in srgb, var(--bar) 80%, transparent);
+}
+:root[data-theme="a2d-sakura"] .list .item.isUser .fill { --bar: var(--isUser-fill); }
+:root[data-theme="a2d-sakura"] .list .item.warning .fill { --bar: var(--warning-fill); }
+:root[data-theme="a2d-sakura"] .list .item.error .fill { --bar: var(--error-fill); }
+:root[data-theme="a2d-sakura"] .list .item.isUser { box-shadow: inset 0 0 0 1px rgba(143,227,255,.75), 0 0 10px rgba(143,227,255,.25); }
+:root[data-theme="a2d-sakura"] .list .item.isUser .name { color: #d9f6ff; }
+:root[data-theme="a2d-sakura"] .list .item .rank { color: #ffb6d5; font-style: italic; opacity: .95; }
+:root[data-theme="a2d-sakura"] .list .item .content { padding: 0 10px; }
+:root[data-theme="a2d-sakura"] .list .item .dps p:first-child { font-weight: 700; }
+:root[data-theme="a2d-sakura"] .meterFooter { background: none; border-top: 1px solid rgba(255,182,213,.18); }
+/* Retouches : le pied garde la police normale (la chasse fixe y déborde),
+   et sous Sakura les chiffres n'ont pas de bandeau sombre. */
+:root[data-theme="a2d-terminal"] .meterFooter,
+:root[data-theme="a2d-terminal"] .meterFooter * { font-family: "Bahnschrift", "Segoe UI", sans-serif; }
+:root[data-theme="a2d-sakura"] .list .item .dps { background: none; margin-right: 0; padding-left: 8px; }
+:root[data-theme="a2d-sakura"] .list .item .fill::after { width: 3px; height: 60%; border-radius: 3px; right: 3px; }

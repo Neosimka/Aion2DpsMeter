@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.13",
+      "date": "2026-11-08",
+      "notes": {
+        "fr": "**Deux nouveaux thèmes**\n- **Terminal** : écran phosphore vert, police à chasse fixe, barres en segments et curseur qui clignote.\n- **Sakura** : prune et rose pâle, lignes arrondies, une couleur par place (rose, lilas, pervenche) et toi en bleu ciel.\n- Ces deux thèmes redessinent tout l'overlay : ils passent par-dessus le style choisi (Blason, Verre, Bannière).\n- À choisir dans Paramètres → Apparence → Thème.",
+        "en": "**Deux nouveaux thèmes**\n- **Terminal** : écran phosphore vert, police à chasse fixe, barres en segments et curseur qui clignote.\n- **Sakura** : prune et rose pâle, lignes arrondies, une couleur par place (rose, lilas, pervenche) et toi en bleu ciel.\n- Ces deux thèmes redessinent tout l'overlay : ils passent par-dessus le style choisi (Blason, Verre, Bannière).\n- À choisir dans Paramètres → Apparence → Thème."
+      }
+    },
+    {
       "version": "2.1.12",
       "date": "2026-11-08",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "- Nombre de coups : les coups par seconde entre parenthèses, par exemple « 955 (5,3/s) ».",
         "en": "- Nombre de coups : les coups par seconde entre parenthèses, par exemple « 955 (5,3/s) »."
-      }
-    },
-    {
-      "version": "2.1.7",
-      "date": "2026-11-02",
-      "notes": {
-        "fr": "- Nouvelle métrique **Nombre de coups** dans le menu des métriques (clic sur DPS en bas) : trier par coups portés, ou les afficher à côté du DPS. Ce sont les coups directs du combat, sans les dégâts sur la durée.",
-        "en": "- Nouvelle métrique **Nombre de coups** dans le menu des métriques (clic sur DPS en bas) : trier par coups portés, ou les afficher à côté du DPS. Ce sont les coups directs du combat, sans les dégâts sur la durée."
       }
     }
   ]
