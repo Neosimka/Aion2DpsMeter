@@ -10389,3 +10389,28 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
 /* Retouches : sous Sakura, les chiffres n'ont pas de bandeau sombre. */
 :root[data-a2d-skin="sakura"] .list .item .dps { background: none; margin-right: 0; padding-left: 8px; }
 :root[data-a2d-skin="sakura"] .list .item .fill::after { width: 3px; height: 60%; border-radius: 3px; right: 3px; }
+
+/* Aion2DpsMeter : barre du boss compacte (a2dBossMini.js) */
+.a2dBossRow { display: flex; align-items: center; gap: 10px; padding: 3px 10px 4px; min-width: 0; }
+.a2dBossRow[hidden] { display: none; }
+.a2dBossRow .a2dRecord { flex: 1; min-width: 0; padding: 0; gap: 8px; }
+.a2dBossRow .a2dRecord > span { overflow: hidden; text-overflow: ellipsis; }
+.a2dBossMini {
+  position: relative; flex: none; display: inline-flex; align-items: center; justify-content: flex-end;
+  width: 92px; height: 16px; border-radius: 3px; overflow: hidden;
+  background: rgba(0, 0, 0, 0.55); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.a2dBossMini[hidden] { display: none; }
+.a2dBossMiniFill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 100%;
+  background: linear-gradient(180deg, #ff5a5a 0%, #d63030 100%);
+  transition: width var(--bar-glide, 200ms) steps(5, end);
+}
+.a2dBossMini.isLow .a2dBossMiniFill { animation: a2dBossLow 1.2s ease-in-out infinite; }
+@keyframes a2dBossLow { 50% { filter: brightness(1.35); } }
+.a2dBossMiniPct {
+  position: relative; padding: 0 5px; font-family: var(--hud-tech); font-size: 11px; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95);
+}
+/* Avec la barre compacte, la grande barre est masquée. */
+:root.a2dBossMiniOn .bossHpBar { display: none !important; }

@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.16",
+      "date": "2026-11-08",
+      "notes": {
+        "fr": "**Barre du boss compacte**\n- Quand tu tapes un boss, sa vie s'affiche dans une petite barre rouge avec le pourcentage (ex. 53.7%), sous l'en-tête, avec ton record à côté.\n- Elle clignote doucement sous 25 %.\n- Tu préfères l'ancienne grande barre avec les PV restants ? Décoche « Barre du boss compacte » dans Paramètres → Apparence.",
+        "en": "**Barre du boss compacte**\n- Quand tu tapes un boss, sa vie s'affiche dans une petite barre rouge avec le pourcentage (ex. 53.7%), sous l'en-tête, avec ton record à côté.\n- Elle clignote doucement sous 25 %.\n- Tu préfères l'ancienne grande barre avec les PV restants ? Décoche « Barre du boss compacte » dans Paramètres → Apparence."
+      }
+    },
+    {
       "version": "2.1.15",
       "date": "2026-11-08",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "- Combats envoyés au site de la légion : le meter dit maintenant si le boss est mort, pour que le site ne classe que les kills.",
         "en": "- Combats envoyés au site de la légion : le meter dit maintenant si le boss est mort, pour que le site ne classe que les kills."
-      }
-    },
-    {
-      "version": "2.1.10",
-      "date": "2026-11-05",
-      "notes": {
-        "fr": "- Horaires mis à jour d'après la mise à jour du jeu du 4 novembre :\n  - Siège d'artefact et boss d'artefact (Tamasa, Agro et Kaira exécuteurs) : jeudi et samedi seulement, plus le lundi.\n  - Agro le roi des esprits (Abysses) : deux fois par jour, à 10 h 30 et 22 h 30, avec son téléporteur.\n  - Les boss programmés restent affichés « en cours » 15 min après leur apparition.",
-        "en": "- Horaires mis à jour d'après la mise à jour du jeu du 4 novembre :\n  - Siège d'artefact et boss d'artefact (Tamasa, Agro et Kaira exécuteurs) : jeudi et samedi seulement, plus le lundi.\n  - Agro le roi des esprits (Abysses) : deux fois par jour, à 10 h 30 et 22 h 30, avec son téléporteur.\n  - Les boss programmés restent affichés « en cours » 15 min après leur apparition."
       }
     }
   ]

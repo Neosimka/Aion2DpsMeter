@@ -89,9 +89,9 @@
     if (best) {
       const diff = now > 0 ? Math.round((now / best - 1) * 100) : null;
       const cls = diff == null ? "" : diff >= 0 ? " isUp" : " isDown";
-      html += `<span class="a2dRecBest">🏆 Record <b>${fmtDps(best)}</b>${diff != null ? ` <i class="a2dRecDiff${cls}">${diff > 0 ? "+" : diff < 0 ? "−" : ""}${Math.abs(diff)} %</i>` : ""}</span>`;
+      html += `<span class="a2dRecBest">🏆 <small class="a2dRecLbl">Record </small><b>${fmtDps(best)}</b>${diff != null ? ` <i class="a2dRecDiff${cls}">${diff > 0 ? "+" : diff < 0 ? "−" : ""}${Math.abs(diff)} %</i>` : ""}</span>`;
     }
-    if (fastest) html += `<span class="a2dRecFast">⏱ meilleur kill <b>${fmtTime(fastest)}</b></span>`;
+    if (fastest) html += `<span class="a2dRecFast">⏱ <small class="a2dRecLbl">meilleur kill </small><b>${fmtTime(fastest)}</b></span>`;
     e.innerHTML = html;
     e.hidden = false;
     const kills = rec.archived?.kills || 0;
