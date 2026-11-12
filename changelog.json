@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.17",
+      "date": "2026-11-12",
+      "notes": {
+        "fr": "**Son des alertes réglable**\n- Dans le panneau Événements (icône calendrier), sous « Alerte » : choix du son (Carillon, Cloche, Bip, Harpe ou Aucun son) et curseur de volume.\n- Changer le son ou le volume le fait entendre tout de suite ; « Tester » montre l'alerte complète.\n- Le réglage vaut pour toutes les alertes : événements, boss et familiers.",
+        "en": "**Son des alertes réglable**\n- Dans le panneau Événements (icône calendrier), sous « Alerte » : choix du son (Carillon, Cloche, Bip, Harpe ou Aucun son) et curseur de volume.\n- Changer le son ou le volume le fait entendre tout de suite ; « Tester » montre l'alerte complète.\n- Le réglage vaut pour toutes les alertes : événements, boss et familiers."
+      }
+    },
+    {
       "version": "2.1.16",
       "date": "2026-11-08",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Important depuis la mise à jour du jeu du 4/11**\n- Le jeu emballe maintenant certaines connexions dans un nouveau format : le meter le lit de nouveau. Sans ça, il ne voyait qu'une partie des coups et pouvait enregistrer un kill comme un wipe (correctif d'A2Tools 2.0.89).\n\n**Repris d'A2Tools 2.0.92**\n- Bouton « Copier pour le chat » (bulle en haut du meter et dans les détails) : ton résultat prêt à coller dans le chat du jeu.\n- Minuteur de vol : temps avant d'être plein, ou vol restant pendant que tu voles.\n- Mannequin : limite de temps en mode entraînement (30 s à 5 min).\n- Carte des boss des Abysses de nouveau envoyée.\n\n**Réglages**\n- Onglet Confidentialité retiré : rien n'est partagé avec A2Tools (combats, présence dans le groupe, timers), et ce qui avait pu être activé est coupé.",
         "en": "**Important depuis la mise à jour du jeu du 4/11**\n- Le jeu emballe maintenant certaines connexions dans un nouveau format : le meter le lit de nouveau. Sans ça, il ne voyait qu'une partie des coups et pouvait enregistrer un kill comme un wipe (correctif d'A2Tools 2.0.89).\n\n**Repris d'A2Tools 2.0.92**\n- Bouton « Copier pour le chat » (bulle en haut du meter et dans les détails) : ton résultat prêt à coller dans le chat du jeu.\n- Minuteur de vol : temps avant d'être plein, ou vol restant pendant que tu voles.\n- Mannequin : limite de temps en mode entraînement (30 s à 5 min).\n- Carte des boss des Abysses de nouveau envoyée.\n\n**Réglages**\n- Onglet Confidentialité retiré : rien n'est partagé avec A2Tools (combats, présence dans le groupe, timers), et ce qui avait pu être activé est coupé."
-      }
-    },
-    {
-      "version": "2.1.11",
-      "date": "2026-11-08",
-      "notes": {
-        "fr": "- Combats envoyés au site de la légion : le meter dit maintenant si le boss est mort, pour que le site ne classe que les kills.",
-        "en": "- Combats envoyés au site de la légion : le meter dit maintenant si le boss est mort, pour que le site ne classe que les kills."
       }
     }
   ]

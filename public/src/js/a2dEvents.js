@@ -258,7 +258,27 @@
       foot.innerHTML = `<label>${BELL}<span>Alerte</span>
           <select class="a2dEvLead">${LEADS.map((m) => `<option value="${m}">${m} min avant</option>`).join("")}</select></label>
         <span class="a2dEvCount"></span>
-        <button type="button" class="a2dEvTest">Tester</button>`;
+        <button type="button" class="a2dEvTest">Tester</button>
+        <div class="a2dEvSound">
+          <label title="Le son joué avec chaque alerte">🔊 <select class="a2dEvSoundSel">${Object.entries(SOUNDS).map(([v, n]) => `<option value="${v}">${n}</option>`).join("")}</select></label>
+          <input type="range" class="a2dEvVol" min="0" max="100" step="5" title="Volume des alertes" aria-label="Volume des alertes">
+          <span class="a2dEvVolVal"></span>
+        </div>`;
+      const sel = foot.querySelector(".a2dEvSoundSel");
+      const vol = foot.querySelector(".a2dEvVol");
+      const volVal = foot.querySelector(".a2dEvVolVal");
+      const showVol = () => { volVal.textContent = sound === "off" ? "" : `${volume} %`; vol.disabled = sound === "off"; };
+      sel.value = sound;
+      vol.value = String(volume);
+      showVol();
+      sel.addEventListener("change", () => {
+        sound = SOUNDS[sel.value] ? sel.value : "chime";
+        store.set(SOUND_KEY, sound);
+        showVol();
+        chime();
+      });
+      vol.addEventListener("input", () => { volume = Number(vol.value) || 0; store.set(VOL_KEY, String(volume)); showVol(); });
+      vol.addEventListener("change", () => chime());
       foot.querySelector(".a2dEvLead").value = String(lead);
       foot.querySelector(".a2dEvLead").addEventListener("change", (e) => {
         lead = Number(e.target.value) || 10;
@@ -282,23 +302,42 @@
       if (audio.state === "suspended") audio.resume();
     } catch {}
   }
-  // Petit carillon de trois notes, fabriqué sur place (aucun fichier son).
-  function chime() {
+  // Sons fabriqués sur place (aucun fichier son), au choix, avec leur volume.
+  const SOUND_KEY = "a2d.alertSound";
+  const VOL_KEY = "a2d.alertVolume";
+  const SOUNDS = { chime: "Carillon", bell: "Cloche", beep: "Bip", harp: "Harpe", off: "Aucun son" };
+  let sound = SOUNDS[store.get(SOUND_KEY)] ? store.get(SOUND_KEY) : "chime";
+  let volume = Math.max(0, Math.min(100, Number(store.get(VOL_KEY) ?? 60)));
+  if (!Number.isFinite(volume)) volume = 60;
+  // Une note : fréquence, départ, durée, forme d'onde, force (0 à 1).
+  function note(f, d, len, type, peak) {
+    const t0 = audio.currentTime + 0.02 + d;
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.type = type;
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+    o.connect(g).connect(audio.destination);
+    o.start(t0);
+    o.stop(t0 + len + 0.05);
+  }
+  function chime(kind = sound, vol = volume) {
+    if (kind === "off" || vol <= 0) return;
     unlockAudio();
     if (!audio) return;
-    const t0 = audio.currentTime + 0.02;
-    [[880, 0], [1174.66, 0.16], [1567.98, 0.32]].forEach(([f, d]) => {
-      const o = audio.createOscillator();
-      const g = audio.createGain();
-      o.type = "sine";
-      o.frequency.value = f;
-      g.gain.setValueAtTime(0.0001, t0 + d);
-      g.gain.exponentialRampToValueAtTime(0.35, t0 + d + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.9);
-      o.connect(g).connect(audio.destination);
-      o.start(t0 + d);
-      o.stop(t0 + d + 1);
-    });
+    const k = (vol / 100) * 0.6; // 60 % = l'ancien volume
+    if (kind === "bell") {
+      // une cloche : la note et ses harmoniques, qui s'éteignent lentement
+      [[660, 1], [1320, 0.45], [1980, 0.22], [2640, 0.12]].forEach(([f, p]) => note(f, 0, 2.2, "sine", k * p));
+    } else if (kind === "beep") {
+      [0, 0.18].forEach((d) => note(1046.5, d, 0.12, "square", k * 0.35));
+    } else if (kind === "harp") {
+      [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((f, i) => note(f, i * 0.07, 1.1, "triangle", k * 0.8));
+    } else {
+      [[880, 0], [1174.66, 0.16], [1567.98, 0.32]].forEach(([f, d]) => note(f, d, 0.9, "sine", k));
+    }
   }
 
   // ---------- popup ----------

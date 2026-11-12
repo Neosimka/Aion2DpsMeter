@@ -10414,3 +10414,11 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
 }
 /* Avec la barre compacte, la grande barre est masquée. */
 :root.a2dBossMiniOn .bossHpBar { display: none !important; }
+
+/* Aion2DpsMeter : son et volume des alertes (pied du panneau Événements) */
+.a2dEvents .a2dEvFoot { flex-wrap: wrap; }
+.a2dEvents .a2dEvSound { flex: 1 0 100%; display: flex; align-items: center; gap: 8px; }
+.a2dEvents .a2dEvSound label { color: rgba(255,255,255,.85); }
+.a2dEvents .a2dEvVol { flex: 1 1 auto; min-width: 60px; accent-color: #f2c66d; height: 14px; }
+.a2dEvents .a2dEvVol:disabled { opacity: .35; }
+.a2dEvents .a2dEvVolVal { min-width: 34px; text-align: right; color: rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
