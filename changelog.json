@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.19",
+      "date": "2026-11-13",
+      "notes": {
+        "fr": "**Vue PVP : les AP vont au bon joueur**\n- Quand plusieurs joueurs tombaient à la suite, tous les AP s'empilaient sur le premier tué. Chaque kill garde maintenant ses propres AP, que le jeu les envoie avant ou après la mort.\n- Les kills et les gains d'AP sont notés dans le journal du meter, pour corriger plus vite si un nom ne colle pas.",
+        "en": "**Vue PVP : les AP vont au bon joueur**\n- Quand plusieurs joueurs tombaient à la suite, tous les AP s'empilaient sur le premier tué. Chaque kill garde maintenant ses propres AP, que le jeu les envoie avant ou après la mort.\n- Les kills et les gains d'AP sont notés dans le journal du meter, pour corriger plus vite si un nom ne colle pas."
+      }
+    },
+    {
       "version": "2.1.18",
       "date": "2026-11-13",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Nouveau thème Givre** (remplace Terminal)\n- Fond bleu glacé avec reflets, barres en éclats de glace taillés en biseau, du bleu pâle au bleu profond selon la place.\n- Toi en ambre, bien visible sur le bleu.\n- Comme Sakura, il redessine tout l'overlay, quel que soit le style choisi.\n- Si tu avais choisi Terminal, le meter repasse sur Éther doré : choisis Givre dans Paramètres → Apparence → Thème.",
         "en": "**Nouveau thème Givre** (remplace Terminal)\n- Fond bleu glacé avec reflets, barres en éclats de glace taillés en biseau, du bleu pâle au bleu profond selon la place.\n- Toi en ambre, bien visible sur le bleu.\n- Comme Sakura, il redessine tout l'overlay, quel que soit le style choisi.\n- Si tu avais choisi Terminal, le meter repasse sur Éther doré : choisis Givre dans Paramètres → Apparence → Thème."
-      }
-    },
-    {
-      "version": "2.1.13",
-      "date": "2026-11-08",
-      "notes": {
-        "fr": "**Deux nouveaux thèmes**\n- **Terminal** : écran phosphore vert, police à chasse fixe, barres en segments et curseur qui clignote.\n- **Sakura** : prune et rose pâle, lignes arrondies, une couleur par place (rose, lilas, pervenche) et toi en bleu ciel.\n- Ces deux thèmes redessinent tout l'overlay : ils passent par-dessus le style choisi (Blason, Verre, Bannière).\n- À choisir dans Paramètres → Apparence → Thème.",
-        "en": "**Deux nouveaux thèmes**\n- **Terminal** : écran phosphore vert, police à chasse fixe, barres en segments et curseur qui clignote.\n- **Sakura** : prune et rose pâle, lignes arrondies, une couleur par place (rose, lilas, pervenche) et toi en bleu ciel.\n- Ces deux thèmes redessinent tout l'overlay : ils passent par-dessus le style choisi (Blason, Verre, Bannière).\n- À choisir dans Paramètres → Apparence → Thème."
       }
     }
   ]

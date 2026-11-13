@@ -2444,6 +2444,7 @@ impl DataStorage {
         let kind = self.kda.lock().player_died(victim, by_me, at_ms);
         if let Some(k @ (KdaKind::Kill | KdaKind::Assist)) = kind {
             let name = self.get_nickname(victim).unwrap_or_else(|| format!("#{victim}"));
+            tracing::info!("PvP: {kind:?} on {victim} named '{name}' at {at_ms}");
             crate::a2d_pvp::kill(name, k == KdaKind::Assist, at_ms);
         }
         tracing::debug!("KDA: player {victim} died, killer {killer}{}: {kind:?}", if by_me { " (you)" } else { "" });
