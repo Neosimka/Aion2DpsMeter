@@ -125,6 +125,22 @@ pub fn a2d_nearby_players(app: tauri::AppHandle) -> serde_json::Value {
     serde_json::json!({ "allies": allies, "enemies": enemies, "unknown": unknown, "factionKnown": faction(server) != 0 })
 }
 
+/// Les Points Abyssaux de la semaine et leur plafond, tels que le jeu les a
+/// envoyés (le compteur de la session se fait côté page).
+#[cfg(feature = "desktop")]
+#[tauri::command]
+pub fn a2d_abyss_points(app: tauri::AppHandle) -> serde_json::Value {
+    use tauri::Manager;
+    let Some(state) = app.try_state::<crate::app::AppState>() else {
+        return serde_json::Value::Null;
+    };
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0);
+    match state.data_storage.abyss_points_at(now) {
+        Some((points, limit)) => serde_json::json!({ "points": points, "limit": limit }),
+        None => serde_json::Value::Null,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

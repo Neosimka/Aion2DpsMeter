@@ -10422,3 +10422,21 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
 .a2dEvents .a2dEvVol { flex: 1 1 auto; min-width: 60px; accent-color: #f2c66d; height: 14px; }
 .a2dEvents .a2dEvVol:disabled { opacity: .35; }
 .a2dEvents .a2dEvVolVal { min-width: 34px; text-align: right; color: rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
+
+/* Aion2DpsMeter : Points Abyssaux de la session (a2dAbyss.js) */
+.meterFooter .a2dAbyss {
+  display: inline-flex; align-items: baseline; gap: 4px; flex: 0 0 auto; margin-left: 8px; padding: 1px 6px;
+  border: 1px solid rgba(160, 130, 255, .35); border-radius: 999px; background: rgba(110, 80, 220, .14);
+  color: #d9ccff; font: inherit; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap;
+  text-shadow: var(--text-shadow); cursor: pointer; position: relative;
+}
+.meterFooter .a2dAbyss[hidden] { display: none; }
+.meterFooter .a2dAbyss .a2dAbIcon { color: #a98bff; font-size: 10px; }
+.meterFooter .a2dAbyss b { color: #fff; font-weight: 700; }
+.meterFooter .a2dAbyss small { color: rgba(217, 204, 255, .7); font-size: 10px; }
+.meterFooter .a2dAbyss em {
+  position: absolute; right: 4px; bottom: 100%; font-style: normal; font-weight: 700; color: #c7b5ff;
+  animation: a2dAbUp 1.8s ease-out forwards; pointer-events: none;
+}
+.meterFooter .a2dAbyss.isFlash { border-color: rgba(190, 165, 255, .9); box-shadow: 0 0 10px rgba(150, 120, 255, .45); }
+@keyframes a2dAbUp { from { opacity: 1; transform: translateY(2px); } to { opacity: 0; transform: translateY(-14px); } }
