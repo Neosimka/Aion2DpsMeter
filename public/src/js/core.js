@@ -68,6 +68,8 @@ const TARGET_MENU_MODES = [
   ["bossTargets", "BOSS", "header.targetMode.bossTargets", "Bosses only"],
   ["trainTargets", "TRAIN", "header.targetMode.trainTargets", "Training dummies"],
   ["allTargets", "ALL", "header.targetMode.allTargets", "Every enemy, combined"],
+  // Aion2DpsMeter : la vue PvP (a2dPvp.js), côté page seulement.
+  ["pvp", "PVP", "header.targetMode.a2dPvp", "Joueurs tués et AP gagnés"],
 ];
 
 // Settings whose change in the Settings window must redraw the meter, mapped to
@@ -6164,6 +6166,17 @@ class DpsApp {
     this.targetMenuOpen = false;
 
     const choose = (mode) => {
+      // Aion2DpsMeter : PVP n'est pas un mode du moteur, juste une autre vue.
+      if (mode === "pvp") {
+        window.A2dPvp?.setOn(true);
+        this.updateTargetModeButton();
+        this.setTargetMenuOpen(false);
+        return;
+      }
+      if (window.A2dPvp?.isOn()) {
+        window.A2dPvp.setOn(false);
+        if (mode === this.targetSelection) { this.updateTargetModeButton(); this.setTargetMenuOpen(false); return; }
+      }
       const wasTrain = this.targetSelection === "trainTargets";
       this.setTargetSelection(mode, { persist: true, syncBackend: true, reason: "target menu" });
       // Into Train mode with a time limit: the timed fight starts from 0:00 at
@@ -6177,7 +6190,7 @@ class DpsApp {
     };
     const step = (dir) => {
       const modes = TARGET_MENU_MODES.map(([mode]) => mode);
-      const i = modes.indexOf(this.targetSelection);
+      const i = modes.indexOf(window.A2dPvp?.isOn() ? "pvp" : this.targetSelection);
       choose(modes[(i + dir + modes.length) % modes.length]);
     };
     btn.addEventListener("click", () => this.setTargetMenuOpen(!this.targetMenuOpen));
@@ -6199,7 +6212,8 @@ class DpsApp {
     );
     menu.addEventListener("click", (event) => {
       const item = event.target.closest?.("[data-mode]");
-      if (item && item.dataset.mode !== this.targetSelection) choose(item.dataset.mode);
+      const current = window.A2dPvp?.isOn() ? "pvp" : this.targetSelection;
+      if (item && item.dataset.mode !== current) choose(item.dataset.mode);
     });
     document.addEventListener("pointerdown", (event) => {
       if (!this.targetMenuOpen) return;
@@ -6231,8 +6245,9 @@ class DpsApp {
     if (!menu || !this.targetMenuOpen) return;
     const t = (key, fallback) => this.i18n?.t(key, fallback) ?? fallback;
     menu.replaceChildren();
+    const current = window.A2dPvp?.isOn() ? "pvp" : this.targetSelection;
     for (const [mode, label, descKey, descFallback] of TARGET_MENU_MODES) {
-      const primary = mode === this.targetSelection;
+      const primary = mode === current;
       const el = document.createElement("div");
       el.className = "metricMenuItem";
       el.dataset.mode = mode;
@@ -7603,6 +7618,12 @@ class DpsApp {
           ? "Train targets mode"
           : "Target mode";
     this.targetModeBtn.setAttribute("aria-label", ariaLabel);
+    const pvp = !!window.A2dPvp?.isOn();
+    this.targetModeBtn.classList.toggle("isPvp", pvp);
+    if (pvp) {
+      this.targetModeBtn.textContent = "PVP";
+      this.targetModeBtn.setAttribute("aria-label", "PvP view");
+    }
   }
 
   refreshBossLabel() {

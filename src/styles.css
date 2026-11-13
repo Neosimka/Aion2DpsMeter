@@ -10441,3 +10441,44 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
 }
 .meterFooter .a2dAbyss.isFlash { border-color: rgba(190, 165, 255, .9); box-shadow: 0 0 10px rgba(150, 120, 255, .45); }
 @keyframes a2dAbUp { from { opacity: 1; transform: translateY(2px); } to { opacity: 0; transform: translateY(-14px); } }
+
+/* Aion2DpsMeter : vue PvP (a2dPvp.js) */
+.meter.a2dPvpOn > .list, .meter.a2dPvpOn .list:not(.barPreviewList) { display: none !important; }
+.a2dPvp { padding: 4px 6px 6px; font-variant-numeric: tabular-nums; }
+.a2dPvp[hidden] { display: none; }
+.a2dPvpHead {
+  display: flex; align-items: center; gap: 12px; padding: 3px 4px 6px; font-size: 12px;
+  color: rgba(255,255,255,.75); text-shadow: var(--text-shadow);
+}
+.a2dPvpHead b { color: #fff; }
+.a2dPvpHead .a2dPvpTot { margin-left: auto; color: #d9ccff; }
+.a2dPvpHead .a2dPvpTot b { color: #fff; }
+.a2dPvpReset {
+  border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.3); color: #fff; border-radius: 4px;
+  font: inherit; font-size: 12px; line-height: 1; padding: 2px 6px; cursor: pointer;
+}
+.a2dPvpRows { display: flex; flex-direction: column; gap: 3px; }
+.a2dPvpRow {
+  position: relative; display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px;
+  border-radius: var(--rounded, 4px); overflow: hidden; background: rgba(var(--hud-bg, 12,14,20), .55);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+}
+.a2dPvpFill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, rgba(150,110,255,.18), rgba(150,110,255,.55));
+  box-shadow: inset -2px 0 0 rgba(200,180,255,.85);
+}
+.a2dPvpRow.isAssist .a2dPvpFill { background: linear-gradient(90deg, rgba(110,170,255,.14), rgba(110,170,255,.42)); box-shadow: inset -2px 0 0 rgba(170,210,255,.8); }
+.a2dPvpRow > span:not(.a2dPvpFill) { position: relative; }
+.a2dPvpRank { width: 16px; text-align: center; color: rgba(255,255,255,.6); font-size: 12px; }
+.a2dPvpName {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 15px; font-weight: 600; color: var(--hud-name, #fff); text-shadow: var(--player-name-shadow, var(--text-shadow));
+}
+.a2dPvpName small { margin-left: 6px; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.6); }
+.a2dPvpAp { font-size: 16px; font-weight: 800; color: #fff; text-shadow: var(--dps-shadow, var(--text-shadow)); }
+.a2dPvpAp small { margin-left: 3px; font-size: 10px; font-weight: 600; color: #c9b8ff; }
+.a2dPvpEmpty { padding: 14px 6px; text-align: center; color: rgba(255,255,255,.75); font-size: 13px; text-shadow: var(--text-shadow); }
+.a2dPvpEmpty small { color: rgba(255,255,255,.5); }
+.a2dPvpOther { padding: 5px 4px 0; font-size: 11px; color: rgba(255,255,255,.5); text-align: right; }
+.targetModeBtn.isPvp, button.isPvp { color: #d9ccff !important; border-color: rgba(170,140,255,.6) !important; }

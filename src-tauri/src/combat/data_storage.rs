@@ -1938,6 +1938,7 @@ impl DataStorage {
     /// The Abyss Points total the game just sent, for the K/D/A feed.
     pub fn note_abyss_points_total(&self, total: u64, at: i64) {
         self.kda.lock().abyss_points(total, at);
+        crate::a2d_pvp::abyss_total(total, at);
     }
 
     /// The week's Abyss Points and limit at `now` (unix ms): 0 points once a
@@ -2441,6 +2442,10 @@ impl DataStorage {
             killer == me
         };
         let kind = self.kda.lock().player_died(victim, by_me, at_ms);
+        if let Some(k @ (KdaKind::Kill | KdaKind::Assist)) = kind {
+            let name = self.get_nickname(victim).unwrap_or_else(|| format!("#{victim}"));
+            crate::a2d_pvp::kill(name, k == KdaKind::Assist, at_ms);
+        }
         tracing::debug!("KDA: player {victim} died, killer {killer}{}: {kind:?}", if by_me { " (you)" } else { "" });
         kind
     }

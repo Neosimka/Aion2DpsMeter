@@ -4765,6 +4765,8 @@ pub fn run() {
             crate::a2d_events::a2d_character,
             crate::a2d_nearby::a2d_nearby_players,
             crate::a2d_nearby::a2d_abyss_points,
+            crate::a2d_pvp::a2d_pvp_state,
+            crate::a2d_pvp::a2d_pvp_reset,
             crate::a2d_radar::a2d_radar_state,
             crate::a2d_capture::a2d_capture_start,
             crate::a2d_capture::a2d_capture_stop,
