@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.21",
+      "date": "2026-11-13",
+      "notes": {
+        "fr": "**Vue PVP : 9 joueurs et un menu déroulant**\n- La liste montre les 9 joueurs qui t'ont rapporté le plus d'AP.\n- Les autres sont dans un menu déroulant (« ▾ 6 autres joueurs · +7 500 AP ») : un clic l'ouvre ou le ferme.\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde.",
+        "en": "**Vue PVP : 9 joueurs et un menu déroulant**\n- La liste montre les 9 joueurs qui t'ont rapporté le plus d'AP.\n- Les autres sont dans un menu déroulant (« ▾ 6 autres joueurs · +7 500 AP ») : un clic l'ouvre ou le ferme.\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde."
+      }
+    },
+    {
       "version": "2.1.20",
       "date": "2026-11-13",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Barre du boss compacte**\n- Quand tu tapes un boss, sa vie s'affiche dans une petite barre rouge avec le pourcentage (ex. 53.7%), sous l'en-tête, avec ton record à côté.\n- Elle clignote doucement sous 25 %.\n- Tu préfères l'ancienne grande barre avec les PV restants ? Décoche « Barre du boss compacte » dans Paramètres → Apparence.",
         "en": "**Barre du boss compacte**\n- Quand tu tapes un boss, sa vie s'affiche dans une petite barre rouge avec le pourcentage (ex. 53.7%), sous l'en-tête, avec ton record à côté.\n- Elle clignote doucement sous 25 %.\n- Tu préfères l'ancienne grande barre avec les PV restants ? Décoche « Barre du boss compacte » dans Paramètres → Apparence."
-      }
-    },
-    {
-      "version": "2.1.15",
-      "date": "2026-11-08",
-      "notes": {
-        "fr": "**Givre et Sakura deviennent des styles d'overlay**\n- Ils sont maintenant dans Paramètres → Apparence → **Style de l'overlay**, à côté de Blason, Verre et Bannière (ils n'étaient pas à leur place dans les thèmes de couleur).\n- Givre : cristal de glace bleu pâle, barres en éclats taillés, toi en ambre.\n- Sakura : prune et rose pâle, lignes arrondies, une couleur par place, toi en bleu ciel.\n- Ils gardent leurs propres couleurs, quel que soit le thème de couleur choisi.",
-        "en": "**Givre et Sakura deviennent des styles d'overlay**\n- Ils sont maintenant dans Paramètres → Apparence → **Style de l'overlay**, à côté de Blason, Verre et Bannière (ils n'étaient pas à leur place dans les thèmes de couleur).\n- Givre : cristal de glace bleu pâle, barres en éclats taillés, toi en ambre.\n- Sakura : prune et rose pâle, lignes arrondies, une couleur par place, toi en bleu ciel.\n- Ils gardent leurs propres couleurs, quel que soit le thème de couleur choisi."
       }
     }
   ]

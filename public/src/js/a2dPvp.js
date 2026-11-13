@@ -8,6 +8,7 @@
   try { on = localStorage.getItem(KEY) === "1"; } catch {}
   let box = null;
   let timer = null;
+  let more = false; // menu « autres joueurs » ouvert
   const fmt = (n) => Math.round(n).toLocaleString("fr-FR");
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
@@ -20,6 +21,13 @@
     box.hidden = true;
     list.insertAdjacentElement("afterend", box);
     box.addEventListener("click", (e) => {
+      if (e.target.closest(".a2dPvpMore")) {
+        e.stopPropagation();
+        more = !more;
+        tick();
+        requestAnimationFrame(() => window.javaBridge?.updateOverlaySize?.());
+        return;
+      }
       if (!e.target.closest(".a2dPvpReset")) return;
       e.stopPropagation();
       window.__TAURI__?.core?.invoke?.("a2d_pvp_reset").catch(() => {});
@@ -31,11 +39,13 @@
   function render(v) {
     const b = node();
     if (!b) return;
-    // 12 joueurs au plus (les plus rentables) ; les totaux comptent tout le monde.
-    const MAX_ROWS = 12;
+    // 9 joueurs (les plus rentables), les autres dans un menu déroulant ;
+    // les totaux comptent tout le monde.
+    const MAX_ROWS = 9;
     const all = v?.players || [];
     const players = all.slice(0, MAX_ROWS);
-    const hidden = all.length - players.length;
+    const rest = all.slice(MAX_ROWS);
+    const hidden = rest.length;
     const top = Math.max(1, ...players.map((p) => p.ap || 0));
     const head = `<div class="a2dPvpHead"><span>⚔ <b>${v?.kills || 0}</b> kill${(v?.kills || 0) > 1 ? "s" : ""}</span>` +
       `<span>🤝 <b>${v?.assists || 0}</b> assist${(v?.assists || 0) > 1 ? "s" : ""}</span>` +
@@ -54,7 +64,10 @@
         }).join("")
       : `<div class="a2dPvpEmpty">Aucun joueur tué pour l'instant.<br><small>Chaque kill ou assist s'ajoute ici avec les AP gagnés.</small></div>`;
     const html = head + `<div class="a2dPvpRows">${rows}</div>` +
-      (hidden > 0 ? `<div class="a2dPvpOther">+ ${hidden} autre${hidden > 1 ? "s" : ""} joueur${hidden > 1 ? "s" : ""} (compté${hidden > 1 ? "s" : ""} dans le total)</div>` : "") +
+      (hidden > 0
+        ? `<button type="button" class="a2dPvpMore${more ? " isOpen" : ""}">${more ? "▴" : "▾"} ${hidden} autre${hidden > 1 ? "s" : ""} joueur${hidden > 1 ? "s" : ""} · +${fmt(rest.reduce((t, p) => t + (p.ap || 0), 0))} AP</button>` +
+          (more ? `<div class="a2dPvpRest">${rest.map((p, i) => `<div class="a2dPvpMini${p.kills ? "" : " isAssist"}"><span class="a2dPvpRank">${MAX_ROWS + i + 1}</span><span class="a2dPvpName">${esc(p.name)}${(p.kills || 0) + (p.assists || 0) > 1 ? `<small>×${(p.kills || 0) + (p.assists || 0)}</small>` : ""}</span><span class="a2dPvpAp">${p.ap ? `+${fmt(p.ap)}` : "—"}<small>AP</small></span></div>`).join("")}</div>` : "")
+        : "") +
       (v?.otherAp ? `<div class="a2dPvpOther">+${fmt(v.otherAp)} AP gagnés hors PvP</div>` : "");
     if (b.innerHTML !== html) b.innerHTML = html;
   }
