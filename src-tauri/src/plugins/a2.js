@@ -32,7 +32,9 @@
 //                                              (Wednesday) has passed, and contentTimes ({ "<entry
 //                                              id>": [time, seen at ms] }: 10000001-10000003 the Abyss
 //                                              passages' usage time left (ms), gone once used; the time
-//                                              as the game last sent it)
+//                                              as the game last sent it). Meter 2.0.96 on also
+//                                              cooldownReduction: the stat page's cooldown reduction in
+//                                              percent (4.3 for -4.3%), null until the game sent your stats
 //   a2.on("bossMap", ({ map, bosses }) => ...) a map the player just opened, its field bosses as
 //                                              a2.bossTimers gives them (permission
 //                                              "feed:boss-timers", meter 2.0.65 on)
@@ -55,6 +57,28 @@
 //                                              player } who won it. The highest roll wins. A roll can
 //                                              come before its "open" or without one. Once each, kept
 //                                              like a decoder's events
+//   a2.on("blackMarket", (m) => ...)           the Black Cloud Merchants' stock, each time a tab of the
+//                                              shop is opened (permission "events:black-market", meter
+//                                              2.0.93 on): m = { at, kind, refreshAt (unix ms, when the
+//                                              stock changes next), goods: [{ goodsId (RandomShopGoods id),
+//                                              itemId, count, tier (discount: 0 10%, 1 20%, 2 30%, 3 50%),
+//                                              currency, originalPrice, price, soldOut (meter 2.0.95 on: this character bought it
+//                                              from this stock) }] }. Kept like a decoder's
+//                                              events
+//   a2.on("kda", ({ kind }) => ...)           you killed a player ("kill"), helped kill one ("assist") or
+//                                              a player killed you ("death"), once each, kept like a
+//                                              decoder's events; the event's `at` (unix ms) says when
+//                                              and `seq` (from 1) numbers it, two in the same ms differ by it
+//                                              (permission "events:kda", meter 2.0.94 on). No names. Also
+//                                              "points" with `amount`: Abyss Points just gained, and
+//                                              "zone" with `abyss` true/false: the Abyss entered or
+//                                              left (the first map load of a meter started there too).
+//   a2.on("stats", (s) => ...)                 your character's stats, at login and each time one changes
+//                                              (permission "events:stats", meter 2.0.96 on): s = { entity,
+//                                              stats: { [EStat id]: value }, cooldownReduction (percent: 4.3
+//                                              for a sheet showing -4.3%) }. Percent stats are in hundredths
+//                                              (CoolTimeDecrease 215, CoolTimeIncrease 385 negative when it
+//                                              shortens cooldowns). The latest is kept for a window opened later
 //   a2.on("game", ({ running }) => ...)        whether AION2 is open, at start and on change
 //                                              (meter 2.0.65 on)
 //   a2.on("ping", ({ ms }) => ...)             the ping to the game server in ms (null while not known),
@@ -239,7 +263,8 @@
       lock: (locked) => call("widgets.lock", [!!locked]),
       locked: () => call("widgets.locked", []),
       // Meter 2.0.72 on: where a widget is, and moving it (physical screen
-      // pixels), for a plugin that lays its widgets out itself.
+      // pixels), for a plugin that lays its widgets out itself. On KDE
+      // Wayland, where is right from meter 2.0.96 (before, its x and y were not).
       where: (name) => call("widgets.where", [String(name)]),
       place: (name, at) => call("widgets.place", [String(name), { x: Number(at?.x), y: Number(at?.y) }]),
     }),

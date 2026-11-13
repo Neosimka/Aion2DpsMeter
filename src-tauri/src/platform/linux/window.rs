@@ -314,6 +314,12 @@ pub fn start_drag(window: &tauri::WebviewWindow) {
 
 /// Turn a window's always-on-top on or off (the Windows one keeps a hidden
 /// window hidden; here the plain call does).
+/// Nothing to do here: the compositor keeps windows above (see the Windows
+/// one, for Lossless Scaling's on-top window).
+pub fn rise_over_foreign_topmost(_window: &tauri::WebviewWindow) -> bool {
+    false
+}
+
 pub fn set_on_top_without_showing(window: &tauri::WebviewWindow, on_top: bool) {
     let _ = window.set_always_on_top(on_top);
 }
@@ -501,6 +507,14 @@ pub fn keep_places(
 /// (`focus::places_own_windows`).
 pub fn places_own_windows() -> bool {
     super::focus::places_own_windows()
+}
+
+/// Where a window is, in physical screen pixels, when the window cannot say:
+/// on KDE Wayland no app learns where its windows are, but KWin's script tells
+/// the meter where the player left each one (`focus::place_of`). None
+/// elsewhere: there the window's own position is right.
+pub fn known_position(window: &tauri::WebviewWindow) -> Option<(i32, i32)> {
+    if super::focus::kwin_places_windows() { super::focus::place_of(window) } else { None }
 }
 
 /// The edge the overlay keeps as it fits its rows (Settings → Meter stays

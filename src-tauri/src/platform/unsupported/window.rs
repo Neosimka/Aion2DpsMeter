@@ -28,6 +28,12 @@ pub fn show_on_top_without_focus(window: &tauri::WebviewWindow) {
 
 /// Turn a window's always-on-top on or off (the Windows one keeps a hidden
 /// window hidden; here the plain call does).
+/// Nothing to do here: the compositor keeps windows above (see the Windows
+/// one, for Lossless Scaling's on-top window).
+pub fn rise_over_foreign_topmost(_window: &tauri::WebviewWindow) -> bool {
+    false
+}
+
 pub fn set_on_top_without_showing(window: &tauri::WebviewWindow, on_top: bool) {
     let _ = window.set_always_on_top(on_top);
 }
@@ -99,6 +105,12 @@ pub fn hide_in_place(window: &tauri::WebviewWindow) {
 /// The meter places its own windows here.
 pub fn places_own_windows() -> bool {
     true
+}
+
+/// Where a window is, when the window cannot say: never here, its own
+/// position is right.
+pub fn known_position(_window: &tauri::WebviewWindow) -> Option<(i32, i32)> {
+    None
 }
 
 /// The edge the overlay keeps: the meter moves it itself here

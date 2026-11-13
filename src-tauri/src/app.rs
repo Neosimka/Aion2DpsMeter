@@ -742,6 +742,58 @@ impl Drop for InFlight {
     }
 }
 
+#[cfg(feature = "online")]
+/// Send again, once each, the fights the service refused for having no boss
+/// in their slice, with the boss this meter saw (`share::claim_sweep_candidates`):
+/// mostly Ludra's, refused before the meter kept spawns (2.0.98). Under the
+/// automatic upload's rules, one every few seconds. A fight the service
+/// answers is marked whatever the answer; one that could not reach it
+/// (offline, a locked keyring) ends the sweep unmarked, for the next start.
+async fn claim_sweep(app: tauri::AppHandle) {
+    const PACE: Duration = Duration::from_secs(5);
+    let Some(state) = app.try_state::<AppState>() else { return };
+    if !share::auto_uploads(&state.settings) {
+        return;
+    }
+    let dir = state.app_data_dir.clone();
+    let npcs = state.npc_lookup.clone();
+    let candidates = tauri::async_runtime::spawn_blocking(move || {
+        let history = crate::history::fight_history::FightHistoryManager::new(dir.clone());
+        share::claim_sweep_candidates(&dir, |id| history.load_fight(id).ok(), |code| npcs.is_boss(code))
+    })
+    .await
+    .unwrap_or_default();
+    if candidates.is_empty() {
+        return;
+    }
+    tracing::info!("Claim sweep: {} refused fight(s) to send again with their boss", candidates.len());
+    for (id, claim) in candidates {
+        if !share::auto_uploads(&state.settings) {
+            break;
+        }
+        let Some(_in_flight) = InFlight::start(&id) else { continue };
+        let Ok(record) = state.fight_history.load_fight(&id) else { continue };
+        match share::upload_claiming(&state.http, &state.app_data_dir, &record, &state.settings, Some(claim)).await {
+            Ok(result) => {
+                share::note_claim_swept(&state.app_data_dir, &id);
+                tracing::info!("Claim sweep: {id} ({} in {}) -> {}", claim.mob, claim.dungeon, result.url);
+                let _ = app.emit("fight-uploaded", serde_json::json!({
+                    "fightId": id, "url": result.url, "visibility": result.visibility,
+                }));
+            }
+            Err(failure) if failure.keyring_locked || (failure.retryable && failure.code.is_none()) => {
+                tracing::info!("Claim sweep stopped at {id}, for the next start: {}", failure.message);
+                break;
+            }
+            Err(failure) => {
+                share::note_claim_swept(&state.app_data_dir, &id);
+                tracing::info!("Claim sweep: {id} refused again: {}", failure.message);
+            }
+        }
+        tokio::time::sleep(PACE).await;
+    }
+}
+
 /// Which fights have a slice to upload, and which already have a link.
 #[tauri::command]
 async fn share_status(
@@ -1099,11 +1151,16 @@ fn hotkey_of(settings: &Settings, key: &str) -> (u32, u32) {
 /// Register the hotkeys from saved settings (or defaults).
 /// Show or hide the meter, and remember it (as Settings → Plugins → Show
 /// the DPS meter does): its keybind and the tray's. Hidden by auto-hide
-/// only, it is shown, as before, and nothing changes.
+/// only, it is shown, as before, and nothing changes. Auto-hide and the
+/// out-of-combat and solo rules minimise it, which Windows still calls
+/// visible: the first press took it for shown and hid it for good, so the
+/// keybind needed two presses to bring it back (2026-11-09).
 pub(crate) fn toggle_meter(app: &tauri::AppHandle) {
     if meter_wanted(app)
         && let Some(window) = app.get_webview_window("main")
-        && (!window.is_visible().unwrap_or(true) || platform::window::is_hidden_in_place(&window))
+        && (!window.is_visible().unwrap_or(true)
+            || window.is_minimized().unwrap_or(false)
+            || platform::window::is_hidden_in_place(&window))
     {
         show_meter_again(app, &window);
         return;
@@ -1151,14 +1208,21 @@ fn start_hotkeys(app: &tauri::AppHandle, settings: &Settings) {
     let lock = binding("lock", "dpsMeter.lockHotkey", Box::new(move || toggle_overlay_lock(&h)));
     let h = app.clone();
     let plugins = binding("plugins", "dpsMeter.pluginWindowsHotkey", Box::new(move || {
-        tracing::info!("Hotkey: bringing back the plugin windows");
+        tracing::info!("Hotkey: showing or hiding the plugin windows");
         let app = h.clone();
         // Window calls belong on the main thread.
-        let _ = h.run_on_main_thread(move || crate::plugins::bring_back_windows(&app));
-        // And those closed this run, opened again: windows are built off the
-        // main thread (on Windows, building one there deadlocks).
-        let app = h.clone();
-        tauri::async_runtime::spawn(async move { crate::plugins::reopen_closed(&app) });
+        let pins = h
+            .try_state::<AppState>()
+            .and_then(|s| s.settings.get(crate::plugins::HIDE_PINS_KEY))
+            .is_some_and(|v| v == "true");
+        let _ = h.run_on_main_thread(move || {
+            if crate::plugins::toggle_windows(&app, pins) {
+                // Shown: those closed this run opened again too. Windows are
+                // built off the main thread (on Windows, building one there
+                // deadlocks).
+                tauri::async_runtime::spawn(async move { crate::plugins::reopen_closed(&app) });
+            }
+        });
     }));
 
     hotkeys.manager.start(
@@ -1243,6 +1307,9 @@ fn get_capture_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
         // When true, characterName is the game's (null = an unnamed tutorial
         // character) and the UI should adopt it rather than push its own.
         "characterNameFromGame": state.data_storage.local_identity_from_self_record(),
+        // The character's server (0 while not known), for what the page keeps
+        // per character: one name can be a character on several servers.
+        "serverId": state.data_storage.own_server(),
     })
 }
 
@@ -3891,6 +3958,22 @@ pub fn run() {
             let npc_lookup = Arc::new(npc_lookup);
 
             let data_storage = Arc::new(DataStorage::new());
+            // What a run's entry sent, kept across a restart in the middle of
+            // it (see combat::entry_ledger); written when it changes.
+            let entry_ledger_path = crate::combat::entry_ledger::path_in(&app_data_dir);
+            data_storage.restore_entry_ledger(&entry_ledger_path);
+            {
+                let storage = data_storage.clone();
+                std::thread::Builder::new()
+                    .name("entry-ledger".into())
+                    .spawn(move || loop {
+                        std::thread::sleep(Duration::from_secs(10));
+                        if let Some(saved) = storage.entry_ledger_to_save() {
+                            crate::combat::entry_ledger::store(&entry_ledger_path, saved.as_ref());
+                        }
+                    })
+                    .ok();
+            }
             if let Some(ref data_dir) = found_data_dir
                 && let Ok(text) = std::fs::read_to_string(data_dir.join("abnormals.json"))
             {
@@ -4035,6 +4118,8 @@ pub fn run() {
             crate::boss_report::spawn(app.handle().clone());
             #[cfg(feature = "online")]
             crate::supply_report::spawn(app.handle().clone());
+            #[cfg(feature = "online")]
+            crate::ranking_report::spawn(app.handle().clone());
             #[cfg(feature = "online")]
             crate::party_presence::spawn(app.handle().clone());
             // A deletion of guest uploads the player asked for that hasn't
@@ -4269,7 +4354,12 @@ pub fn run() {
                             if last_odyle.as_ref() != Some(&now) || tick_count % 4 == 0 {
                                 let _ = handle.emit(
                                     "odyle-energy",
-                                    serde_json::json!({ "basic": energy.0, "charged": energy.1, "name": now.1 }),
+                                    serde_json::json!({
+                                        "basic": energy.0,
+                                        "charged": energy.1,
+                                        "name": now.1,
+                                        "server": state.data_storage.own_server(),
+                                    }),
                                 );
                                 last_odyle = Some(now);
                             }
@@ -4442,6 +4532,18 @@ pub fn run() {
                             }
                         }
 
+                        // Another program's on-top window over the game
+                        // (Lossless Scaling's frame generation) comes over the
+                        // meter's windows whenever the game takes the front:
+                        // they go back above it (#184).
+                        if tick_count > 20 && platform::window_detector::is_aion2_foreground() {
+                            for (_, w) in handle.webview_windows() {
+                                if platform::window::rise_over_foreign_topmost(&w) && tick_count % 20 == 0 {
+                                    tracing::debug!("{} raised over another program's on-top window", w.label());
+                                }
+                            }
+                        }
+
                         // --- Save window position every ~5 seconds (every 10 ticks) ---
                         if tick_count % 10 == 0 {
                             if let Some(window) = handle.get_webview_window("main") {
@@ -4476,6 +4578,17 @@ pub fn run() {
                     }
                 }
             });
+
+            // Fights refused for having no boss, sent once more with the boss
+            // this meter saw, once the start has settled.
+            #[cfg(feature = "online")]
+            {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(Duration::from_secs(90)).await;
+                    claim_sweep(handle).await;
+                });
+            }
 
             // One blocking history job at a time; disk/JSON work never runs
             // on Tokio's cooperative workers. The next tick waits for completion.

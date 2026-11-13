@@ -392,8 +392,32 @@ impl CaptureDispatcher {
                     waiting.clear();
                 }
                 if cap.src_port != port && cap.dst_port != port {
+                    // The server the game announced it is moving to (`16 36`):
+                    // followed at its first packet, with or without combat.
+                    if crate::capture::combat_port_detector::announced_port(now) == Some(cap.src_port) {
+                        info!("Following the game to the server it announced: port {}", cap.src_port);
+                        crate::capture::combat_port_detector::clear_announced();
+                        crate::capture::combat_port_detector::set_return_port(Some(port));
+                        self.port_detector.move_port(cap.src_port);
+                        assemblers.clear();
+                        sig_hits.clear();
+                        waiting.clear();
+                        replay.push_front(cap);
+                        continue;
+                    }
                     let quiet = self.port_detector.port_quiet_ms(now).is_some_and(|q| q >= PORT_MOVE_QUIET_MS);
                     if !quiet {
+                        continue;
+                    }
+                    // Back from an announced server, to the port it was left for.
+                    if crate::capture::combat_port_detector::return_port() == Some(cap.src_port) {
+                        info!("Back to the server the game left: port {}", cap.src_port);
+                        crate::capture::combat_port_detector::set_return_port(None);
+                        self.port_detector.move_port(cap.src_port);
+                        assemblers.clear();
+                        sig_hits.clear();
+                        waiting.clear();
+                        replay.push_front(cap);
                         continue;
                     }
                     if let Some((new_port, packets)) = waiting.offer(cap, now) {

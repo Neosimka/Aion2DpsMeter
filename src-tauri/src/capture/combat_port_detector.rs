@@ -21,6 +21,51 @@ const LOOPBACK_GRACE_MS: i64 = 2500;
 // here while discovery runs. A recently active port keeps its place.
 const MAX_CANDIDATE_PORTS: usize = 16;
 
+/// The port of the server the game said it is moving to (`16 36`, see
+/// `StreamProcessor`), and when (unix ms); 0: none. One meter, one game:
+/// global, as the stream processor that reads it has no detector.
+static ANNOUNCED_PORT: AtomicU32 = AtomicU32::new(0);
+static ANNOUNCED_AT_MS: AtomicI64 = AtomicI64::new(0);
+/// How long an announcement waits for its connection.
+const ANNOUNCED_FOR_MS: i64 = 60_000;
+
+/// The game is moving to another server, `port` being the u16 its move
+/// record names: the Shugo Festival is on a server of its own (193.202.112.81
+/// on 2026-11-12). The meter read nothing of a first festival, and all of a
+/// second one with the capture filters opened for the announcement, though
+/// the festival's connection was on the game's port (54141) both times and
+/// never on the one named (13328).
+pub fn announce_port(port: u16) {
+    ANNOUNCED_AT_MS.store(now_ms(), Ordering::Relaxed);
+    ANNOUNCED_PORT.store(port as u32, Ordering::Relaxed);
+}
+
+/// The port announced in the last `ANNOUNCED_FOR_MS`, if any.
+pub fn announced_port(now: i64) -> Option<u16> {
+    let port = ANNOUNCED_PORT.load(Ordering::Relaxed) as u16;
+    (port != 0 && now - ANNOUNCED_AT_MS.load(Ordering::Relaxed) <= ANNOUNCED_FOR_MS).then_some(port)
+}
+
+/// The announced connection was taken.
+pub fn clear_announced() {
+    ANNOUNCED_PORT.store(0, Ordering::Relaxed);
+}
+
+/// The port the game left for an announced server (0: none). Leaving the
+/// festival, nothing may announce the way back, and the main server's
+/// connection need not carry combat at once: once the festival's port goes
+/// quiet, a connection on this one is the way back.
+static RETURN_PORT: AtomicU32 = AtomicU32::new(0);
+
+pub fn set_return_port(port: Option<u16>) {
+    RETURN_PORT.store(port.map_or(0, u32::from), Ordering::Relaxed);
+}
+
+pub fn return_port() -> Option<u16> {
+    let port = RETURN_PORT.load(Ordering::Relaxed) as u16;
+    (port != 0).then_some(port)
+}
+
 /// Global combat port detector — identifies which network device and port
 /// carry AION 2 game traffic by looking for the combat signature bytes.
 pub struct CombatPortDetector {
@@ -197,7 +242,7 @@ impl CombatPortDetector {
         if inner.locked_port.is_none() {
             inner.locked_port = Some(port);
             inner.locked_device = device.clone();
-            info!("Combat port locked: {}", port);
+            info!("Combat port locked: {} on {}", port, device.as_deref().unwrap_or("an unnamed device"));
             inner.candidates.clear();
         }
     }

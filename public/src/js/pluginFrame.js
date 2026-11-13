@@ -42,6 +42,9 @@
       if ((event === "bossMap" || event === "bossLive" || event === "abyss") && !allowed("feed:boss-timers")) return;
       if (event === "deathRecap" && !allowed("events:death-recap")) return;
       if (event === "lootRoll" && !allowed("events:loot-rolls")) return;
+      if (event === "blackMarket" && !allowed("events:black-market")) return;
+      if (event === "kda" && !allowed("events:kda")) return;
+      if (event === "stats" && !allowed("events:stats")) return;
       const msg = { event, data, ...extra };
       if (ready) send(msg);
       else queue.push(msg);

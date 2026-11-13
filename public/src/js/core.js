@@ -94,6 +94,8 @@ class DpsApp {
     this.POLL_MS = 100;
     this.WINDOW_TITLE_POLL_MS = 3000;
     this.USER_NAME = "";
+    // The local character's server, once the game has said it (0 before).
+    this.USER_SERVER = 0;
     this.onlyShowUser = false;
     this.debugLoggingEnabled = false;
     this.pinMeToTop = false;
@@ -162,6 +164,7 @@ class DpsApp {
       autoHideMeter: "dpsMeter.autoHideMeter",
       hideWhenGameClosed: "dpsMeter.hideWhenGameClosed",
       closeWithGame: "dpsMeter.closeWithGame",
+      pluginWindowsHidePins: "dpsMeter.pluginWindowsHidePins",
       hideWhenSolo: "dpsMeter.hideWhenSolo",
       hideOutOfCombat: "dpsMeter.hideOutOfCombat",
       globalHotkeys: "dpsMeter.globalHotkeys",
@@ -936,6 +939,11 @@ class DpsApp {
     const info = typeof raw === "string" ? this.safeParseJSON(raw, {}) : {};
     if (!info?.characterNameFromGame) return false;
     const name = String(info.characterName ?? "").trim();
+    const server = Number(info.serverId) || 0;
+    if (server !== this.USER_SERVER) {
+      this.USER_SERVER = server;
+      this.updateOdyle();
+    }
     if (name === this.USER_NAME) return true;
     this.USER_NAME = name;
     if (this.characterNameInput && document.activeElement !== this.characterNameInput) {
@@ -3446,6 +3454,15 @@ class DpsApp {
         this.safeSetSetting(this.storageKeys.closeWithGame, String(!!event.target?.checked));
       });
     }
+    // The plugin windows keybind hides the plugins' pins too (read by the
+    // backend at each press).
+    this.pluginHidePinsCheckbox = document.querySelector(".pluginHidePinsCheckbox");
+    if (this.pluginHidePinsCheckbox) {
+      this.pluginHidePinsCheckbox.checked = this.safeGetSetting(this.storageKeys.pluginWindowsHidePins) === "true";
+      this.pluginHidePinsCheckbox.addEventListener("change", (event) => {
+        this.safeSetSetting(this.storageKeys.pluginWindowsHidePins, String(!!event.target?.checked));
+      });
+    }
     // And while not in a party (the same loop).
     this.hideWhenSoloCheckbox = document.querySelector(".hideWhenSoloCheckbox");
     if (this.hideWhenSoloCheckbox) {
@@ -4778,7 +4795,7 @@ class DpsApp {
     });
     const applyDetailsColumnVisibility = () => {
       if (!this.detailsPanel) return;
-      const columns = ["hit", "dmg", "dmgpct", "mhit", "mdmg", "crit", "parry", "perfect", "double", "back", "block", "perfectblock", "ironwall", "regeneration", "miss", "resist", "regen", "mindmg", "avgdmg", "maxdmg"];
+      const columns = ["hit", "dmg", "dmgpct", "mhit", "mdmg", "crit", "parry", "perfect", "double", "back", "block", "perfectblock", "ironwall", "regeneration", "miss", "resist", "regen", "stagger", "mindmg", "avgdmg", "maxdmg"];
       columns.forEach((column) => {
         this.detailsPanel.classList.toggle(`hide-col-${column}`, hiddenColumns.has(column));
       });
@@ -5569,6 +5586,7 @@ class DpsApp {
       [this.autoHideMeterCheckbox, "autoHideMeter", false],
       [this.hideWhenGameClosedCheckbox, "hideWhenGameClosed", false],
       [this.closeWithGameCheckbox, "closeWithGame", false],
+      [this.pluginHidePinsCheckbox, "pluginWindowsHidePins", false],
       [this.hideWhenSoloCheckbox, "hideWhenSolo", false],
       [this.globalHotkeysCheckbox, "globalHotkeys", !document.documentElement?.classList?.contains?.("linux")],
       [this.saveRawPacketsCheckbox, "saveRawPackets", false],
@@ -7267,7 +7285,8 @@ class DpsApp {
     if (!el) return;
     const isEnergy = (e) => typeof e?.basic === "number" && typeof e?.charged === "number";
     const live = isEnergy(this.odyleEnergy);
-    const shown = live ? this.odyleEnergy : this.rememberedOdyle()[this.USER_NAME];
+    const remembered = this.odyleKey(this.USER_NAME, this.USER_SERVER);
+    const shown = live ? this.odyleEnergy : remembered ? this.rememberedOdyle()[remembered] : null;
     if (!this.showOdyle || !isEnergy(shown)) {
       el.classList.remove("isVisible");
       return;
@@ -7333,8 +7352,17 @@ class DpsApp {
     return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
   }
 
-  rememberOdyle({ basic, charged, name }) {
+  // Whose remembered Odyle energy: the character's name and server. One name
+  // can be a character on each of several servers, whose energy was shown as
+  // another's (#190); with no server known, nothing is remembered or shown.
+  odyleKey(name, server) {
     const owner = String(name ?? "").trim();
+    const id = Number(server) || 0;
+    return owner && id > 0 ? `${owner}@${id}` : "";
+  }
+
+  rememberOdyle({ basic, charged, name, server }) {
+    const owner = this.odyleKey(name, server);
     if (!owner || typeof basic !== "number" || typeof charged !== "number") return;
     const saved = this.rememberedOdyle();
     const was = saved[owner];
