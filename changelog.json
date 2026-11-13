@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.18",
+      "date": "2026-11-13",
+      "notes": {
+        "fr": "**Vue PVP et compteur de Points Abyssaux**\n- Nouveau mode **PVP** dans le menu du bouton BOSS (en bas) : la fenêtre montre les joueurs que tu as tués ou aidé à tuer, avec les AP gagnés sur chacun, plus le total de kills, d'assists et d'AP. Le bouton ↺ remet la vue à zéro.\n- En bas du meter, **◆ +AP** : les Points Abyssaux gagnés depuis le lancement, en temps réel. Survole pour le rythme par heure et le total de la semaine ; clic pour remettre à zéro.\n- Reprise d'A2Tools 2.0.93 à 2.0.96 : choc par joueur et par compétence, chronologie des buffs corrigée, énergie d'Odyle par serveur, données du jeu du 11 novembre.",
+        "en": "**Vue PVP et compteur de Points Abyssaux**\n- Nouveau mode **PVP** dans le menu du bouton BOSS (en bas) : la fenêtre montre les joueurs que tu as tués ou aidé à tuer, avec les AP gagnés sur chacun, plus le total de kills, d'assists et d'AP. Le bouton ↺ remet la vue à zéro.\n- En bas du meter, **◆ +AP** : les Points Abyssaux gagnés depuis le lancement, en temps réel. Survole pour le rythme par heure et le total de la semaine ; clic pour remettre à zéro.\n- Reprise d'A2Tools 2.0.93 à 2.0.96 : choc par joueur et par compétence, chronologie des buffs corrigée, énergie d'Odyle par serveur, données du jeu du 11 novembre."
+      }
+    },
+    {
       "version": "2.1.17",
       "date": "2026-11-12",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Deux nouveaux thèmes**\n- **Terminal** : écran phosphore vert, police à chasse fixe, barres en segments et curseur qui clignote.\n- **Sakura** : prune et rose pâle, lignes arrondies, une couleur par place (rose, lilas, pervenche) et toi en bleu ciel.\n- Ces deux thèmes redessinent tout l'overlay : ils passent par-dessus le style choisi (Blason, Verre, Bannière).\n- À choisir dans Paramètres → Apparence → Thème.",
         "en": "**Deux nouveaux thèmes**\n- **Terminal** : écran phosphore vert, police à chasse fixe, barres en segments et curseur qui clignote.\n- **Sakura** : prune et rose pâle, lignes arrondies, une couleur par place (rose, lilas, pervenche) et toi en bleu ciel.\n- Ces deux thèmes redessinent tout l'overlay : ils passent par-dessus le style choisi (Blason, Verre, Bannière).\n- À choisir dans Paramètres → Apparence → Thème."
-      }
-    },
-    {
-      "version": "2.1.12",
-      "date": "2026-11-08",
-      "notes": {
-        "fr": "**Important depuis la mise à jour du jeu du 4/11**\n- Le jeu emballe maintenant certaines connexions dans un nouveau format : le meter le lit de nouveau. Sans ça, il ne voyait qu'une partie des coups et pouvait enregistrer un kill comme un wipe (correctif d'A2Tools 2.0.89).\n\n**Repris d'A2Tools 2.0.92**\n- Bouton « Copier pour le chat » (bulle en haut du meter et dans les détails) : ton résultat prêt à coller dans le chat du jeu.\n- Minuteur de vol : temps avant d'être plein, ou vol restant pendant que tu voles.\n- Mannequin : limite de temps en mode entraînement (30 s à 5 min).\n- Carte des boss des Abysses de nouveau envoyée.\n\n**Réglages**\n- Onglet Confidentialité retiré : rien n'est partagé avec A2Tools (combats, présence dans le groupe, timers), et ce qui avait pu être activé est coupé.",
-        "en": "**Important depuis la mise à jour du jeu du 4/11**\n- Le jeu emballe maintenant certaines connexions dans un nouveau format : le meter le lit de nouveau. Sans ça, il ne voyait qu'une partie des coups et pouvait enregistrer un kill comme un wipe (correctif d'A2Tools 2.0.89).\n\n**Repris d'A2Tools 2.0.92**\n- Bouton « Copier pour le chat » (bulle en haut du meter et dans les détails) : ton résultat prêt à coller dans le chat du jeu.\n- Minuteur de vol : temps avant d'être plein, ou vol restant pendant que tu voles.\n- Mannequin : limite de temps en mode entraînement (30 s à 5 min).\n- Carte des boss des Abysses de nouveau envoyée.\n\n**Réglages**\n- Onglet Confidentialité retiré : rien n'est partagé avec A2Tools (combats, présence dans le groupe, timers), et ce qui avait pu être activé est coupé."
       }
     }
   ]
