@@ -20,11 +20,22 @@ const BEFORE_MS: i64 = 20_000;
 const MAX_GAIN: u64 = 20_000;
 const MAX_KILLS: usize = 300;
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+/// Comment le joueur est mort pour toi.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum How {
+    /// Le dernier coup est le tien.
+    Kill,
+    /// Tu l'as touché juste avant sa mort.
+    Assist,
+    /// Quelqu'un de ton groupe l'a tué, sans que tu le touches.
+    Group,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct Kill {
     pub at: i64,
     pub name: String,
-    pub assist: bool,
+    pub how: How,
     pub ap: u64,
 }
 
@@ -60,11 +71,11 @@ fn settle(s: &mut State, now: i64) {
     }
 }
 
-/// Un joueur est mort de ta main (`assist` : tu l'as touché juste avant).
-pub fn kill(name: String, assist: bool, at: i64) {
+/// Un joueur est mort : de ta main, avec ton aide, ou de celle de ton groupe.
+pub fn kill(name: String, how: How, at: i64) {
     with(|s| {
         settle(s, at);
-        let mut k = Kill { at, name, assist, ap: 0 };
+        let mut k = Kill { at, name, how, ap: 0 };
         // des points arrivés juste avant ce record : les plus anciens d'abord
         if let Some(i) = s.pending.iter().position(|&(pat, _)| pat <= at && at - pat <= WAIT_MS) {
             k.ap = s.pending.remove(i).map(|(_, ap)| ap).unwrap_or(0);
@@ -100,32 +111,43 @@ pub fn reset() {
     });
 }
 
-/// Les morts (par joueur) et les totaux de la session.
+/// Les morts (par joueur) et les totaux de la session. Une mort du groupe sans
+/// points n'est pas montrée : elle ne t'a rien rapporté.
 pub fn snapshot(now: i64) -> serde_json::Value {
     with(|s| {
         settle(s, now);
-        let mut by: Vec<(String, u64, u32, u32, i64)> = Vec::new();
-        for k in &s.kills {
-            match by.iter_mut().find(|e| e.0 == k.name) {
-                Some(e) => {
-                    e.1 += k.ap;
-                    if k.assist { e.3 += 1 } else { e.2 += 1 }
-                    e.4 = e.4.max(k.at);
+        // nom, AP, kills, assists, groupe, dernière mort
+        let mut by: Vec<(String, u64, u32, u32, u32, i64)> = Vec::new();
+        for k in s.kills.iter().filter(|k| k.how != How::Group || k.ap > 0) {
+            let e = match by.iter_mut().position(|e| e.0 == k.name) {
+                Some(i) => &mut by[i],
+                None => {
+                    by.push((k.name.clone(), 0, 0, 0, 0, k.at));
+                    by.last_mut().expect("just pushed")
                 }
-                None => by.push((k.name.clone(), k.ap, u32::from(!k.assist), u32::from(k.assist), k.at)),
+            };
+            e.1 += k.ap;
+            match k.how {
+                How::Kill => e.2 += 1,
+                How::Assist => e.3 += 1,
+                How::Group => e.4 += 1,
             }
+            e.5 = e.5.max(k.at);
         }
-        by.sort_by(|a, b| b.1.cmp(&a.1).then(b.4.cmp(&a.4)));
+        by.sort_by(|a, b| b.1.cmp(&a.1).then(b.5.cmp(&a.5)));
         let players: Vec<_> = by
             .iter()
-            .map(|(name, ap, kills, assists, last)| serde_json::json!({ "name": name, "ap": ap, "kills": kills, "assists": assists, "last": last }))
+            .map(|(name, ap, kills, assists, group, last)| {
+                serde_json::json!({ "name": name, "ap": ap, "kills": kills, "assists": assists, "group": group, "last": last })
+            })
             .collect();
-        let pvp_ap: u64 = s.kills.iter().map(|k| k.ap).sum();
+        let shown = |h: How| s.kills.iter().filter(|k| k.how == h && (h != How::Group || k.ap > 0)).count();
         serde_json::json!({
             "players": players,
-            "kills": s.kills.iter().filter(|k| !k.assist).count(),
-            "assists": s.kills.iter().filter(|k| k.assist).count(),
-            "pvpAp": pvp_ap,
+            "kills": shown(How::Kill),
+            "assists": shown(How::Assist),
+            "group": shown(How::Group),
+            "pvpAp": s.kills.iter().map(|k| k.ap).sum::<u64>(),
             "otherAp": s.other_ap,
         })
     })
@@ -156,10 +178,10 @@ mod tests {
     fn points_after_each_kill() {
         fresh();
         abyss_total(100_000, 0);
-        kill("Lyrael".into(), false, 10_000);
+        kill("Lyrael".into(), How::Kill, 10_000);
         abyss_total(101_240, 11_000);
-        kill("Kael".into(), true, 30_000);
-        kill("Morw".into(), false, 32_000);
+        kill("Kael".into(), How::Assist, 30_000);
+        kill("Morw".into(), How::Kill, 32_000);
         abyss_total(101_740, 33_000);
         abyss_total(102_000, 120_000); // hors PvP
         let v = snapshot(200_000);
@@ -176,11 +198,11 @@ mod tests {
         fresh();
         abyss_total(100_000, 0);
         abyss_total(101_000, 1_000);
-        kill("A".into(), false, 2_000);
+        kill("A".into(), How::Kill, 2_000);
         abyss_total(103_000, 6_000);
-        kill("B".into(), false, 7_500);
+        kill("B".into(), How::Kill, 7_500);
         abyss_total(103_500, 9_000);
-        kill("C".into(), false, 10_000);
+        kill("C".into(), How::Kill, 10_000);
         let v = snapshot(60_000);
         let ap = |n: &str| v["players"].as_array().unwrap().iter().find(|p| p["name"] == n).unwrap()["ap"].as_u64().unwrap();
         assert_eq!((ap("A"), ap("B"), ap("C")), (1000, 2000, 500));
@@ -188,10 +210,26 @@ mod tests {
     }
 
     #[test]
+    fn group_kills_count_only_when_they_pay() {
+        fresh();
+        abyss_total(100_000, 0);
+        // un allié de groupe tue sans que tu touches : points quand même
+        kill("Groupé".into(), How::Group, 5_000);
+        abyss_total(100_600, 5_500);
+        // une mort du groupe sans points n'apparaît pas
+        kill("Rien".into(), How::Group, 40_000);
+        let v = snapshot(80_000);
+        let p = v["players"].as_array().unwrap();
+        assert_eq!(p.len(), 1);
+        assert_eq!((p[0]["name"].as_str(), p[0]["ap"].as_u64(), p[0]["group"].as_u64()), (Some("Groupé"), Some(600), Some(1)));
+        assert_eq!((v["kills"].as_u64(), v["group"].as_u64(), v["pvpAp"].as_u64()), (Some(0), Some(1), Some(600)));
+    }
+
+    #[test]
     fn late_points_go_to_the_last_unpaid_kill() {
         fresh();
         abyss_total(100_000, 0);
-        kill("A".into(), false, 1_000);
+        kill("A".into(), How::Kill, 1_000);
         abyss_total(100_800, 9_000); // 8 s après, pas d'autre mort
         let v = snapshot(30_000);
         assert_eq!(v["players"][0]["ap"], 800);

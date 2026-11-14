@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.22",
+      "date": "2026-11-14",
+      "notes": {
+        "fr": "**Vue PVP : les kills de ton groupe comptent aussi**\n- Quand quelqu'un de ton groupe tue un joueur sans que tu le touches, le jeu te donne quand même des AP : ce joueur apparaît maintenant dans la liste, avec une barre vert d'eau et ses AP.\n- En haut, « 👥 N groupe » compte ces kills, à côté de tes kills et assists.\n- Un kill du groupe qui ne t'a rien rapporté n'est pas affiché.",
+        "en": "**Vue PVP : les kills de ton groupe comptent aussi**\n- Quand quelqu'un de ton groupe tue un joueur sans que tu le touches, le jeu te donne quand même des AP : ce joueur apparaît maintenant dans la liste, avec une barre vert d'eau et ses AP.\n- En haut, « 👥 N groupe » compte ces kills, à côté de tes kills et assists.\n- Un kill du groupe qui ne t'a rien rapporté n'est pas affiché."
+      }
+    },
+    {
       "version": "2.1.21",
       "date": "2026-11-13",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Son des alertes réglable**\n- Dans le panneau Événements (icône calendrier), sous « Alerte » : choix du son (Carillon, Cloche, Bip, Harpe ou Aucun son) et curseur de volume.\n- Changer le son ou le volume le fait entendre tout de suite ; « Tester » montre l'alerte complète.\n- Le réglage vaut pour toutes les alertes : événements, boss et familiers.",
         "en": "**Son des alertes réglable**\n- Dans le panneau Événements (icône calendrier), sous « Alerte » : choix du son (Carillon, Cloche, Bip, Harpe ou Aucun son) et curseur de volume.\n- Changer le son ou le volume le fait entendre tout de suite ; « Tester » montre l'alerte complète.\n- Le réglage vaut pour toutes les alertes : événements, boss et familiers."
-      }
-    },
-    {
-      "version": "2.1.16",
-      "date": "2026-11-08",
-      "notes": {
-        "fr": "**Barre du boss compacte**\n- Quand tu tapes un boss, sa vie s'affiche dans une petite barre rouge avec le pourcentage (ex. 53.7%), sous l'en-tête, avec ton record à côté.\n- Elle clignote doucement sous 25 %.\n- Tu préfères l'ancienne grande barre avec les PV restants ? Décoche « Barre du boss compacte » dans Paramètres → Apparence.",
-        "en": "**Barre du boss compacte**\n- Quand tu tapes un boss, sa vie s'affiche dans une petite barre rouge avec le pourcentage (ex. 53.7%), sous l'en-tête, avec ton record à côté.\n- Elle clignote doucement sous 25 %.\n- Tu préfères l'ancienne grande barre avec les PV restants ? Décoche « Barre du boss compacte » dans Paramètres → Apparence."
       }
     }
   ]

@@ -10497,3 +10497,6 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
 .a2dPvpMini .a2dPvpName { font-size: 13px; }
 .a2dPvpMini .a2dPvpAp { font-size: 13px; }
 .a2dPvpMini.isAssist .a2dPvpName { color: #cfe3ff; }
+/* Vue PvP : joueur tué par le groupe sans toi (vert d'eau) */
+.a2dPvpRow.isGroup .a2dPvpFill { background: linear-gradient(90deg, rgba(80,200,170,.14), rgba(80,200,170,.42)); box-shadow: inset -2px 0 0 rgba(150,235,210,.85); }
+.a2dPvpMini.isGroup .a2dPvpName { color: #bff2e3; }

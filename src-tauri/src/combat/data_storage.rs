@@ -2442,10 +2442,22 @@ impl DataStorage {
             killer == me
         };
         let kind = self.kda.lock().player_died(victim, by_me, at_ms);
-        if let Some(k @ (KdaKind::Kill | KdaKind::Assist)) = kind {
-            let name = self.get_nickname(victim).unwrap_or_else(|| format!("#{victim}"));
-            tracing::info!("PvP: {kind:?} on {victim} named '{name}' at {at_ms}");
-            crate::a2d_pvp::kill(name, k == KdaKind::Assist, at_ms);
+        let name = || self.get_nickname(victim).unwrap_or_else(|| format!("#{victim}"));
+        match kind {
+            Some(k @ (KdaKind::Kill | KdaKind::Assist)) => {
+                let name = name();
+                tracing::info!("PvP: {kind:?} on {victim} named '{name}' at {at_ms}");
+                let how = if k == KdaKind::Assist { crate::a2d_pvp::How::Assist } else { crate::a2d_pvp::How::Kill };
+                crate::a2d_pvp::kill(name, how, at_ms);
+            }
+            // Tué par quelqu'un de ton groupe sans que tu le touches : le jeu
+            // te donne quand même des Points Abyssaux.
+            None if self.get_nickname(killer).is_some_and(|k| self.get_party_members().contains_key(&k)) => {
+                let name = name();
+                tracing::info!("PvP: group kill on {victim} named '{name}' by {killer} at {at_ms}");
+                crate::a2d_pvp::kill(name, crate::a2d_pvp::How::Group, at_ms);
+            }
+            _ => {}
         }
         tracing::debug!("KDA: player {victim} died, killer {killer}{}: {kind:?}", if by_me { " (you)" } else { "" });
         kind

@@ -49,24 +49,27 @@
     const top = Math.max(1, ...players.map((p) => p.ap || 0));
     const head = `<div class="a2dPvpHead"><span>⚔ <b>${v?.kills || 0}</b> kill${(v?.kills || 0) > 1 ? "s" : ""}</span>` +
       `<span>🤝 <b>${v?.assists || 0}</b> assist${(v?.assists || 0) > 1 ? "s" : ""}</span>` +
+      (v?.group ? `<span title="Joueurs tués par ton groupe sans que tu les touches : ils rapportent quand même des AP">👥 <b>${v.group}</b> groupe</span>` : "") +
       `<span class="a2dPvpTot">◆ <b>+${fmt(v?.pvpAp || 0)}</b> AP</span>` +
       `<button type="button" class="a2dPvpReset" title="Remettre la vue PvP à zéro">↺</button></div>`;
     const rows = players.length
       ? players.map((p, i) => {
-          const n = (p.kills || 0) + (p.assists || 0);
-          const tip = `${p.kills || 0} kill${p.kills > 1 ? "s" : ""}, ${p.assists || 0} assist${p.assists > 1 ? "s" : ""}`;
-          return `<div class="a2dPvpRow${p.kills ? "" : " isAssist"}" title="${esc(tip)}">
+          const n = (p.kills || 0) + (p.assists || 0) + (p.group || 0);
+          const tip = `${p.kills || 0} kill${p.kills > 1 ? "s" : ""}, ${p.assists || 0} assist${p.assists > 1 ? "s" : ""}` +
+            (p.group ? `, ${p.group} par le groupe` : "");
+          const cls = p.kills ? "" : p.assists ? " isAssist" : " isGroup";
+          return `<div class="a2dPvpRow${cls}" title="${esc(tip)}">
             <span class="a2dPvpFill" style="width:${((p.ap || 0) / top) * 100}%"></span>
             <span class="a2dPvpRank">${i + 1}</span>
             <span class="a2dPvpName">${esc(p.name)}${n > 1 ? `<small>×${n}</small>` : ""}</span>
             <span class="a2dPvpAp">${p.ap ? `+${fmt(p.ap)}` : "—"}<small>AP</small></span>
           </div>`;
         }).join("")
-      : `<div class="a2dPvpEmpty">Aucun joueur tué pour l'instant.<br><small>Chaque kill ou assist s'ajoute ici avec les AP gagnés.</small></div>`;
+      : `<div class="a2dPvpEmpty">Aucun joueur tué pour l'instant.<br><small>Chaque kill, assist ou kill de ton groupe qui rapporte des AP s'ajoute ici.</small></div>`;
     const html = head + `<div class="a2dPvpRows">${rows}</div>` +
       (hidden > 0
         ? `<button type="button" class="a2dPvpMore${more ? " isOpen" : ""}">${more ? "▴" : "▾"} ${hidden} autre${hidden > 1 ? "s" : ""} joueur${hidden > 1 ? "s" : ""} · +${fmt(rest.reduce((t, p) => t + (p.ap || 0), 0))} AP</button>` +
-          (more ? `<div class="a2dPvpRest">${rest.map((p, i) => `<div class="a2dPvpMini${p.kills ? "" : " isAssist"}"><span class="a2dPvpRank">${MAX_ROWS + i + 1}</span><span class="a2dPvpName">${esc(p.name)}${(p.kills || 0) + (p.assists || 0) > 1 ? `<small>×${(p.kills || 0) + (p.assists || 0)}</small>` : ""}</span><span class="a2dPvpAp">${p.ap ? `+${fmt(p.ap)}` : "—"}<small>AP</small></span></div>`).join("")}</div>` : "")
+          (more ? `<div class="a2dPvpRest">${rest.map((p, i) => `<div class="a2dPvpMini${p.kills ? "" : p.assists ? " isAssist" : " isGroup"}"><span class="a2dPvpRank">${MAX_ROWS + i + 1}</span><span class="a2dPvpName">${esc(p.name)}${(p.kills || 0) + (p.assists || 0) + (p.group || 0) > 1 ? `<small>×${(p.kills || 0) + (p.assists || 0) + (p.group || 0)}</small>` : ""}</span><span class="a2dPvpAp">${p.ap ? `+${fmt(p.ap)}` : "—"}<small>AP</small></span></div>`).join("")}</div>` : "")
         : "") +
       (v?.otherAp ? `<div class="a2dPvpOther">+${fmt(v.otherAp)} AP gagnés hors PvP</div>` : "");
     if (b.innerHTML !== html) b.innerHTML = html;
