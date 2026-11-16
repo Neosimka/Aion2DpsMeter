@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.24",
+      "date": "2026-11-16",
+      "notes": {
+        "fr": "**Détails : 10 joueurs**\n- La fenêtre de détail d'un combat (et l'historique) montre jusqu'à 10 joueurs au lieu de 8 : tout un groupe de Ludra.",
+        "en": "**Détails : 10 joueurs**\n- La fenêtre de détail d'un combat (et l'historique) montre jusqu'à 10 joueurs au lieu de 8 : tout un groupe de Ludra."
+      }
+    },
+    {
       "version": "2.1.23",
       "date": "2026-11-16",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Vue PVP : les AP vont au bon joueur**\n- Quand plusieurs joueurs tombaient à la suite, tous les AP s'empilaient sur le premier tué. Chaque kill garde maintenant ses propres AP, que le jeu les envoie avant ou après la mort.\n- Les kills et les gains d'AP sont notés dans le journal du meter, pour corriger plus vite si un nom ne colle pas.",
         "en": "**Vue PVP : les AP vont au bon joueur**\n- Quand plusieurs joueurs tombaient à la suite, tous les AP s'empilaient sur le premier tué. Chaque kill garde maintenant ses propres AP, que le jeu les envoie avant ou après la mort.\n- Les kills et les gains d'AP sont notés dans le journal du meter, pour corriger plus vite si un nom ne colle pas."
-      }
-    },
-    {
-      "version": "2.1.18",
-      "date": "2026-11-13",
-      "notes": {
-        "fr": "**Vue PVP et compteur de Points Abyssaux**\n- Nouveau mode **PVP** dans le menu du bouton BOSS (en bas) : la fenêtre montre les joueurs que tu as tués ou aidé à tuer, avec les AP gagnés sur chacun, plus le total de kills, d'assists et d'AP. Le bouton ↺ remet la vue à zéro.\n- En bas du meter, **◆ +AP** : les Points Abyssaux gagnés depuis le lancement, en temps réel. Survole pour le rythme par heure et le total de la semaine ; clic pour remettre à zéro.\n- Reprise d'A2Tools 2.0.93 à 2.0.96 : choc par joueur et par compétence, chronologie des buffs corrigée, énergie d'Odyle par serveur, données du jeu du 11 novembre.",
-        "en": "**Vue PVP et compteur de Points Abyssaux**\n- Nouveau mode **PVP** dans le menu du bouton BOSS (en bas) : la fenêtre montre les joueurs que tu as tués ou aidé à tuer, avec les AP gagnés sur chacun, plus le total de kills, d'assists et d'AP. Le bouton ↺ remet la vue à zéro.\n- En bas du meter, **◆ +AP** : les Points Abyssaux gagnés depuis le lancement, en temps réel. Survole pour le rythme par heure et le total de la semaine ; clic pour remettre à zéro.\n- Reprise d'A2Tools 2.0.93 à 2.0.96 : choc par joueur et par compétence, chronologie des buffs corrigée, énergie d'Odyle par serveur, données du jeu du 11 novembre."
       }
     }
   ]
