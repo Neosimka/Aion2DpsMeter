@@ -169,7 +169,15 @@
       "parriedTakenTip": "Of the hits taken: parried, and in brackets perfectly parried",
       "parryRateTip": "Of your hits: the share the target parried",
       "stagger": "Stagger",
-      "staggerTip": "Stagger dealt to the bosses' gauges, and in brackets the share of all the stagger dealt"
+      "staggerTip": "Stagger dealt to the bosses' gauges, and in brackets the share of all the stagger dealt",
+      "a2dMiss": "Misses",
+      "a2dMissTip": "Your missed hits, and in brackets their share of all your tries",
+      "a2dResist": "Resisted",
+      "a2dResistTip": "Your hits the target resisted, and in brackets their share of all your tries",
+      "a2dBlocked": "Blocked by target (Perfect)",
+      "a2dBlockedTip": "Your hits the target blocked with a shield, and in brackets perfectly blocked",
+      "a2dIronWall": "Target endurance",
+      "a2dIronWallTip": "Your hits the target's endurance absorbed"
     },
     "titleFor": "for",
     "titleVs": "vs",

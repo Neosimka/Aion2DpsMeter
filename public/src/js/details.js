@@ -298,6 +298,8 @@ const createDetailsUI = ({
     return spans;
   };
 
+  // « 12 (3.4%) » : un nombre et sa part.
+  const countPct = (n, p) => (n == null ? "-" : `${formatCount(n)} (${pctText(p)})`);
   const STATUS = [
     {
       key: "details.stats.totalDamage",
@@ -343,6 +345,36 @@ const createDetailsUI = ({
       getValue: (d) => pctText(d?.totalParryPct),
     },
     { key: "details.stats.regen", fallback: "Regen", getValue: (d) => formatDamageCompact(d?.totalRegen) },
+    // Aion2DpsMeter : les résultats de tes coups, comme les colonnes des compétences
+    {
+      key: "details.stats.a2dMiss",
+      fallback: "Coups ratés",
+      tip: ["details.stats.a2dMissTip", "Tes coups ratés, et entre parenthèses leur part sur tous tes essais"],
+      getValue: (d) => countPct(d?.totalMiss, d?.totalMissPct),
+    },
+    {
+      key: "details.stats.a2dResist",
+      fallback: "Résistés",
+      tip: ["details.stats.a2dResistTip", "Tes coups résistés par la cible, et entre parenthèses leur part sur tous tes essais"],
+      getValue: (d) => countPct(d?.totalResist, d?.totalResistPct),
+    },
+    {
+      key: "details.stats.a2dBlocked",
+      fallback: "Bloqués par la cible (parfait)",
+      tip: ["details.stats.a2dBlockedTip", "Tes coups bloqués au bouclier par la cible, et entre parenthèses bloqués parfaitement"],
+      getValue: (d) => (d ? `${pctText(d.totalShieldBlockPct)} (${pctText(d.totalPerfectBlockPct)})` : "-"),
+    },
+    {
+      key: "details.stats.a2dIronWall",
+      fallback: "Endurance de la cible",
+      tip: ["details.stats.a2dIronWallTip", "Tes coups encaissés par l'endurance de la cible"],
+      getValue: (d) => pctText(d?.totalIronWallPct),
+    },
+    {
+      key: "details.stats.backRate",
+      fallback: "Attaques dans le dos",
+      getValue: (d) => pctText(d?.totalBackPct),
+    },
     {
       key: "details.stats.stagger",
       fallback: "Stagger",
@@ -3149,6 +3181,12 @@ const createDetailsUI = ({
     let totalMultiHitDamage = 0;
     let totalMultiHitHits = 0;
     let totalRegen = 0;
+    // Aion2DpsMeter : les résultats de tes coups (ratés, résistés, bloqués…)
+    let totalMiss = 0;
+    let totalResist = 0;
+    let totalShieldBlock = 0;
+    let totalPerfectBlock = 0;
+    let totalIronWall = 0;
 
     skills.forEach((skill) => {
       const dmg = Number(skill?.dmg) || 0;
@@ -3164,10 +3202,18 @@ const createDetailsUI = ({
         totalBack += Number(skill?.back) || 0;
         totalPerfect += Number(skill?.perfect) || 0;
         totalDouble += Number(skill?.double) || 0;
+        totalMiss += Number(skill?.miss) || 0;
+        totalResist += Number(skill?.resist) || 0;
+        totalShieldBlock += Number(skill?.shieldBlock) || 0;
+        totalPerfectBlock += Number(skill?.perfectBlock) || 0;
+        totalIronWall += Number(skill?.ironWall) || 0;
       }
     });
 
     const pct = (num, den) => (den > 0 ? Math.round((num / den) * 1000) / 10 : 0);
+    // Les ratés et résistés ne sont pas des coups : leur part se compte sur
+    // tous les essais (coups + ratés + résistés).
+    const tries = totalTimes + totalMiss + totalResist;
     const battleTimeMs = detailsList.reduce((sum, details) => sum + (Number(details?.battleTimeMs) || 0), 0);
 
     return {
@@ -3180,6 +3226,13 @@ const createDetailsUI = ({
       totalBackPct: pct(totalBack, totalTimes),
       totalPerfectPct: pct(totalPerfect, totalTimes),
       totalDoublePct: pct(totalDouble, totalTimes),
+      totalMiss,
+      totalMissPct: pct(totalMiss, tries),
+      totalResist,
+      totalResistPct: pct(totalResist, tries),
+      totalShieldBlockPct: pct(totalShieldBlock, totalTimes),
+      totalPerfectBlockPct: pct(totalPerfectBlock, totalTimes),
+      totalIronWallPct: pct(totalIronWall, totalTimes),
       multiHitCount: totalMultiHitCount,
       multiHitDamage: totalMultiHitDamage,
       multiHitPct: pct(totalMultiHitCount, totalTimes),

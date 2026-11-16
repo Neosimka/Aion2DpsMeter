@@ -164,7 +164,15 @@
       "parriedTakenTip": "Des coups subis : parés, et entre parenthèses parés parfaitement",
       "parryRateTip": "De vos coups : la part que la cible a parée",
       "stagger": "Étourdissement",
-      "staggerTip": "Étourdissement infligé aux jauges des boss, et entre parenthèses la part de tout l'étourdissement"
+      "staggerTip": "Étourdissement infligé aux jauges des boss, et entre parenthèses la part de tout l'étourdissement",
+      "a2dMiss": "Coups ratés",
+      "a2dMissTip": "Tes coups ratés, et entre parenthèses leur part sur tous tes essais",
+      "a2dResist": "Résistés",
+      "a2dResistTip": "Tes coups résistés par la cible, et entre parenthèses leur part sur tous tes essais",
+      "a2dBlocked": "Bloqués par la cible (parfait)",
+      "a2dBlockedTip": "Tes coups bloqués au bouclier par la cible, et entre parenthèses bloqués parfaitement",
+      "a2dIronWall": "Endurance de la cible",
+      "a2dIronWallTip": "Tes coups encaissés par l'endurance de la cible"
     },
     "titleFor": "pour",
     "titleVs": "contre",

@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.23",
+      "date": "2026-11-16",
+      "notes": {
+        "fr": "**Détails : tes coups ratés et résistés**\n- Dans la fenêtre de détail d'un combat, de nouvelles stats sous les autres : **Coups ratés** et **Résistés** (nombre et part de tes essais), **Bloqués par la cible** (avec les blocages parfaits), **Endurance de la cible** et **Attaques dans le dos**.\n- Clique sur ton nom pour voir tes chiffres à côté de ceux du groupe, comme pour les autres stats.",
+        "en": "**Détails : tes coups ratés et résistés**\n- Dans la fenêtre de détail d'un combat, de nouvelles stats sous les autres : **Coups ratés** et **Résistés** (nombre et part de tes essais), **Bloqués par la cible** (avec les blocages parfaits), **Endurance de la cible** et **Attaques dans le dos**.\n- Clique sur ton nom pour voir tes chiffres à côté de ceux du groupe, comme pour les autres stats."
+      }
+    },
+    {
       "version": "2.1.22",
       "date": "2026-11-14",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Vue PVP et compteur de Points Abyssaux**\n- Nouveau mode **PVP** dans le menu du bouton BOSS (en bas) : la fenêtre montre les joueurs que tu as tués ou aidé à tuer, avec les AP gagnés sur chacun, plus le total de kills, d'assists et d'AP. Le bouton ↺ remet la vue à zéro.\n- En bas du meter, **◆ +AP** : les Points Abyssaux gagnés depuis le lancement, en temps réel. Survole pour le rythme par heure et le total de la semaine ; clic pour remettre à zéro.\n- Reprise d'A2Tools 2.0.93 à 2.0.96 : choc par joueur et par compétence, chronologie des buffs corrigée, énergie d'Odyle par serveur, données du jeu du 11 novembre.",
         "en": "**Vue PVP et compteur de Points Abyssaux**\n- Nouveau mode **PVP** dans le menu du bouton BOSS (en bas) : la fenêtre montre les joueurs que tu as tués ou aidé à tuer, avec les AP gagnés sur chacun, plus le total de kills, d'assists et d'AP. Le bouton ↺ remet la vue à zéro.\n- En bas du meter, **◆ +AP** : les Points Abyssaux gagnés depuis le lancement, en temps réel. Survole pour le rythme par heure et le total de la semaine ; clic pour remettre à zéro.\n- Reprise d'A2Tools 2.0.93 à 2.0.96 : choc par joueur et par compétence, chronologie des buffs corrigée, énergie d'Odyle par serveur, données du jeu du 11 novembre."
-      }
-    },
-    {
-      "version": "2.1.17",
-      "date": "2026-11-12",
-      "notes": {
-        "fr": "**Son des alertes réglable**\n- Dans le panneau Événements (icône calendrier), sous « Alerte » : choix du son (Carillon, Cloche, Bip, Harpe ou Aucun son) et curseur de volume.\n- Changer le son ou le volume le fait entendre tout de suite ; « Tester » montre l'alerte complète.\n- Le réglage vaut pour toutes les alertes : événements, boss et familiers.",
-        "en": "**Son des alertes réglable**\n- Dans le panneau Événements (icône calendrier), sous « Alerte » : choix du son (Carillon, Cloche, Bip, Harpe ou Aucun son) et curseur de volume.\n- Changer le son ou le volume le fait entendre tout de suite ; « Tester » montre l'alerte complète.\n- Le réglage vaut pour toutes les alertes : événements, boss et familiers."
       }
     }
   ]
