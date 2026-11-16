@@ -804,8 +804,8 @@ const createDetailsUI = ({
     detailsPartyListEl.innerHTML = "";
     const allActors = Array.isArray(stats) ? stats : [];
     if (allActors.length === 0) return;
-    // Cap party list to 8 players to prevent overflow in large fights
-    const actors = allActors.slice(0, 8);
+    // Aion2DpsMeter : 10 joueurs (un groupe de raid de Ludra), au lieu de 8.
+    const actors = allActors.slice(0, 10);
 
     const topDmg = actors.reduce((m, a) => Math.max(m, Number(a.totalDmg) || 0), 1);
     const btMs = Number(battleTimeMs) || Number(lastDetails?.battleTimeMs) || 0;
