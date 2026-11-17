@@ -6,18 +6,20 @@
   let el = null;
   function node() {
     if (el?.isConnected) return el;
-    const anchor = document.querySelector(".meterFooter .odyleDisplay");
+    // dans la ligne d'infos au-dessus du bas (a2dFooter.js)
+    const anchor = window.A2dFooter?.strip();
     if (!anchor) return null;
     el = document.createElement("div");
     el.className = "a2dNearby";
     el.hidden = true;
-    anchor.insertAdjacentElement("afterend", el);
+    anchor.appendChild(el);
     return el;
   }
   async function tick() {
     const invoke = window.__TAURI__?.core?.invoke;
     const e = node();
     if (!invoke || !e) return;
+    try { if (localStorage.getItem("a2d.nearby.on") === "0") { e.hidden = true; return; } } catch {}
     let n;
     try { n = await invoke("a2d_nearby_players"); } catch { return; }
     if (!n) { e.hidden = true; return; }

@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.25",
+      "date": "2026-11-17",
+      "notes": {
+        "fr": "**Bas du meter allégé**\n- Les petites infos (joueurs autour, Points Abyssaux, énergie d'Odyle, vol) passent sur une ligne fine juste au-dessus du bas. Elle disparaît quand elle n'a rien à montrer.\n- Le bas ne garde que le minuteur, le total du groupe et les boutons : plus rien n'est coupé.\n- Clique sur le minuteur (ou sur la ligne d'infos) pour choisir ce qui s'affiche, joueurs autour et AP compris.",
+        "en": "**Bas du meter allégé**\n- Les petites infos (joueurs autour, Points Abyssaux, énergie d'Odyle, vol) passent sur une ligne fine juste au-dessus du bas. Elle disparaît quand elle n'a rien à montrer.\n- Le bas ne garde que le minuteur, le total du groupe et les boutons : plus rien n'est coupé.\n- Clique sur le minuteur (ou sur la ligne d'infos) pour choisir ce qui s'affiche, joueurs autour et AP compris."
+      }
+    },
+    {
       "version": "2.1.24",
       "date": "2026-11-16",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Vue PVP : 12 joueurs au plus**\n- La liste montre les 12 joueurs qui t'ont rapporté le plus d'AP ; les autres sont résumés en une ligne (« + 3 autres joueurs »).\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde.",
         "en": "**Vue PVP : 12 joueurs au plus**\n- La liste montre les 12 joueurs qui t'ont rapporté le plus d'AP ; les autres sont résumés en une ligne (« + 3 autres joueurs »).\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde."
-      }
-    },
-    {
-      "version": "2.1.19",
-      "date": "2026-11-13",
-      "notes": {
-        "fr": "**Vue PVP : les AP vont au bon joueur**\n- Quand plusieurs joueurs tombaient à la suite, tous les AP s'empilaient sur le premier tué. Chaque kill garde maintenant ses propres AP, que le jeu les envoie avant ou après la mort.\n- Les kills et les gains d'AP sont notés dans le journal du meter, pour corriger plus vite si un nom ne colle pas.",
-        "en": "**Vue PVP : les AP vont au bon joueur**\n- Quand plusieurs joueurs tombaient à la suite, tous les AP s'empilaient sur le premier tué. Chaque kill garde maintenant ses propres AP, que le jeu les envoie avant ou après la mort.\n- Les kills et les gains d'AP sont notés dans le journal du meter, pour corriger plus vite si un nom ne colle pas."
       }
     }
   ]

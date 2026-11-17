@@ -15,14 +15,16 @@
 
   function node() {
     if (el?.isConnected) return el;
-    const anchor = document.querySelector(".meterFooter .odyleDisplay");
+    // dans la ligne d'infos au-dessus du bas (a2dFooter.js)
+    const anchor = window.A2dFooter?.strip();
     if (!anchor) return null;
     el = document.createElement("button");
     el.type = "button";
+    el.dataset.noDrag = "true";
     el.className = "a2dAbyss";
     el.hidden = true;
     el.addEventListener("click", (e) => { e.stopPropagation(); base = last?.points ?? null; startAt = 0; render(); });
-    anchor.insertAdjacentElement("afterend", el);
+    anchor.appendChild(el);
     return el;
   }
 

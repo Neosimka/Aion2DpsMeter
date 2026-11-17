@@ -10500,3 +10500,25 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
 /* Vue PvP : joueur tué par le groupe sans toi (vert d'eau) */
 .a2dPvpRow.isGroup .a2dPvpFill { background: linear-gradient(90deg, rgba(80,200,170,.14), rgba(80,200,170,.42)); box-shadow: inset -2px 0 0 rgba(150,235,210,.85); }
 .a2dPvpMini.isGroup .a2dPvpName { color: #bff2e3; }
+
+/* Aion2DpsMeter : ligne d'infos au-dessus du bas (a2dFooter.js) */
+.a2dFootStrip {
+  display: flex; align-items: center; gap: 14px; min-height: 18px; padding: 1px 12px;
+  border-top: 1px solid var(--hud-hairline); background: rgba(0, 0, 0, 0.14);
+  font-family: var(--hud-tech); font-size: 11px; font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.82); text-shadow: var(--text-shadow); white-space: nowrap; overflow: hidden; cursor: pointer;
+}
+.a2dFootStrip[hidden] { display: none; }
+.a2dFootStrip > * { flex: 0 0 auto; margin: 0 !important; }
+.a2dFootStrip .a2dNearby { margin: 0; }
+.a2dFootStrip .a2dAbyss {
+  border: 0; background: none; padding: 0; box-shadow: none; margin: 0; font-size: 11px; color: #d9ccff;
+}
+.a2dFootStrip .a2dAbyss.isFlash { box-shadow: none; text-shadow: 0 0 8px rgba(170, 140, 255, .9); }
+.a2dFootStrip .a2dAbyss em { right: auto; left: 12px; }
+.a2dFootStrip .odyleDisplay, .a2dFootStrip .fpTimer { font-size: 11px; }
+.a2dFootStrip .a2dAbyss em { display: none; }
+.a2dFootStrip .a2dNearby { order: 1; }
+.a2dFootStrip .a2dAbyss { order: 2; }
+.a2dFootStrip .odyleDisplay { order: 3; }
+.a2dFootStrip .fpTimer { order: 4; }

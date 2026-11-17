@@ -60,6 +60,13 @@ const FOOTER_DISPLAYS = [
   ["showFpPin", "footerMenu.fpPin", "Flight power as a pin"],
   ["showPing", "footerMenu.ping", "Ping"],
 ];
+// Aion2DpsMeter : nos affichages du bas, réglés dans le même menu
+// (clé localStorage, libellé ; affichés par défaut).
+const A2D_FOOTER_DISPLAYS = [
+  ["a2d.nearby.on", "Joueurs autour (👥 ⚔)"],
+  ["a2d.abyss.on", "Points Abyssaux gagnés (◆)"],
+];
+const a2dShown = (key) => { try { return localStorage.getItem(key) !== "0"; } catch { return true; } };
 
 // The target mode menu, in the button's old cycle order: mode, the label the
 // button shows, and what it counts.
@@ -6291,6 +6298,14 @@ class DpsApp {
       this.setFooterMenuOpen(!this.footerMenuOpen);
     });
     menu.addEventListener("click", (event) => {
+      const a2d = event.target.closest?.("[data-a2d-display]");
+      if (a2d) {
+        const key = a2d.dataset.a2dDisplay;
+        try { localStorage.setItem(key, a2dShown(key) ? "0" : "1"); } catch {}
+        window.dispatchEvent(new CustomEvent("a2d:footer"));
+        this.renderFooterMenu();
+        return;
+      }
       const item = event.target.closest?.("[data-display]");
       if (!item) return;
       const display = FOOTER_DISPLAYS.find(([key]) => key === item.dataset.display);
@@ -6349,6 +6364,23 @@ class DpsApp {
       const name = document.createElement("span");
       name.className = "metricMenuName";
       name.textContent = t(labelKey, fallback);
+      const check = document.createElement("span");
+      check.className = "metricMenuCheck";
+      check.setAttribute("aria-hidden", "true");
+      el.append(name, check);
+      menu.appendChild(el);
+    }
+    for (const [key, label] of A2D_FOOTER_DISPLAYS) {
+      const shown = a2dShown(key);
+      const el = document.createElement("div");
+      el.className = "metricMenuItem";
+      el.dataset.a2dDisplay = key;
+      el.classList.toggle("isShown", shown);
+      el.setAttribute("role", "menuitemcheckbox");
+      el.setAttribute("aria-checked", String(shown));
+      const name = document.createElement("span");
+      name.className = "metricMenuName";
+      name.textContent = label;
       const check = document.createElement("span");
       check.className = "metricMenuCheck";
       check.setAttribute("aria-hidden", "true");
