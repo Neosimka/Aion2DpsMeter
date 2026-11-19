@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.26",
+      "date": "2026-11-19",
+      "notes": {
+        "fr": "**Nouvel onglet Tâches**\n- Dans le panneau Événements (icône calendrier), l'onglet **Tâches** fait le point sur ton perso : énergie d'Odyle, entrées (Cauchemar, Épreuve d'Éveil, Brèche inconnue, clés Shugo et d'invasion).\n- **Aujourd'hui** : missions de vocation, Kinah gagnés, corridors d'Abysse, avec l'heure de la remise à zéro.\n- **Cette semaine** : Points Abyssaux, énergie Od achetée et transmutée, et les arènes, le champ de bataille et le raid Ludra à cocher (ils se décochent tout seuls le mercredi).\n- Les compteurs arrivent à la connexion du perso : reconnecte-toi ou change de zone si un compteur dit « pas encore lu ».",
+        "en": "**Nouvel onglet Tâches**\n- Dans le panneau Événements (icône calendrier), l'onglet **Tâches** fait le point sur ton perso : énergie d'Odyle, entrées (Cauchemar, Épreuve d'Éveil, Brèche inconnue, clés Shugo et d'invasion).\n- **Aujourd'hui** : missions de vocation, Kinah gagnés, corridors d'Abysse, avec l'heure de la remise à zéro.\n- **Cette semaine** : Points Abyssaux, énergie Od achetée et transmutée, et les arènes, le champ de bataille et le raid Ludra à cocher (ils se décochent tout seuls le mercredi).\n- Les compteurs arrivent à la connexion du perso : reconnecte-toi ou change de zone si un compteur dit « pas encore lu »."
+      }
+    },
+    {
       "version": "2.1.25",
       "date": "2026-11-17",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Vue PVP : 9 joueurs et un menu déroulant**\n- La liste montre les 9 joueurs qui t'ont rapporté le plus d'AP.\n- Les autres sont dans un menu déroulant (« ▾ 6 autres joueurs · +7 500 AP ») : un clic l'ouvre ou le ferme.\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde.",
         "en": "**Vue PVP : 9 joueurs et un menu déroulant**\n- La liste montre les 9 joueurs qui t'ont rapporté le plus d'AP.\n- Les autres sont dans un menu déroulant (« ▾ 6 autres joueurs · +7 500 AP ») : un clic l'ouvre ou le ferme.\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde."
-      }
-    },
-    {
-      "version": "2.1.20",
-      "date": "2026-11-13",
-      "notes": {
-        "fr": "**Vue PVP : 12 joueurs au plus**\n- La liste montre les 12 joueurs qui t'ont rapporté le plus d'AP ; les autres sont résumés en une ligne (« + 3 autres joueurs »).\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde.",
-        "en": "**Vue PVP : 12 joueurs au plus**\n- La liste montre les 12 joueurs qui t'ont rapporté le plus d'AP ; les autres sont résumés en une ligne (« + 3 autres joueurs »).\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde."
       }
     }
   ]

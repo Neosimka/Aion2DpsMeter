@@ -10522,3 +10522,23 @@ body:not(.noStatColours) .footerBtns .metricToggleBtn[data-metric="hits"] { colo
 .a2dFootStrip .a2dAbyss { order: 2; }
 .a2dFootStrip .odyleDisplay { order: 3; }
 .a2dFootStrip .fpTimer { order: 4; }
+
+/* Aion2DpsMeter : onglet Tâches (a2dTasks.js) */
+.a2dEvents .a2dTkRow { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 4px; font-size: 12.5px; }
+.a2dEvents .a2dTkRow[data-task] { cursor: pointer; }
+.a2dEvents .a2dTkRow[data-task]:hover { background: rgba(255,255,255,.06); }
+.a2dEvents .a2dTkIcon { width: 16px; text-align: center; color: #9fd8ff; }
+.a2dEvents .a2dTkName { color: rgba(255,255,255,.9); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.a2dEvents .a2dTkName small { color: rgba(255,255,255,.5); font-size: 10px; }
+.a2dEvents .a2dTkVal { flex: 0 0 auto; font-variant-numeric: tabular-nums; color: rgba(255,255,255,.75); }
+.a2dEvents .a2dTkVal b { color: #fff; }
+.a2dEvents .a2dTkVal em { font-style: normal; color: rgba(255,255,255,.4); font-size: 11px; }
+.a2dEvents .a2dTkVal small { color: rgba(255,255,255,.5); font-size: 10px; }
+.a2dEvents .a2dTkPlus { color: #7fd4ff; }
+.a2dEvents .a2dTkTodo { color: #f2c66d; font-size: 11px; }
+.a2dEvents .a2dTkRow.isDone .a2dTkName, .a2dEvents .a2dTkRow.isDone .a2dTkVal { color: #7fe0a8; }
+.a2dEvents .a2dTkRow.isDone .a2dTkName { text-decoration: line-through; text-decoration-color: rgba(127,224,168,.5); }
+.a2dEvents .a2dTkBarRow { padding: 0 4px 3px 28px; list-style: none; }
+.a2dEvents .a2dTkBar { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+.a2dEvents .a2dTkBar i { display: block; height: 100%; background: linear-gradient(90deg, #4fa8e8, #8fdcff); }
+.a2dEvents .a2dEvHead small { font-weight: 400; opacity: .6; margin-left: 4px; text-transform: none; letter-spacing: 0; }

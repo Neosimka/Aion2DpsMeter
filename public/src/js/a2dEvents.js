@@ -37,7 +37,7 @@
   let feedTimer = null;
   let tickTimer = null;
   let open = false;
-  let tab = ["bosses", "pets"].includes(store.get(TAB_KEY)) ? store.get(TAB_KEY) : "events";
+  let tab = ["bosses", "pets", "tasks"].includes(store.get(TAB_KEY)) ? store.get(TAB_KEY) : "events";
 
   // ---------- alertes ----------
   // Une cloche par ligne : son + popup quelques minutes avant le début.
@@ -249,9 +249,10 @@
     const serverClock = new Date(now).toLocaleTimeString("fr-FR", { timeZone: timeZone(), hour: "2-digit", minute: "2-digit" });
     el.querySelector(".a2dEvServer").textContent = `${serverName ? `${serverName} · ` : ""}heure serveur ${serverClock}`;
     el.querySelectorAll(".a2dEvTab").forEach((b) => b.classList.toggle("isActive", b.dataset.tab === tab));
-    el.classList.toggle("isPets", tab === "pets");
+    el.classList.toggle("isPets", tab === "pets" || tab === "tasks");
     el.querySelector(".a2dEvList").innerHTML = tab === "bosses" ? renderBosses(now)
-      : tab === "pets" ? (window.A2dPets?.render?.() ?? "") : renderEvents(now);
+      : tab === "pets" ? (window.A2dPets?.render?.() ?? "")
+      : tab === "tasks" ? (window.A2dTasks?.render?.() ?? "") : renderEvents(now);
     const foot = el.querySelector(".a2dEvFoot");
     if (foot && !foot.dataset.ready) {
       foot.dataset.ready = "1";
@@ -456,6 +457,8 @@
     el.querySelector(".a2dEvList").addEventListener("click", (e) => {
       const bs = e.target.closest("[data-boss-shift]");
       if (bs) { setShift(shift + Number(bs.dataset.bossShift)); render(); return; }
+      const tk = e.target.closest("[data-task]");
+      if (tk) { window.A2dTasks?.toggle?.(tk.dataset.task); render(); return; }
       const pv = e.target.closest("[data-pet-view]");
       if (pv) { window.A2dPets?.setView?.(pv.dataset.petView); render(); return; }
       const pc = e.target.closest("[data-pet-capture]");
@@ -497,6 +500,7 @@
     el.querySelectorAll(".a2dEvTab").forEach((b) => b.addEventListener("click", () => {
       tab = b.dataset.tab;
       store.set(TAB_KEY, tab);
+      if (tab === "tasks") window.A2dTasks?.read?.().then(render);
       render();
       resize();
     }));
