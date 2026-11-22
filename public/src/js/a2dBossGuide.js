@@ -4,7 +4,7 @@
 // tombe (avec le temps estimé d'après la vitesse à laquelle le boss perd ses
 // PV), en rouge si elle fait wiper, puis un bandeau quand elle arrive. Une voix
 // (voix Windows) l'annonce quelques secondes avant, puis dit quoi faire.
-// Seuils de Ludra éternel : 8 essais de la légion rejoués depuis les captures du meter ;
+// Seuils de Ludra éternel : 9 essais de la légion rejoués depuis les captures du meter ;
 // Rahu : deux kills de la légion rejoués depuis les captures du meter. Ketu et le Réacteur n'ont pas de seuil
 // connu : une ligne de rappel à la place.
 (() => {
@@ -19,7 +19,7 @@
   const BOSS = {
     ludra: {
       name: "Ludra éternel", enrage: 600,
-      // Seuils relevés sur 8 essais de La Chevrerie, dont 2 kills (22/11/2026, Normal).
+      // Seuils relevés sur 9 essais de La Chevrerie, dont 1 kill (22/11/2026, Normal).
       steps: [
         { at: 92, name: "Orbes", warn: "Orbes", say: "Tours d'orbes. Bleues dedans, la rouge sous blocage." },
         { at: 85, name: "Arène qui rétrécit", warn: "L'arène rétrécit", say: "L'arène rétrécit. Restez loin du bord." },
