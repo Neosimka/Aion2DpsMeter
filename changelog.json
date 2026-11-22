@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.29",
+      "date": "2026-11-22",
+      "notes": {
+        "fr": "**Guide de Rahu calé sur nos kills**\n- Seuils relevés sur deux kills de Rahu de la légion (Normal, 22/11) : **salve de 20 s à 85 %**, vague de monstres à 63 %, arène en quatre à 48 % (Rahu ne prend plus de dégâts quelques secondes), **Temps de prédation à 31 %** (au lieu de 25 %). Plus d'annonce à 75 % : rien ne s'y passe.\n- Nouveau fichier **bossguide.log** dans le dossier du meter : PV des boss de Ludra et coups de leurs monstres, enregistrés même sans le journal de débogage. À m'envoyer après un raid pour caler Ketu et Ludra.",
+        "en": "**Guide de Rahu calé sur nos kills**\n- Seuils relevés sur deux kills de Rahu de la légion (Normal, 22/11) : **salve de 20 s à 85 %**, vague de monstres à 63 %, arène en quatre à 48 % (Rahu ne prend plus de dégâts quelques secondes), **Temps de prédation à 31 %** (au lieu de 25 %). Plus d'annonce à 75 % : rien ne s'y passe.\n- Nouveau fichier **bossguide.log** dans le dossier du meter : PV des boss de Ludra et coups de leurs monstres, enregistrés même sans le journal de débogage. À m'envoyer après un raid pour caler Ketu et Ludra."
+      }
+    },
+    {
       "version": "2.1.28",
       "date": "2026-11-22",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Détails : 10 joueurs**\n- La fenêtre de détail d'un combat (et l'historique) montre jusqu'à 10 joueurs au lieu de 8 : tout un groupe de Ludra.",
         "en": "**Détails : 10 joueurs**\n- La fenêtre de détail d'un combat (et l'historique) montre jusqu'à 10 joueurs au lieu de 8 : tout un groupe de Ludra."
-      }
-    },
-    {
-      "version": "2.1.23",
-      "date": "2026-11-16",
-      "notes": {
-        "fr": "**Détails : tes coups ratés et résistés**\n- Dans la fenêtre de détail d'un combat, de nouvelles stats sous les autres : **Coups ratés** et **Résistés** (nombre et part de tes essais), **Bloqués par la cible** (avec les blocages parfaits), **Endurance de la cible** et **Attaques dans le dos**.\n- Clique sur ton nom pour voir tes chiffres à côté de ceux du groupe, comme pour les autres stats.",
-        "en": "**Détails : tes coups ratés et résistés**\n- Dans la fenêtre de détail d'un combat, de nouvelles stats sous les autres : **Coups ratés** et **Résistés** (nombre et part de tes essais), **Bloqués par la cible** (avec les blocages parfaits), **Endurance de la cible** et **Attaques dans le dos**.\n- Clique sur ton nom pour voir tes chiffres à côté de ceux du groupe, comme pour les autres stats."
       }
     }
   ]

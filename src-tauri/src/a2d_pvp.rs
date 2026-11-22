@@ -203,14 +203,19 @@ pub fn a2d_pvp_reset() {
 mod tests {
     use super::*;
 
-    fn fresh() {
+    /// Les tests partagent l'état global : un à la fois.
+    static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn fresh() -> std::sync::MutexGuard<'static, ()> {
+        let guard = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
         reset();
         with(|s| s.last_total = None);
+        guard
     }
 
     #[test]
     fn points_after_each_kill() {
-        fresh();
+        let _serial = fresh();
         abyss_total(100_000, 0);
         kill("Lyrael".into(), How::Kill, 10_000);
         abyss_total(101_240, 11_000);
@@ -229,7 +234,7 @@ mod tests {
     fn points_before_each_kill_in_a_fast_fight() {
         // le jeu envoie les points avant le record de la mort, et les kills
         // s'enchaînent : chacun garde les siens, rien ne s'empile sur le premier
-        fresh();
+        let _serial = fresh();
         abyss_total(100_000, 0);
         abyss_total(101_000, 1_000);
         kill("A".into(), How::Kill, 2_000);
@@ -245,7 +250,7 @@ mod tests {
 
     #[test]
     fn group_kills_count_only_when_they_pay() {
-        fresh();
+        let _serial = fresh();
         abyss_total(100_000, 0);
         // un allié de groupe tue sans que tu touches : points quand même
         kill("Groupé".into(), How::Group, 5_000);
@@ -261,7 +266,7 @@ mod tests {
 
     #[test]
     fn final_kills_are_taken_once() {
-        fresh();
+        let _serial = fresh();
         abyss_total(100_000, 0);
         kill("A".into(), How::Kill, 1_000);
         abyss_total(100_900, 2_000);
@@ -275,7 +280,7 @@ mod tests {
 
     #[test]
     fn late_points_go_to_the_last_unpaid_kill() {
-        fresh();
+        let _serial = fresh();
         abyss_total(100_000, 0);
         kill("A".into(), How::Kill, 1_000);
         abyss_total(100_800, 9_000); // 8 s après, pas d'autre mort

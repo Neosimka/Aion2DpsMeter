@@ -3158,6 +3158,10 @@ impl DataStorage {
         }
         let mut inner = self.inner.write();
         inner.mob_current_hp.insert(id, hp);
+        // Aion2DpsMeter : relevé des PV des boss de la Forge (guide de boss).
+        if let (Some(&mob), Some(&max)) = (inner.mob_storage.get(&id), inner.mob_hp_data.get(&id)) {
+            crate::a2d_bossguide::note_hp(id, mob, hp, max, crate::clock::now_ms());
+        }
         if hp == 1 {
             inner.hp_floored_ids.insert(id);
         } else if hp > 1

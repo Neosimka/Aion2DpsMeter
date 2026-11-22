@@ -5,7 +5,7 @@
 // PV), en rouge si elle fait wiper, puis un bandeau quand elle arrive. Une voix
 // (voix Windows) l'annonce quelques secondes avant, puis dit quoi faire.
 // Seuils de Ludra éternel : relevés d'AionFlex sur la version globale (14/11) ;
-// Rahu : guides de joueurs (Vtomes). Ketu et le Réacteur n'ont pas de seuil
+// Rahu : deux kills de la légion rejoués depuis les captures du meter. Ketu et le Réacteur n'ont pas de seuil
 // connu : une ligne de rappel à la place.
 (() => {
   const K = { on: "a2d.guide.on", voice: "a2d.guide.voice", wipeOnly: "a2d.guide.wipeOnly", vol: "a2d.guide.volume" };
@@ -30,10 +30,12 @@
     },
     rahu: {
       name: "Rahu",
+      // Seuils relevés sur deux kills de La Chevrerie (22/11/2026, Normal).
       steps: [
-        { at: 75, name: "Projection au bord", warn: "Projection", say: "Projection. Regroupez-vous sur le joueur marqué, flaques au bord." },
-        { at: 50, name: "Arène en quatre", warn: "Arène en quatre", say: "Arène en quatre. Tous du même côté, le tank au centre." },
-        { at: 25, name: "Temps de prédation", wipe: true, warn: "Prédateurs", say: "Temps de prédation. Le rayon rouge sur les quatre prédateurs." },
+        { at: 85, name: "Salve de 20 s", warn: "Salve", say: "Salve de vingt secondes. Défensifs et soins prêts." },
+        { at: 63, name: "Vague de monstres", warn: "Monstres", say: "Monstres. Les distances les prennent." },
+        { at: 48, name: "Arène en quatre", warn: "Arène en quatre", say: "Arène en quatre. Tous du même côté, le tank au centre." },
+        { at: 31, name: "Temps de prédation", wipe: true, warn: "Prédateurs", say: "Temps de prédation. Le rayon rouge sur les quatre prédateurs." },
       ],
     },
     ketu: { name: "Ketu", tip: "Main levée : côté du laser · œil rouge : face, bleu : dos · ta pierre juste avant le gros coup" },
