@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.28",
+      "date": "2026-11-22",
+      "notes": {
+        "fr": "**Guide de boss en direct (raid Ludra)**\n- Sous la barre du boss : la prochaine mécanique de **Ludra éternel** (Orbes 90 %, arène 85 %, **Bingo 60 %**, Zikel 45 %, **Couleurs 33 %**, Cercles 10 %) ou de **Rahu** (75, 50 et 25 %), avec le temps estimé avant qu'elle tombe. En rouge : celles qui font wiper.\n- Quand elle arrive, un bandeau dit quoi faire ; une **voix** l'annonce quelques secondes avant (« Bingo dans 5 ») puis donne la consigne, et prévient une minute avant l'enrage.\n- Ketu et le Réacteur : une ligne de rappel. Sous le guide, la dernière attaque du boss.\n- Réglages → Apparence : guide, voix, « seulement ce qui fait wiper » et volume de la voix.\n- Le meter note les attaques des boss de Ludra dans ses logs, pour caler l'ordre exact des attaques après vos raids.",
+        "en": "**Guide de boss en direct (raid Ludra)**\n- Sous la barre du boss : la prochaine mécanique de **Ludra éternel** (Orbes 90 %, arène 85 %, **Bingo 60 %**, Zikel 45 %, **Couleurs 33 %**, Cercles 10 %) ou de **Rahu** (75, 50 et 25 %), avec le temps estimé avant qu'elle tombe. En rouge : celles qui font wiper.\n- Quand elle arrive, un bandeau dit quoi faire ; une **voix** l'annonce quelques secondes avant (« Bingo dans 5 ») puis donne la consigne, et prévient une minute avant l'enrage.\n- Ketu et le Réacteur : une ligne de rappel. Sous le guide, la dernière attaque du boss.\n- Réglages → Apparence : guide, voix, « seulement ce qui fait wiper » et volume de la voix.\n- Le meter note les attaques des boss de Ludra dans ses logs, pour caler l'ordre exact des attaques après vos raids."
+      }
+    },
+    {
       "version": "2.1.27",
       "date": "2026-11-22",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Détails : tes coups ratés et résistés**\n- Dans la fenêtre de détail d'un combat, de nouvelles stats sous les autres : **Coups ratés** et **Résistés** (nombre et part de tes essais), **Bloqués par la cible** (avec les blocages parfaits), **Endurance de la cible** et **Attaques dans le dos**.\n- Clique sur ton nom pour voir tes chiffres à côté de ceux du groupe, comme pour les autres stats.",
         "en": "**Détails : tes coups ratés et résistés**\n- Dans la fenêtre de détail d'un combat, de nouvelles stats sous les autres : **Coups ratés** et **Résistés** (nombre et part de tes essais), **Bloqués par la cible** (avec les blocages parfaits), **Endurance de la cible** et **Attaques dans le dos**.\n- Clique sur ton nom pour voir tes chiffres à côté de ceux du groupe, comme pour les autres stats."
-      }
-    },
-    {
-      "version": "2.1.22",
-      "date": "2026-11-14",
-      "notes": {
-        "fr": "**Vue PVP : les kills de ton groupe comptent aussi**\n- Quand quelqu'un de ton groupe tue un joueur sans que tu le touches, le jeu te donne quand même des AP : ce joueur apparaît maintenant dans la liste, avec une barre vert d'eau et ses AP.\n- En haut, « 👥 N groupe » compte ces kills, à côté de tes kills et assists.\n- Un kill du groupe qui ne t'a rien rapporté n'est pas affiché.",
-        "en": "**Vue PVP : les kills de ton groupe comptent aussi**\n- Quand quelqu'un de ton groupe tue un joueur sans que tu le touches, le jeu te donne quand même des AP : ce joueur apparaît maintenant dans la liste, avec une barre vert d'eau et ses AP.\n- En haut, « 👥 N groupe » compte ces kills, à côté de tes kills et assists.\n- Un kill du groupe qui ne t'a rien rapporté n'est pas affiché."
       }
     }
   ]

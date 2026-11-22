@@ -2069,6 +2069,10 @@ impl DataStorage {
             && !inner.summon_storage.contains_key(&actor_id)
             && uses_npc_skill
         {
+            // Aion2DpsMeter : les attaques des boss de Ludra, pour le guide de boss.
+            if let Some(&mob) = inner.mob_storage.get(&actor_id) {
+                crate::a2d_bossguide::note(mob, skill_code, pdp.timestamp());
+            }
             // Track damage received on the player target
             let resolved_target = summon_resolver::resolve(target_id, &inner.summon_storage);
             if inner.known_player_ids.contains(&resolved_target) {
