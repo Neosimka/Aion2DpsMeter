@@ -4,7 +4,7 @@
 // tombe (avec le temps estimé d'après la vitesse à laquelle le boss perd ses
 // PV), en rouge si elle fait wiper, puis un bandeau quand elle arrive. Une voix
 // (voix Windows) l'annonce quelques secondes avant, puis dit quoi faire.
-// Seuils de Ludra éternel : relevés d'AionFlex sur la version globale (14/11) ;
+// Seuils de Ludra éternel : 8 essais de la légion rejoués depuis les captures du meter ;
 // Rahu : deux kills de la légion rejoués depuis les captures du meter. Ketu et le Réacteur n'ont pas de seuil
 // connu : une ligne de rappel à la place.
 (() => {
@@ -19,12 +19,16 @@
   const BOSS = {
     ludra: {
       name: "Ludra éternel", enrage: 600,
+      // Seuils relevés sur 8 essais de La Chevrerie, dont 2 kills (22/11/2026, Normal).
       steps: [
-        { at: 90, name: "Orbes", warn: "Orbes", say: "Tours d'orbes. Bleues dedans, la rouge sous blocage." },
+        { at: 92, name: "Orbes", warn: "Orbes", say: "Tours d'orbes. Bleues dedans, la rouge sous blocage." },
         { at: 85, name: "Arène qui rétrécit", warn: "L'arène rétrécit", say: "L'arène rétrécit. Restez loin du bord." },
-        { at: 60, name: "Bingo", wipe: true, warn: "Bingo", say: "Bingo. Allez sur vos numéros, par deux depuis les coins." },
-        { at: 45, name: "Lasers de Zikel", warn: "Zikel", say: "Lasers de Zikel." },
+        { at: 74, name: "Coup sur tout le raid", warn: "Gros coup", say: "Gros coup sur tout le raid. Défensifs et soins." },
+        { at: 52, name: "Coup sur tout le raid", warn: "Gros coup", say: "Gros coup sur tout le raid, puis Bingo." },
+        { at: 50, name: "Bingo", wipe: true, warn: "Bingo", say: "Bingo. Allez sur vos numéros, par deux depuis les coins." },
+        { at: 43, name: "Lasers de Zikel", warn: "Zikel", say: "Lasers de Zikel. Sortez des lignes." },
         { at: 33, name: "Couleurs", wipe: true, warn: "Couleurs", say: "Couleurs. Bleu à gauche, rouge à droite." },
+        { at: 23, name: "Bingo", wipe: true, warn: "Deuxième Bingo", say: "Deuxième Bingo. Sautez d'abord, puis vos numéros." },
         { at: 10, name: "Cercles de couleur", wipe: true, warn: "Cercles", say: "Cercles. Chacun dans sa couleur, à deux secondes de la fin." },
       ],
     },
