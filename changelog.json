@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.27",
+      "date": "2026-11-22",
+      "notes": {
+        "fr": "**Classement PvP de la légion**\n- Tes kills, assists et kills du groupe qui rapportent des Points Abyssaux partent au site de La Chevrerie, avec les AP gagnés sur chacun, une fois les points définitifs (environ 30 s après la mort).\n- Sur le site, onglet Combats → **PvP** : le classement de la semaine (remise à zéro le mercredi), et la semaine d'avant.\n- Même réglage que l'envoi des combats (onglet La Chevrerie) ; un envoi raté est refait plus tard.",
+        "en": "**Classement PvP de la légion**\n- Tes kills, assists et kills du groupe qui rapportent des Points Abyssaux partent au site de La Chevrerie, avec les AP gagnés sur chacun, une fois les points définitifs (environ 30 s après la mort).\n- Sur le site, onglet Combats → **PvP** : le classement de la semaine (remise à zéro le mercredi), et la semaine d'avant.\n- Même réglage que l'envoi des combats (onglet La Chevrerie) ; un envoi raté est refait plus tard."
+      }
+    },
+    {
       "version": "2.1.26",
       "date": "2026-11-19",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Vue PVP : les kills de ton groupe comptent aussi**\n- Quand quelqu'un de ton groupe tue un joueur sans que tu le touches, le jeu te donne quand même des AP : ce joueur apparaît maintenant dans la liste, avec une barre vert d'eau et ses AP.\n- En haut, « 👥 N groupe » compte ces kills, à côté de tes kills et assists.\n- Un kill du groupe qui ne t'a rien rapporté n'est pas affiché.",
         "en": "**Vue PVP : les kills de ton groupe comptent aussi**\n- Quand quelqu'un de ton groupe tue un joueur sans que tu le touches, le jeu te donne quand même des AP : ce joueur apparaît maintenant dans la liste, avec une barre vert d'eau et ses AP.\n- En haut, « 👥 N groupe » compte ces kills, à côté de tes kills et assists.\n- Un kill du groupe qui ne t'a rien rapporté n'est pas affiché."
-      }
-    },
-    {
-      "version": "2.1.21",
-      "date": "2026-11-13",
-      "notes": {
-        "fr": "**Vue PVP : 9 joueurs et un menu déroulant**\n- La liste montre les 9 joueurs qui t'ont rapporté le plus d'AP.\n- Les autres sont dans un menu déroulant (« ▾ 6 autres joueurs · +7 500 AP ») : un clic l'ouvre ou le ferme.\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde.",
-        "en": "**Vue PVP : 9 joueurs et un menu déroulant**\n- La liste montre les 9 joueurs qui t'ont rapporté le plus d'AP.\n- Les autres sont dans un menu déroulant (« ▾ 6 autres joueurs · +7 500 AP ») : un clic l'ouvre ou le ferme.\n- Les totaux de kills, d'assists et d'AP comptent toujours tout le monde."
       }
     }
   ]

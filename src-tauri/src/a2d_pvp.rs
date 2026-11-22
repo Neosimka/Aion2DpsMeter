@@ -19,6 +19,10 @@ const BEFORE_MS: i64 = 20_000;
 /// c'est le total d'un autre personnage à la connexion).
 const MAX_GAIN: u64 = 20_000;
 const MAX_KILLS: usize = 300;
+/// Après ce délai, plus aucun gain ne peut aller à une mort : ses points sont
+/// définitifs et elle peut partir au site de la légion.
+#[allow(dead_code)]
+const FINAL_MS: i64 = BEFORE_MS + WAIT_MS + 2_000;
 
 /// Comment le joueur est mort pour toi.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -37,6 +41,19 @@ pub struct Kill {
     pub name: String,
     pub how: How,
     pub ap: u64,
+    /// Déjà remise à l'envoi au site (`take_final`).
+    pub taken: bool,
+}
+
+impl How {
+    #[allow(dead_code)]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            How::Kill => "kill",
+            How::Assist => "assist",
+            How::Group => "group",
+        }
+    }
 }
 
 #[derive(Default)]
@@ -75,7 +92,7 @@ fn settle(s: &mut State, now: i64) {
 pub fn kill(name: String, how: How, at: i64) {
     with(|s| {
         settle(s, at);
-        let mut k = Kill { at, name, how, ap: 0 };
+        let mut k = Kill { at, name, how, ap: 0, taken: false };
         // des points arrivés juste avant ce record : les plus anciens d'abord
         if let Some(i) = s.pending.iter().position(|&(pat, _)| pat <= at && at - pat <= WAIT_MS) {
             k.ap = s.pending.remove(i).map(|(_, ap)| ap).unwrap_or(0);
@@ -101,6 +118,23 @@ pub fn abyss_total(total: u64, at: i64) {
             s.pending.push_back((at, gain));
         }
     });
+}
+
+/// Les morts dont les points sont définitifs et pas encore remises à l'envoi :
+/// chacune n'est rendue qu'une fois. Un kill du groupe sans points est ignoré.
+#[allow(dead_code)]
+pub fn take_final(now: i64) -> Vec<Kill> {
+    with(|s| {
+        settle(s, now);
+        let mut out = Vec::new();
+        for k in s.kills.iter_mut().filter(|k| !k.taken && now - k.at > FINAL_MS) {
+            k.taken = true;
+            if k.how != How::Group || k.ap > 0 {
+                out.push(k.clone());
+            }
+        }
+        out
+    })
 }
 
 pub fn reset() {
@@ -223,6 +257,20 @@ mod tests {
         assert_eq!(p.len(), 1);
         assert_eq!((p[0]["name"].as_str(), p[0]["ap"].as_u64(), p[0]["group"].as_u64()), (Some("Groupé"), Some(600), Some(1)));
         assert_eq!((v["kills"].as_u64(), v["group"].as_u64(), v["pvpAp"].as_u64()), (Some(0), Some(1), Some(600)));
+    }
+
+    #[test]
+    fn final_kills_are_taken_once() {
+        fresh();
+        abyss_total(100_000, 0);
+        kill("A".into(), How::Kill, 1_000);
+        abyss_total(100_900, 2_000);
+        kill("G".into(), How::Group, 3_000); // sans points : jamais envoyé
+        assert!(take_final(10_000).is_empty()); // trop tôt
+        let got = take_final(60_000);
+        assert_eq!(got.len(), 1);
+        assert_eq!((got[0].name.as_str(), got[0].ap, got[0].how.as_str()), ("A", 900, "kill"));
+        assert!(take_final(90_000).is_empty());
     }
 
     #[test]

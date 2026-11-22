@@ -14,6 +14,9 @@
 //! - La clé de légion est fournie à la compilation (secret GitHub
 //!   `CHEVRERIE_KEY`). Sans clé, rien n'est envoyé.
 //! - Désactivable dans l'onglet La Chevrerie (`dpsMeter.chevrerieUpload`).
+//! - Depuis la 2.1.27, les kills PvP (kills, assists, kills du groupe qui
+//!   rapportent des AP) partent aussi, une fois leurs points définitifs, pour
+//!   le classement PvP de la semaine (`POST /api/meter/pvp`).
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -454,12 +457,107 @@ fn backfill(app: &tauri::AppHandle, state: &AppState, now: i64) {
     }
 }
 
+// ---------- Kills PvP ----------
+
+/// Kills pas encore acceptés par le site (en mémoire ; le site ignore les doublons).
+static PVP_OUTBOX: Mutex<Vec<crate::a2d_pvp::Kill>> = Mutex::new(Vec::new());
+static PVP_BUSY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// Pas plus vieux que ça (le site refuse au-delà de 8 jours).
+const PVP_MAX_AGE_MS: i64 = 7 * 24 * 60 * 60_000;
+const PVP_BATCH: usize = 200;
+
+#[derive(Serialize)]
+struct PvpKill<'a> {
+    at: i64,
+    victim: &'a str,
+    how: &'static str,
+    ap: u64,
+}
+
+#[derive(Serialize)]
+struct PvpPayload<'a> {
+    v: u8,
+    meter: &'a str,
+    uploader: &'a str,
+    kills: Vec<PvpKill<'a>>,
+}
+
+fn pvp_payload<'a>(uploader: &'a str, kills: &'a [crate::a2d_pvp::Kill]) -> PvpPayload<'a> {
+    PvpPayload {
+        v: 1,
+        meter: APP_VERSION,
+        uploader,
+        kills: kills
+            .iter()
+            .map(|k| PvpKill { at: k.at, victim: k.name.as_str(), how: k.how.as_str(), ap: k.ap })
+            .collect(),
+    }
+}
+
+/// Les kills PvP aux points définitifs, envoyés au site par paquets.
+fn send_pvp(app: &tauri::AppHandle, now: i64) {
+    let fresh = crate::a2d_pvp::take_final(now);
+    let batch: Vec<crate::a2d_pvp::Kill> = {
+        let Ok(mut out) = PVP_OUTBOX.lock() else { return };
+        out.extend(fresh);
+        out.retain(|k| now - k.at < PVP_MAX_AGE_MS);
+        if out.is_empty() || PVP_BUSY.swap(true, std::sync::atomic::Ordering::SeqCst) {
+            return;
+        }
+        let n = out.len().min(PVP_BATCH);
+        out.drain(..n).collect()
+    };
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        struct Busy;
+        impl Drop for Busy {
+            fn drop(&mut self) {
+                PVP_BUSY.store(false, std::sync::atomic::Ordering::SeqCst);
+            }
+        }
+        let _busy = Busy;
+        let Some(state) = app.try_state::<AppState>() else { return };
+        let uploader = state.data_storage.local_character_name().unwrap_or_default();
+        let keep = |why: String| {
+            tracing::info!("La Chevrerie : {} kill(s) PvP à renvoyer : {why}", batch.len());
+            if let Ok(mut out) = PVP_OUTBOX.lock() {
+                out.splice(0..0, batch.iter().cloned());
+            }
+        };
+        if uploader.trim().is_empty() {
+            return keep("personnage pas encore connu".into());
+        }
+        let body = serde_json::to_vec(&pvp_payload(&uploader, &batch)).unwrap_or_default();
+        let response = state
+            .http
+            .post(format!("{SITE_API}/pvp"))
+            .header("x-chevrerie-key", legion_key())
+            .header("content-type", "application/json")
+            .body(body)
+            .timeout(Duration::from_secs(20))
+            .send()
+            .await;
+        match response {
+            Ok(r) if r.status().is_success() => {
+                tracing::info!("La Chevrerie : {} kill(s) PvP envoyé(s)", batch.len())
+            }
+            Ok(r) if matches!(r.status().as_u16(), 401 | 403 | 404 | 429) || r.status().is_server_error() => {
+                keep(format!("le site a répondu {}", r.status()))
+            }
+            // 422 : pas un membre de la légion, ou rien de valable : on n'insiste pas.
+            Ok(r) => tracing::info!("La Chevrerie : kills PvP refusés : {}", r.status()),
+            Err(e) => keep(e.to_string()),
+        }
+    });
+}
+
 /// Les combats dont l'envoi a échoué et doit être retenté maintenant.
 pub fn retry_due(app: &tauri::AppHandle, state: &AppState) {
     if !enabled(state) {
         return;
     }
     let now = crate::clock::now_ms();
+    send_pvp(app, now);
     backfill(app, state, now);
     let due: Vec<String> = {
         let _guard = REGISTRY_LOCK.lock();
@@ -657,6 +755,20 @@ mod tests {
         let p = build_payload(&record, Category::Donjon, &members, "NeoSimka", &names).unwrap();
         let got: Vec<&str> = p.players.iter().map(|x| x.name.as_str()).collect();
         assert_eq!(got, ["NeoSimka", "Ptose", "Kyumy"]);
+    }
+
+    #[test]
+    fn pvp_payload_matches_the_site() {
+        use crate::a2d_pvp::{How, Kill};
+        let kills = vec![
+            Kill { at: 1_700_000_000_000, name: "Lyrael".into(), how: How::Kill, ap: 1240, taken: true },
+            Kill { at: 1_700_000_100_000, name: "Kael".into(), how: How::Group, ap: 300, taken: true },
+        ];
+        let json = serde_json::to_value(pvp_payload("NeoSimka", &kills)).unwrap();
+        assert_eq!(json["v"], 1);
+        assert_eq!(json["uploader"], "NeoSimka");
+        assert_eq!(json["kills"][0], serde_json::json!({"at": 1_700_000_000_000i64, "victim": "Lyrael", "how": "kill", "ap": 1240}));
+        assert_eq!(json["kills"][1]["how"], "group");
     }
 
     #[test]
