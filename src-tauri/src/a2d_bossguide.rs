@@ -67,6 +67,41 @@ pub fn note_hp(entity: i32, mob: i32, hp: i32, max: i32, at: i64) {
     write_line(&format!("{at} HP id={entity} mob={mob} {:.1}%", step as f64 / 2.0));
 }
 
+/// Un boss commence une attaque : `<len varint> 06 38 <entité varint>
+/// <compétence u32> …`. Relevé le 24/11/2026 sur les captures du 22/11 :
+/// Ludra éternel l'envoie toutes les ~5 s, dans un ordre fixe d'un essai à
+/// l'autre (1803010 « Fulguration violette » ouvre le Bingo de 50 %,
+/// 1803040 « Épreuve de Ludra » celui de ~23 %).
+pub fn parse_cast(packet: &[u8]) -> Option<(i32, i32)> {
+    let len = crate::capture::stream_processor::read_varint(packet, 0);
+    if len.length <= 0 {
+        return None;
+    }
+    let o = len.length as usize;
+    if packet.get(o..o + 2)? != [0x06, 0x38] {
+        return None;
+    }
+    let ent = crate::capture::stream_processor::read_varint(packet, o + 2);
+    if ent.length <= 0 || ent.value <= 0 {
+        return None;
+    }
+    let p = o + 2 + ent.length as usize;
+    let skill = u32::from_le_bytes(packet.get(p..p + 4)?.try_into().ok()?);
+    if !(1_000_000..100_000_000).contains(&skill) {
+        return None;
+    }
+    Some((ent.value, skill as i32))
+}
+
+/// Une attaque commencée par un boss suivi.
+pub fn note_start(mob: i32, skill: i32, at: i64) {
+    // Les tics d'une même attaque (jusqu'à plusieurs par seconde) ne comptent
+    // qu'une fois : `note` les regroupe et écrit la ligne du fichier.
+    if TRACKED.contains(&mob) {
+        note(mob, skill, at);
+    }
+}
+
 /// Deux coups de la même attaque à moins de ce délai : un seul lancer.
 const SAME_CAST_MS: i64 = 2_500;
 const KEEP: usize = 60;
@@ -87,6 +122,22 @@ struct State {
 static STATE: Mutex<Option<State>> = Mutex::new(None);
 #[cfg(test)]
 static ALL: Mutex<Vec<Cast>> = Mutex::new(Vec::new());
+/// Relevé de test : les paquets qui contiennent un code de compétence de la Forge.
+#[cfg(test)]
+pub static TAP: Mutex<Vec<(i64, Vec<u8>)>> = Mutex::new(Vec::new());
+#[cfg(test)]
+pub fn tap(packet: &[u8], at: i64) {
+    if std::env::var("A2D_TAP").is_err() || packet.len() < 4 {
+        return;
+    }
+    let hit = packet.windows(4).any(|w| {
+        let v = u32::from_le_bytes([w[0], w[1], w[2], w[3]]);
+        (1_802_700..1_803_600).contains(&v)
+    });
+    if hit {
+        TAP.lock().unwrap().push((at, packet.to_vec()));
+    }
+}
 
 /// Un boss vient de toucher un joueur avec une de ses compétences. Renvoie
 /// vrai si c'est un nouveau lancer.
@@ -142,6 +193,14 @@ pub fn a2d_boss_casts(state: tauri::State<'_, crate::app::AppState>) -> Vec<serd
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_a_cast_start() {
+        // 0f 06 38 | d9 9a 01 (19801) | 8a 84 1b 00 (1803402) | fd 00
+        let p = [0x0f, 0x06, 0x38, 0xd9, 0x9a, 0x01, 0x8a, 0x84, 0x1b, 0x00, 0xfd, 0x00];
+        assert_eq!(parse_cast(&p), Some((19_801, 1_803_402)));
+        assert_eq!(parse_cast(&[0x0f, 0x02, 0x38, 0xd9, 0x9a, 0x01, 0x8a, 0x84, 0x1b, 0x00]), None);
+    }
 
     #[test]
     fn one_cast_per_attack_and_only_tracked_bosses() {
@@ -210,6 +269,9 @@ mod tests {
                     }
                 }
             }
+        }
+        for (at, p) in TAP.lock().unwrap().iter() {
+            println!("PKT {at} {}", p.iter().map(|b| format!("{b:02x}")).collect::<String>());
         }
         for c in ALL.lock().unwrap().iter() {
             println!("CAST {} mob={} {} skill={} {}", c.at, c.mob, npcs.get_npc_name(c.mob), c.skill, skills.lookup_skill_name(c.skill));

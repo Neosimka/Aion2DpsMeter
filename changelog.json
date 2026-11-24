@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.31",
+      "date": "2026-11-24",
+      "notes": {
+        "fr": "**Ludra éternel : les attaques lues en direct**\n- Le meter lit maintenant chaque attaque que Ludra commence (et pas seulement ses PV). Ludra suit un ordre fixe, le même d'un essai à l'autre : le guide s'en sert.\n- **Bingo** annoncé à la seconde : « Bingo dans 5 » dès l'attaque qui le précède toujours, puis « Bingo maintenant » quand Ludra lance la Fulguration violette. Pareil pour le **deuxième Bingo** (Épreuve de Ludra) et les **Couleurs**.\n- « Dernière attaque » sous le guide affiche le vrai nom quand le jeu en donne un (Fulguration violette, Épreuve de Ludra, Secteur de tonnerre…).\n- bossguide.log note aussi ces attaques, pour caler Rahu et Ketu de la même façon.",
+        "en": "**Ludra éternel : les attaques lues en direct**\n- Le meter lit maintenant chaque attaque que Ludra commence (et pas seulement ses PV). Ludra suit un ordre fixe, le même d'un essai à l'autre : le guide s'en sert.\n- **Bingo** annoncé à la seconde : « Bingo dans 5 » dès l'attaque qui le précède toujours, puis « Bingo maintenant » quand Ludra lance la Fulguration violette. Pareil pour le **deuxième Bingo** (Épreuve de Ludra) et les **Couleurs**.\n- « Dernière attaque » sous le guide affiche le vrai nom quand le jeu en donne un (Fulguration violette, Épreuve de Ludra, Secteur de tonnerre…).\n- bossguide.log note aussi ces attaques, pour caler Rahu et Ketu de la même façon."
+      }
+    },
+    {
       "version": "2.1.30",
       "date": "2026-11-22",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Nouvel onglet Tâches**\n- Dans le panneau Événements (icône calendrier), l'onglet **Tâches** fait le point sur ton perso : énergie d'Odyle, entrées (Cauchemar, Épreuve d'Éveil, Brèche inconnue, clés Shugo et d'invasion).\n- **Aujourd'hui** : missions de vocation, Kinah gagnés, corridors d'Abysse, avec l'heure de la remise à zéro.\n- **Cette semaine** : Points Abyssaux, énergie Od achetée et transmutée, et les arènes, le champ de bataille et le raid Ludra à cocher (ils se décochent tout seuls le mercredi).\n- Les compteurs arrivent à la connexion du perso : reconnecte-toi ou change de zone si un compteur dit « pas encore lu ».",
         "en": "**Nouvel onglet Tâches**\n- Dans le panneau Événements (icône calendrier), l'onglet **Tâches** fait le point sur ton perso : énergie d'Odyle, entrées (Cauchemar, Épreuve d'Éveil, Brèche inconnue, clés Shugo et d'invasion).\n- **Aujourd'hui** : missions de vocation, Kinah gagnés, corridors d'Abysse, avec l'heure de la remise à zéro.\n- **Cette semaine** : Points Abyssaux, énergie Od achetée et transmutée, et les arènes, le champ de bataille et le raid Ludra à cocher (ils se décochent tout seuls le mercredi).\n- Les compteurs arrivent à la connexion du perso : reconnecte-toi ou change de zone si un compteur dit « pas encore lu »."
-      }
-    },
-    {
-      "version": "2.1.25",
-      "date": "2026-11-17",
-      "notes": {
-        "fr": "**Bas du meter allégé**\n- Les petites infos (joueurs autour, Points Abyssaux, énergie d'Odyle, vol) passent sur une ligne fine juste au-dessus du bas. Elle disparaît quand elle n'a rien à montrer.\n- Le bas ne garde que le minuteur, le total du groupe et les boutons : plus rien n'est coupé.\n- Clique sur le minuteur (ou sur la ligne d'infos) pour choisir ce qui s'affiche, joueurs autour et AP compris.",
-        "en": "**Bas du meter allégé**\n- Les petites infos (joueurs autour, Points Abyssaux, énergie d'Odyle, vol) passent sur une ligne fine juste au-dessus du bas. Elle disparaît quand elle n'a rien à montrer.\n- Le bas ne garde que le minuteur, le total du groupe et les boutons : plus rien n'est coupé.\n- Clique sur le minuteur (ou sur la ligne d'infos) pour choisir ce qui s'affiche, joueurs autour et AP compris."
       }
     }
   ]

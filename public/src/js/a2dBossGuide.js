@@ -126,6 +126,7 @@
     const ms = Number(elapsed) || 0;
     // Nouveau combat : autre boss, minuteur reparti de zéro, ou PV remontés (wipe).
     if (!cur || cur.code !== code || cur.kind !== kind || ms + 5000 < cur.lastElapsed || pct > cur.lastPct + 10) {
+      seenAt = 0;
       cur = fresh(kind, code);
       // Meter ouvert en plein combat : les mécaniques déjà passées ne sont pas rejouées.
       for (const st of BOSS[kind].steps || []) if (pct <= st.at) { cur.done.add(st.at); cur.warned.add(st.at); }
@@ -184,23 +185,50 @@
     pollCasts();
   }
 
-  // ---------- dernière attaque du boss (relevé du meter) ----------
-  let lastPoll = 0, lastCastAt = null, lastCast = null;
+  // ---------- attaques du boss (lues dans le réseau) ----------
+  // Ludra éternel lance ses attaques dans un ordre fixe (relevé sur 4 essais
+  // complets de la légion, 22/11) : certaines annoncent la mécanique à coup sûr,
+  // plus tôt et plus précisément que les PV.
+  const CASTS = {
+    ludra: {
+      1803225: { below: 55, warn: "Bingo dans 5", step: 50 }, // juste avant la Fulguration violette
+      1803010: { name: "Bingo", wipe: true, say: "Bingo maintenant. Vos numéros.", step: 50 },
+      1803040: { name: "Deuxième Bingo", wipe: true, say: "Deuxième Bingo. Sautez, puis vos numéros.", step: 23 },
+      1803006: { name: "Couleurs", wipe: true, say: "Couleurs. Bleu à gauche, rouge à droite.", step: 33 },
+      1803030: { name: "Secteur de tonnerre", say: "Secteur de tonnerre." },
+    },
+  };
+  const NAMES = { 1803010: "Fulguration violette", 1803040: "Épreuve de Ludra", 1803041: "Épreuve de Ludra", 1803030: "Secteur de tonnerre", 1803035: "Secteur de tonnerre", 1803020: "Champ de force condensé", 1803000: "Apport d'énergie d'abîme" };
+  const TICKS = new Set([1803401, 1803402]);
+  let lastPoll = 0, seenAt = 0, lastCast = null;
   async function pollCasts() {
     const now = Date.now();
-    if (now - lastPoll < 1000) return;
+    if (now - lastPoll < 700) return;
     lastPoll = now;
     const invoke = window.__TAURI__?.core?.invoke;
     if (!invoke || !cur) return;
     try {
       const list = await invoke("a2d_boss_casts");
-      const mine = (list || []).filter((c) => kindOf(c.mob, "", false) === cur?.kind);
-      const c = mine[mine.length - 1];
-      if (c && c.at !== lastCastAt) { lastCastAt = c.at; lastCast = { name: c.name || `#${c.skill}`, seen: now }; }
+      const mine = (list || []).filter((c) => kindOf(c.mob, "", false) === cur?.kind && !TICKS.has(c.skill));
+      const fresh = mine.filter((c) => c.at > seenAt);
+      if (seenAt === 0) { seenAt = mine.length ? mine[mine.length - 1].at : 1; return; } // pas d'annonce pour l'historique
+      for (const c of fresh) {
+        seenAt = Math.max(seenAt, c.at);
+        if (c.skill !== 1800000) lastCast = { name: NAMES[c.skill] || (c.name && !/^(Attack|Attaque)$/i.test(c.name) ? c.name : `Attaque ${c.skill % 1000}`), seen: now };
+        const rule = CASTS[cur.kind]?.[c.skill];
+        if (!rule) continue;
+        if (rule.warn) {
+          if (rule.below == null || cur.lastPct <= rule.below) { if (rule.step != null) cur.warned.add(rule.step); speak(rule.warn); }
+          continue;
+        }
+        if (rule.step != null) { cur.done.add(rule.step); cur.warned.add(rule.step); }
+        cur.banner = { text: rule.name, say: rule.say, wipe: !!rule.wipe, until: now + 8000 };
+        if (!wipeOnly() || rule.wipe) speak(rule.say);
+      }
     } catch {}
     const line = el?.querySelector(".a2dGuideLast");
     if (!line) return;
-    const txt = lastCast && now - lastCast.seen < 30_000 && !/^(Attack|Attaque)$/i.test(lastCast.name) ? `Dernière attaque : ${lastCast.name}` : "";
+    const txt = lastCast && now - lastCast.seen < 30_000 ? `Dernière attaque : ${lastCast.name}` : "";
     if (line.textContent !== txt) { line.textContent = txt; line.hidden = !txt; resize(); }
   }
 
