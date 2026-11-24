@@ -127,7 +127,19 @@ static ALL: Mutex<Vec<Cast>> = Mutex::new(Vec::new());
 pub static TAP: Mutex<Vec<(i64, Vec<u8>)>> = Mutex::new(Vec::new());
 #[cfg(test)]
 pub fn tap(packet: &[u8], at: i64) {
-    if std::env::var("A2D_TAP").is_err() || packet.len() < 4 {
+    if packet.len() < 4 {
+        return;
+    }
+    if let Ok(op) = std::env::var("A2D_TAPOP") {
+        let len = crate::capture::stream_processor::read_varint(packet, 0);
+        let o = len.length.max(0) as usize;
+        let hex: String = packet.get(o..o + 2).unwrap_or(&[]).iter().map(|b| format!("{b:02x}")).collect();
+        if hex == op {
+            TAP.lock().unwrap().push((at, packet.to_vec()));
+        }
+        return;
+    }
+    if std::env::var("A2D_TAP").is_err() {
         return;
     }
     let hit = packet.windows(4).any(|w| {

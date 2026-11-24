@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.32",
+      "date": "2026-11-24",
+      "notes": {
+        "fr": "**Calculateur de stats**\n- Nouveau bouton 🧮 en haut du meter : tes stats d'attaque, lues dans le jeu (hausse d'ATQ, boosts de DGT, coup parfait, coup puissant, critiques…), et ce que tu changerais (« +3 % Boost de DGT arme, −40 ATQ ») donnent le **gain de dégâts en %**.\n- « Ce qui te rapporte le plus » : le gain pour +1 % de chaque stat, et pour +100 ATQ.\n- Chance de critique et position (dos, face) réglables. Ce que le jeu n'a pas encore envoyé se tape à la main depuis la fenêtre de personnage.\n- Formule reprise de RATmeter (Kuroukihime, GPL v3).",
+        "en": "**Calculateur de stats**\n- Nouveau bouton 🧮 en haut du meter : tes stats d'attaque, lues dans le jeu (hausse d'ATQ, boosts de DGT, coup parfait, coup puissant, critiques…), et ce que tu changerais (« +3 % Boost de DGT arme, −40 ATQ ») donnent le **gain de dégâts en %**.\n- « Ce qui te rapporte le plus » : le gain pour +1 % de chaque stat, et pour +100 ATQ.\n- Chance de critique et position (dos, face) réglables. Ce que le jeu n'a pas encore envoyé se tape à la main depuis la fenêtre de personnage.\n- Formule reprise de RATmeter (Kuroukihime, GPL v3)."
+      }
+    },
+    {
       "version": "2.1.31",
       "date": "2026-11-24",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Classement PvP de la légion**\n- Tes kills, assists et kills du groupe qui rapportent des Points Abyssaux partent au site de La Chevrerie, avec les AP gagnés sur chacun, une fois les points définitifs (environ 30 s après la mort).\n- Sur le site, onglet Combats → **PvP** : le classement de la semaine (remise à zéro le mercredi), et la semaine d'avant.\n- Même réglage que l'envoi des combats (onglet La Chevrerie) ; un envoi raté est refait plus tard.",
         "en": "**Classement PvP de la légion**\n- Tes kills, assists et kills du groupe qui rapportent des Points Abyssaux partent au site de La Chevrerie, avec les AP gagnés sur chacun, une fois les points définitifs (environ 30 s après la mort).\n- Sur le site, onglet Combats → **PvP** : le classement de la semaine (remise à zéro le mercredi), et la semaine d'avant.\n- Même réglage que l'envoi des combats (onglet La Chevrerie) ; un envoi raté est refait plus tard."
-      }
-    },
-    {
-      "version": "2.1.26",
-      "date": "2026-11-19",
-      "notes": {
-        "fr": "**Nouvel onglet Tâches**\n- Dans le panneau Événements (icône calendrier), l'onglet **Tâches** fait le point sur ton perso : énergie d'Odyle, entrées (Cauchemar, Épreuve d'Éveil, Brèche inconnue, clés Shugo et d'invasion).\n- **Aujourd'hui** : missions de vocation, Kinah gagnés, corridors d'Abysse, avec l'heure de la remise à zéro.\n- **Cette semaine** : Points Abyssaux, énergie Od achetée et transmutée, et les arènes, le champ de bataille et le raid Ludra à cocher (ils se décochent tout seuls le mercredi).\n- Les compteurs arrivent à la connexion du perso : reconnecte-toi ou change de zone si un compteur dit « pas encore lu ».",
-        "en": "**Nouvel onglet Tâches**\n- Dans le panneau Événements (icône calendrier), l'onglet **Tâches** fait le point sur ton perso : énergie d'Odyle, entrées (Cauchemar, Épreuve d'Éveil, Brèche inconnue, clés Shugo et d'invasion).\n- **Aujourd'hui** : missions de vocation, Kinah gagnés, corridors d'Abysse, avec l'heure de la remise à zéro.\n- **Cette semaine** : Points Abyssaux, énergie Od achetée et transmutée, et les arènes, le champ de bataille et le raid Ludra à cocher (ils se décochent tout seuls le mercredi).\n- Les compteurs arrivent à la connexion du perso : reconnecte-toi ou change de zone si un compteur dit « pas encore lu »."
       }
     }
   ]

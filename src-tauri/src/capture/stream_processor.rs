@@ -672,7 +672,13 @@ impl StreamProcessor {
         }
         let id = read_varint(packet, offset + 2);
         if id.length > 0 {
-            self.data_storage.note_self_stats(id.value);
+            if self.data_storage.note_self_stats(id.value) {
+                crate::a2d_stats::clear();
+            }
+            // Aion2DpsMeter : les valeurs, pour le calculateur d'efficacité des stats.
+            if let Some(values) = crate::a2d_stats::parse(packet) {
+                crate::a2d_stats::note(&values, self.override_timestamp.unwrap_or_else(crate::clock::now_ms));
+            }
         }
     }
 
