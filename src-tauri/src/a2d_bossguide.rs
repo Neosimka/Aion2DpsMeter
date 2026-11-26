@@ -282,6 +282,9 @@ mod tests {
                 }
             }
         }
+        if std::env::var("A2D_PVP").is_ok() {
+            println!("PVP {}", serde_json::to_string(&crate::a2d_pvp::snapshot(i64::MAX / 2)).unwrap_or_default());
+        }
         for (at, p) in TAP.lock().unwrap().iter() {
             println!("PKT {at} {}", p.iter().map(|b| format!("{b:02x}")).collect::<String>());
         }
