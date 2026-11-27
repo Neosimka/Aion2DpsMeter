@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.36",
+      "date": "2026-11-27",
+      "notes": {
+        "fr": "**Guide de boss retiré**\n- Le guide de boss en direct (Ludra éternel, Rahu, Ketu, Réacteur) est retiré : plus de ligne de mécaniques ni de bandeaux sous la barre du boss, plus de réglage, plus de fichier bossguide.log.\n- La barre du boss, le record et l'enrage restent comme avant.",
+        "en": "**Guide de boss retiré**\n- Le guide de boss en direct (Ludra éternel, Rahu, Ketu, Réacteur) est retiré : plus de ligne de mécaniques ni de bandeaux sous la barre du boss, plus de réglage, plus de fichier bossguide.log.\n- La barre du boss, le record et l'enrage restent comme avant."
+      }
+    },
+    {
       "version": "2.1.35",
       "date": "2026-11-27",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Ludra éternel : les attaques lues en direct**\n- Le meter lit maintenant chaque attaque que Ludra commence (et pas seulement ses PV). Ludra suit un ordre fixe, le même d'un essai à l'autre : le guide s'en sert.\n- **Bingo** annoncé à la seconde : « Bingo dans 5 » dès l'attaque qui le précède toujours, puis « Bingo maintenant » quand Ludra lance la Fulguration violette. Pareil pour le **deuxième Bingo** (Épreuve de Ludra) et les **Couleurs**.\n- « Dernière attaque » sous le guide affiche le vrai nom quand le jeu en donne un (Fulguration violette, Épreuve de Ludra, Secteur de tonnerre…).\n- bossguide.log note aussi ces attaques, pour caler Rahu et Ketu de la même façon.",
         "en": "**Ludra éternel : les attaques lues en direct**\n- Le meter lit maintenant chaque attaque que Ludra commence (et pas seulement ses PV). Ludra suit un ordre fixe, le même d'un essai à l'autre : le guide s'en sert.\n- **Bingo** annoncé à la seconde : « Bingo dans 5 » dès l'attaque qui le précède toujours, puis « Bingo maintenant » quand Ludra lance la Fulguration violette. Pareil pour le **deuxième Bingo** (Épreuve de Ludra) et les **Couleurs**.\n- « Dernière attaque » sous le guide affiche le vrai nom quand le jeu en donne un (Fulguration violette, Épreuve de Ludra, Secteur de tonnerre…).\n- bossguide.log note aussi ces attaques, pour caler Rahu et Ketu de la même façon."
-      }
-    },
-    {
-      "version": "2.1.30",
-      "date": "2026-11-22",
-      "notes": {
-        "fr": "**Ludra éternel calé sur nos essais**\n- Seuils relevés sur 9 essais de la légion, dont 1 kill (Normal, 22/11) : orbes 92 %, arène 85 %, gros coup sur tout le raid à 74 % et 52 %, **Bingo à 50 %** (et non 60 %), lasers de Zikel 43 %, **Couleurs 33 %**, **deuxième Bingo à 23 %**, cercles 10 %.\n- Rahu : confirmé sur un troisième kill.",
-        "en": "**Ludra éternel calé sur nos essais**\n- Seuils relevés sur 9 essais de la légion, dont 1 kill (Normal, 22/11) : orbes 92 %, arène 85 %, gros coup sur tout le raid à 74 % et 52 %, **Bingo à 50 %** (et non 60 %), lasers de Zikel 43 %, **Couleurs 33 %**, **deuxième Bingo à 23 %**, cercles 10 %.\n- Rahu : confirmé sur un troisième kill."
       }
     }
   ]

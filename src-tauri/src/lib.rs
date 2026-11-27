@@ -42,7 +42,6 @@ mod a2d_capture;
 // Aion2DpsMeter : joueurs autour de toi (alliés / ennemis).
 mod a2d_nearby;
 mod a2d_pvp;
-mod a2d_bossguide;
 mod a2d_stats;
 // Aion2DpsMeter : panneau Événements.
 #[cfg(feature = "desktop")]

@@ -288,15 +288,6 @@ impl StreamProcessor {
             return false;
         }
 
-        #[cfg(test)]
-        crate::a2d_bossguide::tap(packet, self.override_timestamp.unwrap_or(0));
-        // Aion2DpsMeter : les attaques que commencent les boss de la Forge (guide de boss).
-        if let Some((entity, skill)) = crate::a2d_bossguide::parse_cast(packet) {
-            if let Some(mob) = self.data_storage.mob_code(entity) {
-                let at = self.override_timestamp.unwrap_or_else(crate::clock::now_ms);
-                crate::a2d_bossguide::note_start(mob, skill, at);
-            }
-        }
         // Plugin decoders (`crate::plugins`); nothing when none is loaded.
         crate::capture::frame_tap::frame(packet);
         // Aion2DpsMeter : familiers (liste, âmes, niveaux) pour le radar.

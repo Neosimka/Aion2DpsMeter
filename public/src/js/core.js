@@ -1744,9 +1744,6 @@ class DpsApp {
       const me = rowsToRender.find((r) => r.isUser);
       window.A2dRecord?.update?.({ code: targetMobCode, dungeonId, dps: me?.dps, me: me?.name || this.USER_NAME, isBoss: targetIsBoss });
     }
-    // Aion2DpsMeter : guide de boss en direct (raid Ludra).
-    window.A2dBossGuide?.update?.({ code: Number(targetMobCode) || 0, name: targetName, maxHp: targetMaxHp, hp: targetCurrentHp,
-      totalDamage: targetTotalDamage, elapsed: battleTimeMs, isBoss: targetIsBoss });
     if (
       nextTargetLabel !== this._lastRenderedTargetLabel ||
       previousTargetName !== targetName ||

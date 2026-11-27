@@ -3865,7 +3865,6 @@ pub fn run() {
             // Aion2DpsMeter : familiers gardés de la dernière fois (radar).
             crate::a2d_radar::init(&app_data_dir);
             crate::a2d_capture::init(&app_data_dir);
-            crate::a2d_bossguide::init(&app_data_dir);
 
             // Dev builds quit when a `dev-quit` file appears in the data
             // folder (`npm run dev:stop`): run as administrator, the meter
@@ -4768,7 +4767,6 @@ pub fn run() {
             crate::a2d_nearby::a2d_abyss_points,
             crate::a2d_pvp::a2d_pvp_state,
             crate::a2d_pvp::a2d_pvp_reset,
-            crate::a2d_bossguide::a2d_boss_casts,
             crate::a2d_stats::a2d_self_stats,
             crate::a2d_radar::a2d_radar_state,
             crate::a2d_capture::a2d_capture_start,
