@@ -2,19 +2,16 @@
 //
 // Sous la barre du boss : la prochaine mécanique et à combien de % de PV elle
 // tombe (avec le temps estimé d'après la vitesse à laquelle le boss perd ses
-// PV), en rouge si elle fait wiper, puis un bandeau quand elle arrive. Une voix
-// (voix Windows) l'annonce quelques secondes avant, puis dit quoi faire.
+// PV), en rouge si elle fait wiper, puis un bandeau quand elle arrive, avec la
+// consigne. (Les annonces vocales ont été retirées en 2.1.35.)
 // Seuils de Ludra éternel : 9 essais de la légion rejoués depuis les captures du meter ;
 // Rahu : deux kills de la légion rejoués depuis les captures du meter. Ketu et le Réacteur n'ont pas de seuil
 // connu : une ligne de rappel à la place.
 (() => {
-  const K = { on: "a2d.guide.on", voice: "a2d.guide.voice", wipeOnly: "a2d.guide.wipeOnly", vol: "a2d.guide.volume" };
+  const K = { on: "a2d.guide.on" };
   const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch { return d; } };
   const set = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
   const on = () => get(K.on, "1") !== "0";
-  const voiceOn = () => get(K.voice, "1") !== "0";
-  const wipeOnly = () => get(K.wipeOnly, "0") === "1";
-  const volume = () => Math.max(0, Math.min(100, Number(get(K.vol, "80")) || 0));
 
   const BOSS = {
     ludra: {
@@ -61,24 +58,6 @@
     return null;
   };
 
-  // ---------- voix ----------
-  let frVoice = null;
-  const pickVoice = () => {
-    const list = window.speechSynthesis?.getVoices?.() || [];
-    frVoice = list.find((v) => /^fr(-|_|$)/i.test(v.lang)) || null;
-  };
-  try { pickVoice(); window.speechSynthesis?.addEventListener?.("voiceschanged", pickVoice); } catch {}
-  function speak(text, force) {
-    if ((!voiceOn() && !force) || !window.speechSynthesis) return;
-    try {
-      const u = new SpeechSynthesisUtterance(text);
-      if (frVoice) u.voice = frVoice;
-      u.lang = frVoice?.lang || "fr-FR";
-      u.volume = volume() / 100;
-      u.rate = 1.1;
-      window.speechSynthesis.speak(u);
-    } catch {}
-  }
 
   // ---------- affichage ----------
   let el = null;
@@ -146,7 +125,6 @@
       if (pct <= st.at) {
         cur.done.add(st.at);
         cur.banner = { text: st.name, say: st.say, wipe: !!st.wipe, until: now + 8000 };
-        if (!wipeOnly() || st.wipe) speak(st.say);
         continue;
       }
       if (!next) next = st;
@@ -155,14 +133,7 @@
     if (next) {
       eta = r > 0 ? (pct - next.at) / r : null;
       const soon = eta != null ? eta <= 5 : pct - next.at <= 1.5;
-      if (soon && !cur.warned.has(next.at)) {
-        cur.warned.add(next.at);
-        if (!wipeOnly() || next.wipe) speak(eta != null ? `${next.warn} dans ${Math.max(1, Math.round(eta))}` : `${next.warn} bientôt`);
-      }
-    }
-    if (b.enrage && !cur.enrageWarned && ms >= (b.enrage - 60) * 1000 && pct > 0) {
-      cur.enrageWarned = true;
-      speak("Enrage dans une minute.");
+      if (soon && !cur.warned.has(next.at)) cur.warned.add(next.at);
     }
 
     // Ligne affichée.
@@ -218,12 +189,14 @@
         const rule = CASTS[cur.kind]?.[c.skill];
         if (!rule) continue;
         if (rule.warn) {
-          if (rule.below == null || cur.lastPct <= rule.below) { if (rule.step != null) cur.warned.add(rule.step); speak(rule.warn); }
+          if (rule.below == null || cur.lastPct <= rule.below) {
+            if (rule.step != null) cur.warned.add(rule.step);
+            cur.banner = { text: rule.warn, say: "Préparez-vous.", wipe: true, until: now + 5000 };
+          }
           continue;
         }
         if (rule.step != null) { cur.done.add(rule.step); cur.warned.add(rule.step); }
         cur.banner = { text: rule.name, say: rule.say, wipe: !!rule.wipe, until: now + 8000 };
-        if (!wipeOnly() || rule.wipe) speak(rule.say);
       }
     } catch {}
     const line = el?.querySelector(".a2dGuideLast");
@@ -241,18 +214,8 @@
       cb.addEventListener("change", () => { set(key, cb.checked ? "1" : "0"); after?.(cb.checked); });
     };
     box(".a2dGuideCheckbox", K.on, "1", (v) => { if (!v && el) { el.hidden = true; resize(); } });
-    box(".a2dGuideVoiceCheckbox", K.voice, "1", (v) => { if (v) speak("Bingo dans 5.", true); });
-    box(".a2dGuideWipeCheckbox", K.wipeOnly, "0");
-    const range = document.querySelector(".a2dGuideVolumeInput");
-    const val = document.querySelector(".a2dGuideVolumeValue");
-    if (range) {
-      range.value = String(volume());
-      if (val) val.textContent = `${volume()}%`;
-      range.addEventListener("input", () => { set(K.vol, range.value); if (val) val.textContent = `${range.value}%`; });
-      range.addEventListener("change", () => speak("Couleurs. Bleu à gauche, rouge à droite.", true));
-    }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind); else bind();
 
-  window.A2dBossGuide = { update, speak, kindOf, BOSS };
+  window.A2dBossGuide = { update, kindOf, BOSS };
 })();

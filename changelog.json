@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.35",
+      "date": "2026-11-27",
+      "notes": {
+        "fr": "**Guide de boss sans voix**\n- Les annonces vocales du guide de Ludra et de Rahu sont retirées, avec leurs réglages (voix, « seulement ce qui fait wiper », volume).\n- Le guide reste à l'écran : prochaine mécanique, temps estimé, bandeau avec la consigne quand elle tombe. « Bingo dans 5 » s'affiche maintenant en bandeau.",
+        "en": "**Guide de boss sans voix**\n- Les annonces vocales du guide de Ludra et de Rahu sont retirées, avec leurs réglages (voix, « seulement ce qui fait wiper », volume).\n- Le guide reste à l'écran : prochaine mécanique, temps estimé, bandeau avec la consigne quand elle tombe. « Bingo dans 5 » s'affiche maintenant en bandeau."
+      }
+    },
+    {
       "version": "2.1.34",
       "date": "2026-11-27",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Ludra éternel calé sur nos essais**\n- Seuils relevés sur 9 essais de la légion, dont 1 kill (Normal, 22/11) : orbes 92 %, arène 85 %, gros coup sur tout le raid à 74 % et 52 %, **Bingo à 50 %** (et non 60 %), lasers de Zikel 43 %, **Couleurs 33 %**, **deuxième Bingo à 23 %**, cercles 10 %.\n- Rahu : confirmé sur un troisième kill.",
         "en": "**Ludra éternel calé sur nos essais**\n- Seuils relevés sur 9 essais de la légion, dont 1 kill (Normal, 22/11) : orbes 92 %, arène 85 %, gros coup sur tout le raid à 74 % et 52 %, **Bingo à 50 %** (et non 60 %), lasers de Zikel 43 %, **Couleurs 33 %**, **deuxième Bingo à 23 %**, cercles 10 %.\n- Rahu : confirmé sur un troisième kill."
-      }
-    },
-    {
-      "version": "2.1.29",
-      "date": "2026-11-22",
-      "notes": {
-        "fr": "**Guide de Rahu calé sur nos kills**\n- Seuils relevés sur deux kills de Rahu de la légion (Normal, 22/11) : **salve de 20 s à 85 %**, vague de monstres à 63 %, arène en quatre à 48 % (Rahu ne prend plus de dégâts quelques secondes), **Temps de prédation à 31 %** (au lieu de 25 %). Plus d'annonce à 75 % : rien ne s'y passe.\n- Nouveau fichier **bossguide.log** dans le dossier du meter : PV des boss de Ludra et coups de leurs monstres, enregistrés même sans le journal de débogage. À m'envoyer après un raid pour caler Ketu et Ludra.",
-        "en": "**Guide de Rahu calé sur nos kills**\n- Seuils relevés sur deux kills de Rahu de la légion (Normal, 22/11) : **salve de 20 s à 85 %**, vague de monstres à 63 %, arène en quatre à 48 % (Rahu ne prend plus de dégâts quelques secondes), **Temps de prédation à 31 %** (au lieu de 25 %). Plus d'annonce à 75 % : rien ne s'y passe.\n- Nouveau fichier **bossguide.log** dans le dossier du meter : PV des boss de Ludra et coups de leurs monstres, enregistrés même sans le journal de débogage. À m'envoyer après un raid pour caler Ketu et Ludra."
       }
     }
   ]
