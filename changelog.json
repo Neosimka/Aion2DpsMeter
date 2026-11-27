@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.34",
+      "date": "2026-11-27",
+      "notes": {
+        "fr": "**Alerte des cubes cachés retirée**\n- Pas assez précise : le jeu n'envoie presque jamais ta position quand tu te déplaces, donc la distance et la direction manquaient le plus souvent. Le reste du meter ne change pas.",
+        "en": "**Alerte des cubes cachés retirée**\n- Pas assez précise : le jeu n'envoie presque jamais ta position quand tu te déplaces, donc la distance et la direction manquaient le plus souvent. Le reste du meter ne change pas."
+      }
+    },
+    {
       "version": "2.1.33",
       "date": "2026-11-27",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Guide de Rahu calé sur nos kills**\n- Seuils relevés sur deux kills de Rahu de la légion (Normal, 22/11) : **salve de 20 s à 85 %**, vague de monstres à 63 %, arène en quatre à 48 % (Rahu ne prend plus de dégâts quelques secondes), **Temps de prédation à 31 %** (au lieu de 25 %). Plus d'annonce à 75 % : rien ne s'y passe.\n- Nouveau fichier **bossguide.log** dans le dossier du meter : PV des boss de Ludra et coups de leurs monstres, enregistrés même sans le journal de débogage. À m'envoyer après un raid pour caler Ketu et Ludra.",
         "en": "**Guide de Rahu calé sur nos kills**\n- Seuils relevés sur deux kills de Rahu de la légion (Normal, 22/11) : **salve de 20 s à 85 %**, vague de monstres à 63 %, arène en quatre à 48 % (Rahu ne prend plus de dégâts quelques secondes), **Temps de prédation à 31 %** (au lieu de 25 %). Plus d'annonce à 75 % : rien ne s'y passe.\n- Nouveau fichier **bossguide.log** dans le dossier du meter : PV des boss de Ludra et coups de leurs monstres, enregistrés même sans le journal de débogage. À m'envoyer après un raid pour caler Ketu et Ludra."
-      }
-    },
-    {
-      "version": "2.1.28",
-      "date": "2026-11-22",
-      "notes": {
-        "fr": "**Guide de boss en direct (raid Ludra)**\n- Sous la barre du boss : la prochaine mécanique de **Ludra éternel** (Orbes 90 %, arène 85 %, **Bingo 60 %**, Zikel 45 %, **Couleurs 33 %**, Cercles 10 %) ou de **Rahu** (75, 50 et 25 %), avec le temps estimé avant qu'elle tombe. En rouge : celles qui font wiper.\n- Quand elle arrive, un bandeau dit quoi faire ; une **voix** l'annonce quelques secondes avant (« Bingo dans 5 ») puis donne la consigne, et prévient une minute avant l'enrage.\n- Ketu et le Réacteur : une ligne de rappel. Sous le guide, la dernière attaque du boss.\n- Réglages → Apparence : guide, voix, « seulement ce qui fait wiper » et volume de la voix.\n- Le meter note les attaques des boss de Ludra dans ses logs, pour caler l'ordre exact des attaques après vos raids.",
-        "en": "**Guide de boss en direct (raid Ludra)**\n- Sous la barre du boss : la prochaine mécanique de **Ludra éternel** (Orbes 90 %, arène 85 %, **Bingo 60 %**, Zikel 45 %, **Couleurs 33 %**, Cercles 10 %) ou de **Rahu** (75, 50 et 25 %), avec le temps estimé avant qu'elle tombe. En rouge : celles qui font wiper.\n- Quand elle arrive, un bandeau dit quoi faire ; une **voix** l'annonce quelques secondes avant (« Bingo dans 5 ») puis donne la consigne, et prévient une minute avant l'enrage.\n- Ketu et le Réacteur : une ligne de rappel. Sous le guide, la dernière attaque du boss.\n- Réglages → Apparence : guide, voix, « seulement ce qui fait wiper » et volume de la voix.\n- Le meter note les attaques des boss de Ludra dans ses logs, pour caler l'ordre exact des attaques après vos raids."
       }
     }
   ]

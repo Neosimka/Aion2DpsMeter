@@ -249,7 +249,6 @@ mod tests {
             }
         }
         let mut hp_last: std::collections::HashMap<i32, i64> = Default::default();
-        let mut last_cube_print = 0i64;
         for path in std::env::var("A2D_CAPTURE").unwrap().split(',') {
             let text = std::fs::read_to_string(path).unwrap_or_default();
             for line in text.lines() {
@@ -267,14 +266,7 @@ mod tests {
                 };
                 p.set_override_timestamp(Some(ms));
                 p.consume_stream(&bytes);
-                if std::env::var("A2D_CUBES").is_ok() && ms / 5_000 != last_cube_print {
-                    last_cube_print = ms / 5_000;
-                    println!("ME {ms} {:?}", storage.local_player_id());
-                    let st = crate::a2d_cubes::state(ms);
-                    if !st.is_empty() {
-                        println!("CUBES {ms} {}", serde_json::to_string(&st).unwrap_or_default());
-                    }
-                }
+
                 for (id, code) in storage.get_mob_data() {
                     if !(2_300_000..2_302_000).contains(&code) && !npcs.is_boss(code) {
                         continue;
