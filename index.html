@@ -1091,6 +1091,33 @@
                       </span>
                     </label>
                   </div>
+                  <div class="settingsRow">
+                    <label class="settingsToggle" title="Une ligne sous l'en-tête du meter dès qu'un cube caché entre dans ton champ de vue : rouge (à clé) ou doré, depuis quand, et sa distance quand le jeu donne ta position.">
+                      <span class="settingsToggleLabel">Alerte des cubes cachés</span>
+                      <span class="settingsToggleControl">
+                        <input type="checkbox" class="a2dCubesCheckbox" />
+                        <span class="settingsToggleTrack" aria-hidden="true"></span>
+                      </span>
+                    </label>
+                  </div>
+                  <div class="settingsRow">
+                    <label class="settingsToggle" title="Une cloche à chaque nouveau cube.">
+                      <span class="settingsToggleLabel">Son quand un cube apparaît</span>
+                      <span class="settingsToggleControl">
+                        <input type="checkbox" class="a2dCubesSoundCheckbox" />
+                        <span class="settingsToggleTrack" aria-hidden="true"></span>
+                      </span>
+                    </label>
+                  </div>
+                  <div class="settingsRow">
+                    <label class="settingsToggle" title="Pour ne voir que les cubes dorés, qui s'ouvrent sans clé.">
+                      <span class="settingsToggleLabel">Ignorer les cubes à clé (rouges)</span>
+                      <span class="settingsToggleControl">
+                        <input type="checkbox" class="a2dCubesNoRedCheckbox" />
+                        <span class="settingsToggleTrack" aria-hidden="true"></span>
+                      </span>
+                    </label>
+                  </div>
                   <div class="settingsRow settingsRowInput">
                     <div class="settingsInfo">
                       <div class="settingsLabel" title="Volume de la voix du guide de boss.">Volume de la voix</div>
@@ -1906,6 +1933,7 @@
     <script src="/src/js/a2dFade.js"></script>
     <script src="/src/js/a2dBossMini.js"></script>
     <script src="/src/js/a2dBossGuide.js"></script>
+    <script src="/src/js/a2dCubes.js"></script>
     <script src="/src/js/a2dFooter.js"></script>
     <script src="/src/js/a2dNearby.js"></script>
     <script src="/src/js/a2dAbyss.js"></script>

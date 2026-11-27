@@ -506,7 +506,7 @@
     }));
   }
 
-  window.A2dEvents = { open: () => setOpen(true), close: () => setOpen(false), toggle: () => setOpen(!open), nextOf, notify, checkAlerts };
+  window.A2dEvents = { open: () => setOpen(true), close: () => setOpen(false), toggle: () => setOpen(!open), nextOf, notify, checkAlerts, chime };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();

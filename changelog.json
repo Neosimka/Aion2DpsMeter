@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "2.1.33",
+      "date": "2026-11-27",
+      "notes": {
+        "fr": "**Cubes cachés**\n- Dès qu'un cube caché entre dans ton champ de vue, une ligne s'affiche sous l'en-tête du meter : **rouge** pour un cube à clé, **doré** pour un cube normal, depuis quand il est là, et barré quand quelqu'un l'ouvre. Une cloche sonne à chaque nouveau cube.\n- Distance, hauteur et direction (comme sur la carte, le nord en haut) quand le jeu a donné ta position dans la minute ; sinon « près de toi ».\n- Réglages → Apparence : alerte, son, et « ignorer les cubes à clé ».\n- Lu dans le réseau uniquement (jamais la mémoire du jeu).",
+        "en": "**Cubes cachés**\n- Dès qu'un cube caché entre dans ton champ de vue, une ligne s'affiche sous l'en-tête du meter : **rouge** pour un cube à clé, **doré** pour un cube normal, depuis quand il est là, et barré quand quelqu'un l'ouvre. Une cloche sonne à chaque nouveau cube.\n- Distance, hauteur et direction (comme sur la carte, le nord en haut) quand le jeu a donné ta position dans la minute ; sinon « près de toi ».\n- Réglages → Apparence : alerte, son, et « ignorer les cubes à clé ».\n- Lu dans le réseau uniquement (jamais la mémoire du jeu)."
+      }
+    },
+    {
       "version": "2.1.32",
       "date": "2026-11-24",
       "notes": {
@@ -38,14 +46,6 @@
       "notes": {
         "fr": "**Guide de boss en direct (raid Ludra)**\n- Sous la barre du boss : la prochaine mécanique de **Ludra éternel** (Orbes 90 %, arène 85 %, **Bingo 60 %**, Zikel 45 %, **Couleurs 33 %**, Cercles 10 %) ou de **Rahu** (75, 50 et 25 %), avec le temps estimé avant qu'elle tombe. En rouge : celles qui font wiper.\n- Quand elle arrive, un bandeau dit quoi faire ; une **voix** l'annonce quelques secondes avant (« Bingo dans 5 ») puis donne la consigne, et prévient une minute avant l'enrage.\n- Ketu et le Réacteur : une ligne de rappel. Sous le guide, la dernière attaque du boss.\n- Réglages → Apparence : guide, voix, « seulement ce qui fait wiper » et volume de la voix.\n- Le meter note les attaques des boss de Ludra dans ses logs, pour caler l'ordre exact des attaques après vos raids.",
         "en": "**Guide de boss en direct (raid Ludra)**\n- Sous la barre du boss : la prochaine mécanique de **Ludra éternel** (Orbes 90 %, arène 85 %, **Bingo 60 %**, Zikel 45 %, **Couleurs 33 %**, Cercles 10 %) ou de **Rahu** (75, 50 et 25 %), avec le temps estimé avant qu'elle tombe. En rouge : celles qui font wiper.\n- Quand elle arrive, un bandeau dit quoi faire ; une **voix** l'annonce quelques secondes avant (« Bingo dans 5 ») puis donne la consigne, et prévient une minute avant l'enrage.\n- Ketu et le Réacteur : une ligne de rappel. Sous le guide, la dernière attaque du boss.\n- Réglages → Apparence : guide, voix, « seulement ce qui fait wiper » et volume de la voix.\n- Le meter note les attaques des boss de Ludra dans ses logs, pour caler l'ordre exact des attaques après vos raids."
-      }
-    },
-    {
-      "version": "2.1.27",
-      "date": "2026-11-22",
-      "notes": {
-        "fr": "**Classement PvP de la légion**\n- Tes kills, assists et kills du groupe qui rapportent des Points Abyssaux partent au site de La Chevrerie, avec les AP gagnés sur chacun, une fois les points définitifs (environ 30 s après la mort).\n- Sur le site, onglet Combats → **PvP** : le classement de la semaine (remise à zéro le mercredi), et la semaine d'avant.\n- Même réglage que l'envoi des combats (onglet La Chevrerie) ; un envoi raté est refait plus tard.",
-        "en": "**Classement PvP de la légion**\n- Tes kills, assists et kills du groupe qui rapportent des Points Abyssaux partent au site de La Chevrerie, avec les AP gagnés sur chacun, une fois les points définitifs (environ 30 s après la mort).\n- Sur le site, onglet Combats → **PvP** : le classement de la semaine (remise à zéro le mercredi), et la semaine d'avant.\n- Même réglage que l'envoi des combats (onglet La Chevrerie) ; un envoi raté est refait plus tard."
       }
     }
   ]

@@ -4770,6 +4770,7 @@ pub fn run() {
             crate::a2d_pvp::a2d_pvp_reset,
             crate::a2d_bossguide::a2d_boss_casts,
             crate::a2d_stats::a2d_self_stats,
+            crate::a2d_cubes::a2d_cubes,
             crate::a2d_radar::a2d_radar_state,
             crate::a2d_capture::a2d_capture_start,
             crate::a2d_capture::a2d_capture_stop,

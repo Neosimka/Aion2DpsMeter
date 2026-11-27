@@ -44,6 +44,7 @@ mod a2d_nearby;
 mod a2d_pvp;
 mod a2d_bossguide;
 mod a2d_stats;
+mod a2d_cubes;
 // Aion2DpsMeter : panneau Événements.
 #[cfg(feature = "desktop")]
 mod a2d_events;

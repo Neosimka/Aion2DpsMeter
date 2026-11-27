@@ -290,6 +290,11 @@ impl StreamProcessor {
 
         #[cfg(test)]
         crate::a2d_bossguide::tap(packet, self.override_timestamp.unwrap_or(0));
+        // Aion2DpsMeter : cubes cachés et ta position.
+        if let Some(ev) = crate::a2d_cubes::parse(packet) {
+            let at = self.override_timestamp.unwrap_or_else(crate::clock::now_ms);
+            crate::a2d_cubes::note(ev, self.data_storage.local_player_id(), at);
+        }
         // Aion2DpsMeter : les attaques que commencent les boss de la Forge (guide de boss).
         if let Some((entity, skill)) = crate::a2d_bossguide::parse_cast(packet) {
             if let Some(mob) = self.data_storage.mob_code(entity) {
